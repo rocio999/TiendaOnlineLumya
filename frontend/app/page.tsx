@@ -1,4 +1,4 @@
-
+import Link from "next/link";
 export default function Home() {
   return (
 
@@ -22,15 +22,25 @@ export default function Home() {
           Tienda Online Lumya
         </h1>
 
-        <div className="flex gap-4">
-          <button className="bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-200">
-            Iniciar sesión Cliente
-          </button>
+        <div className="flex flex-col gap-3 items-end"> 
+    
+    <Link href="/login">
+      <span className="bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-200 cursor-pointer text-center w-full min-w-[140px]">
+        Iniciar sesión
+      </span>
+    </Link>
 
-          <button className="bg-yellow-400 text-black px-4 py-2 rounded-lg hover:bg-yellow-300">
-            Iniciar sesión Vendedor
-          </button>
-        </div>
+    {/* El texto y el enlace ahora están en un bloque que fuerza el salto de línea */}
+    <div className="text-sm text-white text-right">
+      <p>¿No tienes cuenta aún?</p>
+      <Link href="/registro">
+        <span className="text-blue-500 underline hover:text-blue-400 cursor-pointer font-bold">
+          Regístrate aquí
+        </span>
+      </Link>
+    </div>
+
+  </div>
       </header>
 
       {/* 🏠 Contenido central */}
