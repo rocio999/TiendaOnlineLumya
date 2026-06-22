@@ -30,12 +30,11 @@ export default function Home() {
       </span>
     </Link>
 
-    {/* El texto y el enlace ahora están en un bloque que fuerza el salto de línea */}
     <div className="text-sm text-white text-right">
       <p>¿No tienes cuenta aún?</p>
       <Link href="/registro">
         <span className="text-blue-500 underline hover:text-blue-400 cursor-pointer font-bold">
-          Regístrate aquí
+          Regístrate 
         </span>
       </Link>
     </div>
