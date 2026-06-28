@@ -1,153 +1,60 @@
-"use client";
 import Link from "next/link";
-import Image from "next/image";
-import { useCarrito } from "./CarritoContext";
-import { useState } from "react";
-
-export default function InicioCliente() {
-  const { agregarProducto, productos: carrito } = useCarrito();
-  const [agregado, setAgregado] = useState<number | null>(null);
-
-  const productos = [
-    { id: 1, nombre: "Mochila Urbana", precio: 55, categoria: "Accesorios", emoji: "🎒" },
-    { id: 2, nombre: "Zapatillas Runner", precio: 90, categoria: "Calzado", emoji: "👟" },
-    { id: 3, nombre: "Cámara Digital", precio: 350, categoria: "Electrónica", emoji: "📷" },
-    { id: 4, nombre: "Auriculares BT", precio: 110, categoria: "Electrónica", emoji: "🎧" },
-    { id: 5, nombre: "Camiseta Deportiva", precio: 25, categoria: "Ropa", emoji: "👕" },
-    { id: 6, nombre: "Reloj Inteligente", precio: 199, categoria: "Electrónica", emoji: "⌚" },
-  ];
-
-  const categorias = [
-    { nombre: "Ropa", emoji: "👕" },
-    { nombre: "Calzado", emoji: "👟" },
-    { nombre: "Electrónica", emoji: "📱" },
-    { nombre: "Accesorios", emoji: "👜" },
-  ];
-
-  const handleAgregar = (producto: typeof productos[0]) => {
-    agregarProducto(producto);
-    setAgregado(producto.id);
-    setTimeout(() => setAgregado(null), 1500);
-  };
-
+export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-50">
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-700 to-cyan-500 px-4 py-4 sticky top-0 z-50 shadow-lg">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/logo-lumya.png"
-              alt="Lumya"
-              width={40}
-              height={40}
-              className="rounded-xl"
-            />
-            <span className="text-xl font-bold text-white">lumya</span>
-          </div>
-          <Link href="/cliente/carrito">
-            <button className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-xl font-semibold transition-all text-sm">
-              🛒 Carrito
-              {carrito.length > 0 && (
-                <span className="bg-white text-blue-700 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                  {carrito.length}
-                </span>
-              )}
-            </button>
-          </Link>
-        </div>
+    <div className="relative min-h-screen w-full">
 
-        {/* Barra de búsqueda */}
-        <div className="max-w-4xl mx-auto mt-3">
-          <input
-            type="text"
-            placeholder="Buscar productos..."
-            className="w-full bg-white rounded-xl px-4 py-2 text-gray-700 placeholder-gray-400 focus:outline-none shadow-md"
-          />
-        </div>
-      </div>
+      {}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: "url('/lumia.png')", // pon tu imagen en /public
+        }}
+      />
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      {/* 🌑 Capa oscura para que el texto se vea */}
+      <div className="absolute inset-0 bg-black/60" />
 
-        {/* Oferta Flash */}
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-400 rounded-2xl p-4 mb-6 flex items-center justify-between shadow-lg">
-          <div>
-            <p className="text-white font-bold text-lg">⚡ Oferta Flash</p>
-            <p className="text-blue-100 text-sm">20% OFF en Zapatillas hoy</p>
-          </div>
-          <span className="text-4xl">👟</span>
-        </div>
+      {/* 🧭 Barra superior */}
+      <header className="relative z-10 flex justify-between items-center px-8 py-5 text-white">
+        
+        <h1 className="text-xl font-bold fond- sans">
+          Tienda Online Lumya
+        </h1>
 
-        {/* Categorías */}
-        <h2 className="text-xl font-bold text-blue-900 mb-3">Categorías Populares</h2>
-        <div className="grid grid-cols-4 gap-3 mb-6">
-          {categorias.map((cat) => (
-            <div
-              key={cat.nombre}
-              className="bg-white rounded-2xl p-3 flex flex-col items-center shadow-sm hover:shadow-md hover:border-blue-300 border-2 border-transparent transition cursor-pointer"
-            >
-              <span className="text-3xl mb-1">{cat.emoji}</span>
-              <p className="text-xs font-semibold text-blue-800">{cat.nombre}</p>
-            </div>
-          ))}
-        </div>
+        <div className="flex flex-col gap-3 items-end"> 
+    
+    <Link href="/login">
+      <span className="bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-200 cursor-pointer text-center w-full min-w-[140px]">
+        Iniciar sesión
+      </span>
+    </Link>
 
-        {/* Productos */}
-        <h2 className="text-xl font-bold text-blue-900 mb-3">Productos para ti</h2>
-        <div className="grid grid-cols-2 gap-4 mb-24">
-          {productos.map((producto) => (
-            <div
-              key={producto.id}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition border border-gray-100"
-            >
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 h-32 flex items-center justify-center">
-                <span className="text-6xl">{producto.emoji}</span>
-              </div>
-              <div className="p-3">
-                <p className="font-semibold text-gray-800 text-sm">{producto.nombre}</p>
-                <p className="text-xs text-gray-400 mb-1">{producto.categoria}</p>
-                <div className="flex items-center justify-between">
-                  <p className="text-blue-700 font-bold">${producto.precio}</p>
-                  <button
-                    onClick={() => handleAgregar(producto)}
-                    className={`text-white text-xs px-3 py-1 rounded-lg transition font-semibold ${
-                      agregado === producto.id
-                        ? "bg-green-500"
-                        : "bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90"
-                    }`}
-                  >
-                    {agregado === producto.id ? "✓ Agregado" : "+ Carrito"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="text-sm text-white text-right">
+      <p>¿No tienes cuenta aún?</p>
+      <Link href="/registro">
+        <span className="text-blue-500 underline hover:text-blue-400 cursor-pointer font-bold">
+          Regístrate 
+        </span>
+      </Link>
+    </div>
 
-      </div>
+  </div>
+      </header>
 
-      {/* Barra navegación inferior */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50 shadow-lg">
-        <div className="max-w-4xl mx-auto grid grid-cols-4 gap-2">
-          <button className="flex flex-col items-center text-blue-700">
-            <span className="text-xl">🏠</span>
-            <span className="text-xs font-semibold">Inicio</span>
-          </button>
-          <button className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-            <span className="text-xl">📦</span>
-            <span className="text-xs">Categorías</span>
-          </button>
-          <Link href="/cliente/carrito" className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-            <span className="text-xl">🛒</span>
-            <span className="text-xs">Carrito</span>
-          </Link>
-          <button className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-            <span className="text-xl">👤</span>
-            <span className="text-xs">Perfil</span>
-          </button>
-        </div>
-      </div>
+      {/* 🏠 Contenido central */}
+      <main className="relative z-10 flex flex-col items-center justify-center text-center min-h-screen px-6 text-white">
+
+        <h2 className="text-4xl md:text-6xl font-bold mb-6">
+          Bienvenido a  Lumya 🛍️
+        </h2>
+
+        <p className="text-lg md:text-xl max-w-2xl">
+           Una plataforma donde clientes pueden comprar productos fácilmente
+          y vendedores pueden publicar y gestionar su catálogo en línea.
+        </p>
+
+      </main>
 
     </div>
   );

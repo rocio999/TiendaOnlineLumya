@@ -1,0 +1,94 @@
+.container {
+          display: flex;
+          min-height: 100vh;
+          font-family: Arial, sans-serif;
+        }
+        body {
+         margin: 0;
+        background: white;
+        }
+
+        .left {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: white;
+        }
+
+        .left img {
+          width: 450px;
+         
+        }
+
+        .right {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: 40px;
+          background: white;  
+          
+
+        }
+        .top {
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+        text-align: center;
+        margin-bottom: 20px;
+}
+
+        h1 {
+          margin: 0;
+            color: black;
+        }
+
+        p {
+           color: rgb(10, 28, 107);
+          margin-bottom: 20px;
+        }
+
+        form {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+/*Formulario*/
+        input {  
+          padding: 12px;
+          border: none;
+          border-radius: 20px;
+          background: #8ab6ff;
+          color: rgb(9, 9, 9);
+          outline: none;
+        }
+
+        input::placeholder {
+          color: rgb(253, 251, 252);
+        }
+
+        .roles {
+          margin-top: 10px;
+          color: black;
+        }
+
+        .roles label {
+          margin-right: 15px;
+        }
+
+        button {
+          margin-top: 15px;
+          background: none;
+          border: none;
+          color: #124cb6;
+          font-weight: bold;
+          cursor: pointer;
+          font-size: 16px;
+        }
+      
+        .img-below {/* imagen de logo de registro */
+            width: 150px;   
+            margin: 10px 0 20px 0;
+  
+}
