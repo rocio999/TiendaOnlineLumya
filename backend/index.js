@@ -139,6 +139,87 @@ app.delete("/usuarios/:id", (req, res) => {
 });
 
 // ======================
+// PRODUCTOS
+// ======================
+app.get("/productos", (req, res) => {
+  db.query("SELECT * FROM productos", (err, results) => {
+    if (err) return res.status(500).json(err);
+    res.json(results);
+  });
+});
+
+app.post("/productos", (req, res) => {
+  const { nombre, precio, descripcion, categoria, stock, vendedor_id } = req.body;
+  const sql = "INSERT INTO productos (nombre, precio, descripcion, categoria, stock, vendedor_id) VALUES (?, ?, ?, ?, ?, ?)";
+  db.query(sql, [nombre, precio, descripcion, categoria, stock, vendedor_id], (err) => {
+    if (err) return res.status(500).json(err);
+    res.json({ message: "Producto creado" });
+  });
+});
+
+app.get("/productos/:id", (req, res) => {
+  db.query("SELECT * FROM productos WHERE id=?", [req.params.id], (err, results) => {
+    if (err) return res.status(500).json(err);
+    res.json(results[0]);
+  });
+});
+
+app.put("/productos/:id", (req, res) => {
+  const { nombre, precio, descripcion, categoria, stock } = req.body;
+  const sql = "UPDATE productos SET nombre=?, precio=?, descripcion=?, categoria=?, stock=? WHERE id=?";
+  db.query(sql, [nombre, precio, descripcion, categoria, stock, req.params.id], (err) => {
+    if (err) return res.status(500).json(err);
+    res.json({ message: "Producto actualizado" });
+  });
+});
+
+app.delete("/productos/:id", (req, res) => {
+  db.query("DELETE FROM productos WHERE id=?", [req.params.id], (err) => {
+    if (err) return res.status(500).json(err);
+    res.json({ message: "Producto eliminado" });
+  });
+});
+
+// ======================
+// PAGOS
+// ======================
+app.get("/pagos", (req, res) => {
+  db.query("SELECT * FROM pagos", (err, results) => {
+    if (err) return res.status(500).json(err);
+    res.json(results);
+  });
+});
+
+app.post("/pagos", (req, res) => {
+  const { cliente_id, vendedor_id, producto_id, monto, comprobante } = req.body;
+  const sql = "INSERT INTO pagos (cliente_id, vendedor_id, producto_id, monto, comprobante, estado) VALUES (?, ?, ?, ?, ?, 'Pendiente')";
+  db.query(sql, [cliente_id, vendedor_id, producto_id, monto, comprobante], (err) => {
+    if (err) return res.status(500).json(err);
+    res.json({ message: "Pago registrado" });
+  });
+});
+
+app.put("/pagos/:id", (req, res) => {
+  const { estado } = req.body;
+  const sql = "UPDATE pagos SET estado=? WHERE id=?";
+  db.query(sql, [estado, req.params.id], (err) => {
+    if (err) return res.status(500).json(err);
+    res.json({ message: "Pago actualizado" });
+  });
+});
+
+// ======================
+// SUSPENDER USUARIO
+// ======================
+app.put("/usuarios/:id/suspender", (req, res) => {
+  const { estado } = req.body;
+  const sql = "UPDATE usuarios SET estado=? WHERE id=?";
+  db.query(sql, [estado, req.params.id], (err) => {
+    if (err) return res.status(500).json(err);
+    res.json({ message: "Usuario actualizado" });
+  });
+});
+// ======================
 // SERVER
 // ======================
 app.listen(3001, () => {
