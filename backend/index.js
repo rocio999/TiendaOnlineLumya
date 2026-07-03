@@ -13,60 +13,65 @@ app.use(express.json());
 // PRUEBA
 // ======================
 app.get("/", (req, res) => {
-  res.send("Backend funcionando 🚀");
+  res.send("Backend funcionando 🚀 Firebase listo");
 });
 
 // ======================
-// REGISTRO (SEGURO)
-app.post("/registro", (req, res) => {
-  console.log("BODY RECIBIDO:", req.body);
+// REGISTRO
+// ======================
+app.post("/registro", async (req, res) => {
+  try {
+    const { nombre, apellido, correo, password, rol } = req.body;
 
-  const { nombre, apellido, correo, password, rol } = req.body;
-
-  if (!nombre || !apellido || !correo || !password || !rol) {
-    return res.status(400).json({ message: "Faltan datos" });
-  }
-
-  const hash = bcrypt.hashSync(password, 10);
-
-  const sql =
-    "INSERT INTO usuarios (nombre, apellido, correo, password, rol) VALUES (?, ?, ?, ?, ?)";
-
-  db.query(sql, [nombre, apellido, correo, hash, rol], (err) => {
-    if (err) {
-      console.log(err);
-      return res.status(500).json(err);
+    if (!nombre || !apellido || !correo || !password || !rol) {
+      return res.status(400).json({ message: "Faltan datos" });
     }
 
-    res.json({ message: "Usuario creado correctamente" });
-  });
-});
+    const hash = bcrypt.hashSync(password, 10);
 
+    const user = {
+      nombre,
+      apellido,
+      correo,
+      password: hash,
+      rol,
+      estado: "activo",
+      createdAt: new Date(),
+    };
+
+    const ref = await db.collection("usuarios").add(user);
+
+    res.json({
+      id: ref.id,
+      message: "Usuario creado en Firebase",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // ======================
 // LOGIN
 // ======================
-app.post("/login", (req, res) => {
-  const { correo, password } = req.body;
+app.post("/login", async (req, res) => {
+  try {
+    const { correo, password } = req.body;
 
-  if (!correo || !password) {
-    return res.status(400).json({ message: "Faltan datos" });
-  }
-
-  const sql = "SELECT * FROM usuarios WHERE correo = ?";
-
-  db.query(sql, [correo], (err, results) => {
-    if (err) return res.status(500).json(err);
-
-if (results.length === 0) {
-          return res.status(404).json({ message: "Usuario no encontrado" });
+    if (!correo || !password) {
+      return res.status(400).json({ message: "Faltan datos" });
     }
 
-    const user = results[0];
+    const snapshot = await db
+      .collection("usuarios")
+      .where("correo", "==", correo)
+      .get();
 
-    // 🔥 DEBUG (MUY IMPORTANTE)
-    console.log("PASSWORD BD:", user.password);
-    console.log("PASSWORD INPUT:", password);
+    if (snapshot.empty) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    const userDoc = snapshot.docs[0];
+    const user = userDoc.data();
 
     const passwordValida = bcrypt.compareSync(password, user.password);
 
@@ -75,150 +80,210 @@ if (results.length === 0) {
     }
 
     const token = jwt.sign(
-      { id: user.id, correo: user.correo },
+      { id: userDoc.id, correo: user.correo },
       "secreto123",
       { expiresIn: "1h" }
     );
 
-    res.json({ message: "Login exitoso 🔐", token });
-  });
+    res.json({
+      message: "Login exitoso 🔐",
+      token,
+      user: {
+        id: userDoc.id,
+        nombre: user.nombre,
+        correo: user.correo,
+        rol: user.rol,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // ======================
 // GET USUARIOS
 // ======================
-app.get("/usuarios", (req, res) => {
-  db.query("SELECT * FROM usuarios", (err, results) => {
-    if (err) return res.status(500).json(err);
-    res.json(results);
-  });
+app.get("/usuarios", async (req, res) => {
+  try {
+    const snapshot = await db.collection("usuarios").get();
+
+    const usuarios = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    res.json(usuarios);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // ======================
-// CREATE USUARIO (ADMIN)
+// UPDATE USUARIO
 // ======================
-app.post("/usuarios", (req, res) => {
-  const { nombre, correo, password } = req.body;
+app.put("/usuarios/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
 
-  const hash = bcrypt.hashSync(password, 10);
+    await db.collection("usuarios").doc(id).update(req.body);
 
-  const sql =
-    "INSERT INTO usuarios (nombre, correo, password) VALUES (?, ?, ?)";
-
-  db.query(sql, [nombre, correo, hash], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Usuario creado" });
-  });
-});
-
-// ======================
-// UPDATE
-// ======================
-app.put("/usuarios/:id", (req, res) => {
-  const { nombre, correo, password } = req.body;
-
-  const hash = bcrypt.hashSync(password, 10);
-
-  const sql =
-    "UPDATE usuarios SET nombre=?, correo=?, password=? WHERE id=?";
-
-  db.query(sql, [nombre, correo, hash, req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
     res.json({ message: "Usuario actualizado" });
-  });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // ======================
-// DELETE
+// DELETE USUARIO
 // ======================
-app.delete("/usuarios/:id", (req, res) => {
-  db.query("DELETE FROM usuarios WHERE id=?", [req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
+app.delete("/usuarios/:id", async (req, res) => {
+  try {
+    await db.collection("usuarios").doc(req.params.id).delete();
+
     res.json({ message: "Usuario eliminado" });
-  });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // ======================
 // PRODUCTOS
 // ======================
-app.get("/productos", (req, res) => {
-  db.query("SELECT * FROM productos", (err, results) => {
-    if (err) return res.status(500).json(err);
-    res.json(results);
-  });
+
+// GET
+app.get("/productos", async (req, res) => {
+  try {
+    const snapshot = await db.collection("productos").get();
+
+    const productos = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    res.json(productos);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
-app.post("/productos", (req, res) => {
-  const { nombre, precio, descripcion, categoria, stock, vendedor_id } = req.body;
-  const sql = "INSERT INTO productos (nombre, precio, descripcion, categoria, stock, vendedor_id) VALUES (?, ?, ?, ?, ?, ?)";
-  db.query(sql, [nombre, precio, descripcion, categoria, stock, vendedor_id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Producto creado" });
-  });
+// POST
+app.post("/productos", async (req, res) => {
+  try {
+    const data = {
+      ...req.body,
+      createdAt: new Date(),
+    };
+
+    const ref = await db.collection("productos").add(data);
+
+    res.json({ id: ref.id, message: "Producto creado" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
-app.get("/productos/:id", (req, res) => {
-  db.query("SELECT * FROM productos WHERE id=?", [req.params.id], (err, results) => {
-    if (err) return res.status(500).json(err);
-    res.json(results[0]);
-  });
+// GET BY ID
+app.get("/productos/:id", async (req, res) => {
+  try {
+    const doc = await db.collection("productos").doc(req.params.id).get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    res.json({ id: doc.id, ...doc.data() });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
-app.put("/productos/:id", (req, res) => {
-  const { nombre, precio, descripcion, categoria, stock } = req.body;
-  const sql = "UPDATE productos SET nombre=?, precio=?, descripcion=?, categoria=?, stock=? WHERE id=?";
-  db.query(sql, [nombre, precio, descripcion, categoria, stock, req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
+// UPDATE
+app.put("/productos/:id", async (req, res) => {
+  try {
+    await db.collection("productos").doc(req.params.id).update(req.body);
+
     res.json({ message: "Producto actualizado" });
-  });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
-app.delete("/productos/:id", (req, res) => {
-  db.query("DELETE FROM productos WHERE id=?", [req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
+// DELETE
+app.delete("/productos/:id", async (req, res) => {
+  try {
+    await db.collection("productos").doc(req.params.id).delete();
+
     res.json({ message: "Producto eliminado" });
-  });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // ======================
 // PAGOS
 // ======================
-app.get("/pagos", (req, res) => {
-  db.query("SELECT * FROM pagos", (err, results) => {
-    if (err) return res.status(500).json(err);
-    res.json(results);
-  });
+
+// GET
+app.get("/pagos", async (req, res) => {
+  try {
+    const snapshot = await db.collection("pagos").get();
+
+    const pagos = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    res.json(pagos);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
-app.post("/pagos", (req, res) => {
-  const { cliente_id, vendedor_id, producto_id, monto, comprobante } = req.body;
-  const sql = "INSERT INTO pagos (cliente_id, vendedor_id, producto_id, monto, comprobante, estado) VALUES (?, ?, ?, ?, ?, 'Pendiente')";
-  db.query(sql, [cliente_id, vendedor_id, producto_id, monto, comprobante], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Pago registrado" });
-  });
+// POST
+app.post("/pagos", async (req, res) => {
+  try {
+    const data = {
+      ...req.body,
+      estado: "Pendiente",
+      createdAt: new Date(),
+    };
+
+    const ref = await db.collection("pagos").add(data);
+
+    res.json({ id: ref.id, message: "Pago registrado" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
-app.put("/pagos/:id", (req, res) => {
-  const { estado } = req.body;
-  const sql = "UPDATE pagos SET estado=? WHERE id=?";
-  db.query(sql, [estado, req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
+// UPDATE ESTADO
+app.put("/pagos/:id", async (req, res) => {
+  try {
+    const { estado } = req.body;
+
+    await db.collection("pagos").doc(req.params.id).update({ estado });
+
     res.json({ message: "Pago actualizado" });
-  });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // ======================
 // SUSPENDER USUARIO
 // ======================
-app.put("/usuarios/:id/suspender", (req, res) => {
-  const { estado } = req.body;
-  const sql = "UPDATE usuarios SET estado=? WHERE id=?";
-  db.query(sql, [estado, req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Usuario actualizado" });
-  });
+app.put("/usuarios/:id/suspender", async (req, res) => {
+  try {
+    const { estado } = req.body;
+
+    await db.collection("usuarios").doc(req.params.id).update({ estado });
+
+    res.json({ message: "Estado de usuario actualizado" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
+
 // ======================
 // SERVER
 // ======================
