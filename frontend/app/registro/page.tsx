@@ -2,7 +2,6 @@
 
 import "../../styles/registro.css";
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function Registro() {
@@ -12,13 +11,15 @@ export default function Registro() {
   const [password, setPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [rol, setRol] = useState("cliente");
+  const [loading, setLoading] = useState(false);
 
   const router = useRouter();
 
-  const handleRegistro = async (e: any) => {
-    e.preventDefault();
+const handleRegistro = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+    if (loading) return; // evita doble envío
 
-    if (!nombre || !correo || !password) {
+    if (!nombre || !apellido || !correo || !password) {
       setMensaje("Completa todos los campos");
       return;
     }
@@ -27,6 +28,8 @@ export default function Registro() {
       setMensaje("Contraseña muy corta");
       return;
     }
+
+    setLoading(true);
 
     try {
       const res = await fetch("http://localhost:3001/registro", {
@@ -50,7 +53,7 @@ export default function Registro() {
         return;
       }
 
-      setMensaje("Usuario creado 🚀. Redirigiendo a login...");
+      setMensaje("Usuario creado 🚀. Redirigiendo...");
 
       setTimeout(() => {
         router.push("/login");
@@ -58,6 +61,8 @@ export default function Registro() {
 
     } catch (error) {
       setMensaje("Error de conexión con el servidor");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -127,11 +132,12 @@ export default function Registro() {
             </label>
           </div>
 
-          <button type="submit">CREAR CUENTA</button>
+          <button type="submit" disabled={loading}>
+            {loading ? "CREANDO..." : "CREAR CUENTA"}
+          </button>
         </form>
 
         {mensaje && <p>{mensaje}</p>}
-
       </div>
     </div>
   );
