@@ -9,62 +9,54 @@ export default function Registro() {
   const [apellido, setApellido] = useState("");
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
-  const [rol, setRol] = useState("cliente");
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
 
-const handleRegistro = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleRegistro = async (e) => {
   e.preventDefault();
-    if (loading) return; // evita doble envío
+  setLoading(true);
+  setMensaje("");
 
-    if (!nombre || !apellido || !correo || !password) {
-      setMensaje("Completa todos los campos");
-      return;
+  // Validaciones locales
+  if (!nombre.trim() || !apellido.trim() || !correo.trim() || !password.trim()) {
+    setMensaje("Todos los campos son obligatorios");
+    setLoading(false);
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    setMensaje("Las contraseñas no coinciden");
+    setLoading(false);
+    return;
+  }
+
+  const datos = { nombre, apellido, correo, password };
+
+  try {
+    const res = await fetch("http://localhost:3001/registro", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(datos),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Error al registrar");
     }
 
-    if (password.length < 4) {
-      setMensaje("Contraseña muy corta");
-      return;
-    }
+    setMensaje("Usuario creado 🚀. Redirigiendo...");
+    setTimeout(() => router.push("/login"), 1200);
 
-    setLoading(true);
-
-    try {
-      const res = await fetch("http://localhost:3001/registro", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          nombre,
-          apellido,
-          correo,
-          password,
-          rol,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setMensaje(data.message || "Error al registrar");
-        return;
-      }
-
-      setMensaje("Usuario creado 🚀. Redirigiendo...");
-
-      setTimeout(() => {
-        router.push("/login");
-      }, 1500);
-
-    } catch (error) {
-      setMensaje("Error de conexión con el servidor");
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (error) {
+    setMensaje(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="container">
@@ -83,54 +75,37 @@ const handleRegistro = async (e: React.FormEvent<HTMLFormElement>) => {
           <input
             type="text"
             placeholder="Nombre"
+            value={nombre}
             onChange={(e) => setNombre(e.target.value)}
           />
 
           <input
             type="text"
             placeholder="Apellido"
+            value={apellido}
             onChange={(e) => setApellido(e.target.value)}
           />
 
           <input
             type="email"
             placeholder="Correo"
+            value={correo}
             onChange={(e) => setCorreo(e.target.value)}
           />
 
           <input
             type="password"
             placeholder="Contraseña"
+            value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <input type="password" placeholder="Confirmar Contraseña" />
-
-          <div className="roles">
-            <p>Tipo de cuenta:</p>
-
-            <label>
-              <input
-                type="radio"
-                name="rol"
-                value="cliente"
-                checked={rol === "cliente"}
-                onChange={(e) => setRol(e.target.value)}
-              />
-              Cliente
-            </label>
-
-            <label>
-              <input
-                type="radio"
-                name="rol"
-                value="vendedor"
-                checked={rol === "vendedor"}
-                onChange={(e) => setRol(e.target.value)}
-              />
-              Vendedor
-            </label>
-          </div>
+          <input
+            type="password"
+            placeholder="Confirmar Contraseña"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
 
           <button type="submit" disabled={loading}>
             {loading ? "CREANDO..." : "CREAR CUENTA"}
