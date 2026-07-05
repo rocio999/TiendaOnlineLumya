@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 
+
 export default function InicioCliente() {
   const [agregado, setAgregado] = useState<number | null>(null);
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
@@ -29,11 +30,9 @@ export default function InicioCliente() {
 
   const handleAgregar = (producto: typeof todosProductos[0]) => {
     const carritoActual = JSON.parse(localStorage.getItem("carrito") || "[]");
-    const existe = carritoActual.find((p: any) => p.id === producto.id);
-
+const existe = carritoActual.find((p: { id: number; cantidad: number }) => p.id === producto.id);
     if (existe) {
-      const actualizado = carritoActual.map((p: any) =>
-        p.id === producto.id ? { ...p, cantidad: p.cantidad + 1 } : p
+const actualizado = carritoActual.map((p: { id: number; cantidad: number }) =>        p.id === producto.id ? { ...p, cantidad: p.cantidad + 1 } : p
       );
       localStorage.setItem("carrito", JSON.stringify(actualizado));
     } else {
@@ -50,23 +49,31 @@ export default function InicioCliente() {
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-700 to-cyan-500 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/logo-lumya.png"
-              alt="Lumya"
-              width={40}
-              height={40}
-              className="rounded-xl"
-            />
-            <span className="text-xl font-bold text-white">lumya</span>
-          </div>
-          <Link href="/cliente/carrito">
-            <button className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-xl font-semibold transition-all text-sm">
-              🛒 Carrito
-            </button>
-          </Link>
-        </div>
+  <div className="flex items-center gap-2">
+    <Image
+      src="/logo-lumya.png"
+      alt="Lumya"
+      width={40}
+      height={40}
+      className="rounded-xl"
+    />
+    <span className="text-xl font-bold text-white">lumya</span>
+  </div>
 
+  <div className="flex items-center gap-3">
+    <Link href="/registro">
+      <button className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-xl font-semibold transition-all text-sm">
+        Registrarse
+      </button>
+    </Link>
+
+    <Link href="/cliente/carrito">
+      <button className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-xl font-semibold transition-all text-sm">
+        🛒 Carrito
+      </button>
+    </Link>
+  </div>
+</div>
         {/* Barra de búsqueda */}
         <div className="max-w-4xl mx-auto mt-3">
           <input
