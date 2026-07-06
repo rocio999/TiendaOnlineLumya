@@ -12,7 +12,7 @@ export default function PanelAdmin() {
 
   const menuItems = [
     { titulo: "Gestión de Usuarios", descripcion: "Ver, suspender y gestionar usuarios", emoji: "👥", href: "/admin/usuarios" },
-    { titulo: "Gestión de Productos", descripcion: "Ver y administrar productos", emoji: "📦", href: "/admin/productos" },
+    { titulo: "Gestión de Productos", descripcion: "Ver, administrar productos y categorías", emoji: "📦", href: "/admin/productos" },
     { titulo: "Aprobar Pagos", descripcion: "Revisar y aprobar transferencias", emoji: "💳", href: "/admin/pagos" },
     { titulo: "Historial de Actividad", descripcion: "Registro de acciones del sistema", emoji: "📋", href: "/admin/auditoria" },
   ];
@@ -24,13 +24,7 @@ export default function PanelAdmin() {
       <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Image
-              src="/logo-lumya.png"
-              alt="Lumya"
-              width={40}
-              height={40}
-              className="rounded-xl"
-            />
+            <Image src="/logo-lumya.png" alt="Lumya" width={40} height={40} className="rounded-xl"/>
             <div>
               <span className="text-xl font-bold text-white">lumya</span>
               <span className="ml-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full">
@@ -58,10 +52,7 @@ export default function PanelAdmin() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {stats.map((stat) => (
-            <div
-              key={stat.titulo}
-              className={`bg-gradient-to-br ${stat.color} rounded-2xl p-5 text-white shadow-lg`}
-            >
+            <div key={stat.titulo} className={`bg-gradient-to-br ${stat.color} rounded-2xl p-5 text-white shadow-lg`}>
               <span className="text-3xl">{stat.emoji}</span>
               <p className="text-3xl font-bold mt-2">{stat.valor}</p>
               <p className="text-white/80 text-sm mt-1">{stat.titulo}</p>
