@@ -39,8 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+<<<<<<< HEAD
 
 // lo que modifico el dia 5/07/2026 de clientes 
 node_modules/
 serviceAccountKey.json
 .env
+
+debug.log
