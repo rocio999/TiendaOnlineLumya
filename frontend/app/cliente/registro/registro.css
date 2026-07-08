@@ -1,0 +1,181 @@
+ 
+.login-screen-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+/* LADO IZQUIERDO: Panel del formulario */
+.form-panel {
+  width: 35%; /* Ocupa un espacio más compacto como en la foto */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px;
+  box-sizing: border-box;
+  background: #ffffff;
+}
+
+.brand-header .img-logo {
+  height: 40px;
+  object-fit: contain;
+}
+
+.form-content {
+  max-width: 320px;
+  width: 100%;
+  margin: auto;
+  text-align: center;
+}
+
+/* Icono circular */
+.avatar-icon {
+  width: 80px;
+  height: 80px;
+  background-color: #113dc1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px auto;
+  color: #ffffff;
+}
+
+.avatar-icon svg {
+  width: 40px;
+  height: 40px;
+}
+
+.form-content h2 {
+  font-size: 22px;
+  color: #1a2a5a;
+  margin-bottom: 5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.form-content .subtitle {
+  color: #7e8b9b;
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+.input-group {
+  margin-bottom: 16px;
+  width: 100%;
+  color: black;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 20px;
+  border: 1.5px solid #121291;
+  border-radius: 25px; /* Bordes ovalados */
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+  border-color: #1a2a5a;
+}
+
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.toggle-password-btn {
+  position: absolute;
+  right: 15px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #1a2a5a;
+  color: #ffffff;
+  border: none;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 10px;
+  letter-spacing: 1px;
+  transition: background-color 0.2s;
+}
+
+.submit-btn:hover {
+  background-color: #111b3d;
+}
+
+.submit-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.bottom-dots {
+  text-align: center;
+  color: #1a2a5a;
+  font-size: 24px;
+  letter-spacing: 4px;
+}
+
+.status-message {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #e04f5f;
+}
+
+/* LADO DERECHO */
+.visual-panel {
+  width: 65%;
+  height: 100%;
+  background: radial-gradient(circle at 80% 20%, #f7e6cc 0%, transparent 45%),
+              radial-gradient(circle at 20% 80%, #20509e 0%, transparent 50%),
+              radial-gradient(circle at 50% 50%, #3b73c4 0%, #0d1f4d 100%);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 80px;
+  box-sizing: border-box;
+  color: #ffffff;
+}
+
+.visual-content {
+  max-width: 500px;
+}
+
+.visual-content h1 {
+  font-size: 64px;
+  font-weight: 800;
+  margin-bottom: 20px;
+  letter-spacing: -1px;
+}
+
+.visual-content p {
+  font-size: 16px;
+  line-height: 1.6;
+  opacity: 0.8;
+}
+
+@media (max-width: 1024px) {
+  .form-panel { width: 45%; }
+  .visual-panel { width: 55%; }
+}
+
+/* Ocultar lado visual en móviles */
+@media (max-width: 768px) {
+  .form-panel { width: 100%; padding: 20px; }
+  .visual-panel { display: none; }
+}

@@ -61,7 +61,7 @@ const actualizado = carritoActual.map((p: { id: number; cantidad: number }) =>  
   </div>
 
   <div className="flex items-center gap-3">
-    <Link href="/registro">
+    <Link href="/cliente/registro">
       <button className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-xl font-semibold transition-all text-sm">
         Registrarse
       </button>
