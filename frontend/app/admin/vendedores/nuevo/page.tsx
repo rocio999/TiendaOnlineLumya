@@ -2,66 +2,35 @@
 
 import "./CrearVendedor.css";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-const BANCOS = [
-  "Banco Pichincha",
-  "Banco Guayaquil",
-  "Banco del Pacífico",
-  "Banco Bolivariano",
-  "Banco Produbanco",
-  "Banco Internacional",
-  "Banco General Rumiñahui",
-  "Banco de Loja",
-  "Banco Solidario",
-  "Banco ProCredit",
-  "Banco Machala",
-  "Banco Amazonas",
-  "Banco Capital",
-  "Banco Diners Club",
-  "Banco D-Miro",
-  "Banco VisionFund Ecuador",
-];
+// Datos de ejemplo — luego vendrá de Firestore según el id de la solicitud
+const solicitudMock = {
+  nombrePropietario: "María Jiménez",
+  nombreNegocio: "Artesanías María",
+  correo: "maria.tienda@lumya.com",
+  telefono: "0987654321",
+  descripcion: "Venta de artesanías hechas a mano, bolsos y accesorios tejidos.",
+  estado: "pendiente",
+};
 
-const COOPERATIVAS = [
-  "Cooperativa JEP",
-  "Cooperativa Jardín Azuayo",
-  "Cooperativa Policía Nacional (COOPAC)",
-  "Cooperativa 29 de Octubre",
-  "Cooperativa Andalucía",
-  "Cooperativa Riobamba",
-  "Cooperativa Alianza del Valle",
-  "Cooperativa CACPECO",
-  "Cooperativa San Francisco",
-  "Cooperativa Mego",
-  "Cooperativa Cámara de Comercio de Ambato",
-];
+export default function RevisarSolicitudVendedor() {
+  const router = useRouter();
+  const [solicitud] = useState(solicitudMock);
+  const [mensaje, setMensaje] = useState("");
 
-export default function CrearVendedor() {
-  const [formulario, setFormulario] = useState({
-    nombre: "",
-    apellido: "",
-    correo: "",
-    password: "",
-    confirmarPassword: "",
-    cedula: "",
-    banco: "",
-    numeroCuenta: "",
-  });
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setFormulario({ ...formulario, [e.target.name]: e.target.value });
+  const aprobar = () => {
+    // Aquí luego conectamos con el backend: actualizar estado a "activo"
+    console.log("Vendedor aprobado:", solicitud.correo);
+    setMensaje("Vendedor aprobado. Ya puede iniciar sesión.");
+    setTimeout(() => router.push("/admin/vendedores"), 2000);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formulario.password !== formulario.confirmarPassword) {
-      alert("Las contraseñas no coinciden");
-      return;
-    }
-    // Aquí luego conectamos con el backend: POST /vendedores
-    console.log("Datos del nuevo vendedor:", formulario);
+  const rechazar = () => {
+    // Aquí luego conectamos con el backend: actualizar estado a "rechazado"
+    console.log("Vendedor rechazado:", solicitud.correo);
+    setMensaje("Solicitud rechazada.");
+    setTimeout(() => router.push("/admin/vendedores"), 2000);
   };
 
   return (
@@ -71,111 +40,66 @@ export default function CrearVendedor() {
 
         <div className="titulo">
           <div className="linea"></div>
-          <h2>CREAR VENDEDOR</h2>
+          <h2>SOLICITUD DE VENDEDOR</h2>
           <div className="linea"></div>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="fila">
-            <input
-              type="text"
-              name="nombre"
-              placeholder="Nombre"
-              value={formulario.nombre}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="text"
-              name="apellido"
-              placeholder="Apellido"
-              value={formulario.apellido}
-              onChange={handleChange}
-              required
-            />
+        {mensaje && (
+          <div style={{
+            background: "#dcfce7",
+            color: "#15803d",
+            padding: "12px 16px",
+            borderRadius: "12px",
+            marginBottom: "20px",
+            fontWeight: "bold",
+            textAlign: "center"
+          }}>
+            ✅ {mensaje}
           </div>
+        )}
 
-          <input
-            type="email"
-            name="correo"
-            placeholder="Correo electrónico"
-            className="full"
-            value={formulario.correo}
-            onChange={handleChange}
-            required
-          />
+        <div className="fila">
+          <input type="text" value={solicitud.nombrePropietario} disabled />
+          <input type="text" value={solicitud.nombreNegocio} disabled />
+        </div>
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Contraseña temporal"
-            className="full"
-            value={formulario.password}
-            onChange={handleChange}
-            required
-          />
+        <input type="email" className="full" value={solicitud.correo} disabled />
+        <input type="text" className="full" value={solicitud.telefono} disabled />
 
-          <input
-            type="password"
-            name="confirmarPassword"
-            placeholder="Confirmar contraseña"
-            className="full"
-            value={formulario.confirmarPassword}
-            onChange={handleChange}
-            required
-          />
+        <textarea
+          className="full"
+          value={solicitud.descripcion}
+          disabled
+          rows={3}
+          style={{
+            width: "100%",
+            borderRadius: "20px",
+            border: "2px solid #bcbcbc",
+            padding: "14px 18px",
+            fontSize: "15px",
+            color: "black",
+            resize: "none",
+          }}
+        />
 
-          <div className="separador">Información de pago</div>
+        <div className="separador">Decisión</div>
 
-          <input
-            type="text"
-            name="cedula"
-            placeholder="Cédula (10 dígitos)"
-            className="full"
-            maxLength={10}
-            value={formulario.cedula}
-            onChange={handleChange}
-            required
-          />
-
-          <select
-            name="banco"
-            className="full"
-            value={formulario.banco}
-            onChange={handleChange}
-            required
+        <div style={{ display: "flex", gap: "15px", justifyContent: "center", marginTop: "10px" }}>
+          <button
+            type="button"
+            onClick={aprobar}
+            style={{ background: "#059669", width: "180px" }}
           >
-            <option value="" disabled>
-              Selecciona banco o cooperativa
-            </option>
-            <optgroup label="Bancos">
-              {BANCOS.map((banco) => (
-                <option key={banco} value={banco}>
-                  {banco}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="Cooperativas">
-              {COOPERATIVAS.map((coop) => (
-                <option key={coop} value={coop}>
-                  {coop}
-                </option>
-              ))}
-            </optgroup>
-          </select>
-
-          <input
-            type="text"
-            name="numeroCuenta"
-            placeholder="Número de cuenta"
-            className="full"
-            value={formulario.numeroCuenta}
-            onChange={handleChange}
-            required
-          />
-
-          <button type="submit">CREAR VENDEDOR</button>
-        </form>
+            ✓ Aprobar
+          </button>
+          <button
+            type="button"
+            onClick={rechazar}
+            style={{ background: "#dc2626", width: "180px" }}
+          >
+            ✕ Rechazar
+          </button>
+        </div>
       </div>
     </div>
   );

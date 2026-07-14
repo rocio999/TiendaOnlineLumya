@@ -21,7 +21,6 @@ export default function PanelAdmin() {
   return (
     <div className="min-h-screen bg-slate-50">
 
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -44,13 +43,11 @@ export default function PanelAdmin() {
 
       <div className="max-w-6xl mx-auto px-4 py-8">
 
-        {/* Bienvenida */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-blue-900">Panel de Administración</h1>
           <p className="text-slate-500 mt-1">Gestiona todos los aspectos de Lumya</p>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {stats.map((stat) => (
             <div key={stat.titulo} className={`bg-gradient-to-br ${stat.color} rounded-2xl p-5 text-white shadow-lg`}>
@@ -61,7 +58,6 @@ export default function PanelAdmin() {
           ))}
         </div>
 
-        {/* Menú principal */}
         <h2 className="text-xl font-bold text-blue-900 mb-4">Módulos del Sistema</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {menuItems.map((item) => (
