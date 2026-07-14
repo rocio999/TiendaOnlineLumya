@@ -28,6 +28,11 @@ export default function Login() {
       }
 
       localStorage.setItem("token", data.token);
+      localStorage.setItem(
+      "usuario",
+      JSON.stringify(data.usuario)
+);
+
 
       setMensaje("Login exitoso 🚀");
 

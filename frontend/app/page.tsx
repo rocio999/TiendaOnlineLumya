@@ -4,44 +4,56 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
+
   const router = useRouter();
 
   useEffect(() => {
+
     const timer = setTimeout(() => {
-      router.push("/cliente");
-    }, 3000); // Espera 3 segundos
+      router.replace("/cliente/tiendas");
+    }, 5000);
 
     return () => clearTimeout(timer);
+
   }, [router]);
 
+
   return (
-    <div className="relative min-h-screen w-full">
+
+    <div className="home-container">
+
       {/* Fondo */}
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: "url('/lumia.png')",
-        }}
-      />
+      <div className="home-background" />
+
 
       {/* Capa oscura */}
-      <div className="absolute inset-0 bg-black/60" />
+      <div className="home-overlay" />
+
 
       {/* Contenido */}
-      <main className="relative z-10 flex flex-col items-center justify-center text-center min-h-screen px-6 text-white">
-        <h2 className="text-4xl md:text-6xl font-bold mb-6">
+      <main className="home-content">
+
+        <h2 className="home-title">
           Bienvenido a Lumya 🛍️
         </h2>
 
-        <p className="text-lg md:text-xl max-w-2xl">
+
+        <p className="home-description">
           Una plataforma donde clientes pueden comprar productos fácilmente y
           vendedores pueden publicar y gestionar su catálogo en línea.
         </p>
 
-        <p className="mt-8 text-sm text-gray-300 animate-pulse">
-          Redirigiendo...
-        </p>
+
+        <div className="home-loader-container">
+
+          <div className="home-loader" />
+
+        </div>
+
+
       </main>
+
     </div>
+
   );
 }

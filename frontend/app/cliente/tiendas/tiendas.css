@@ -1,0 +1,112 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#f5f7fb;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+.contenedor{
+
+    width:90%;
+    margin:auto;
+    padding:40px 0;
+
+}
+
+.titulo{
+
+    text-align:center;
+    color:#123D7C;
+    margin-bottom:40px;
+    font-size:35px;
+
+}
+
+.gridTiendas{
+
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+    gap:30px;
+
+}
+
+.card{
+
+    background:white;
+    border-radius:18px;
+    overflow:hidden;
+    cursor:pointer;
+    transition:.3s;
+    box-shadow:0 5px 15px rgba(0,0,0,.12);
+
+}
+
+.card:hover{
+
+    transform:translateY(-8px);
+
+}
+
+.portada{
+
+    width:100%;
+    height:180px;
+    object-fit:cover;
+
+}
+
+.contenido{
+
+    padding:20px;
+    text-align:center;
+
+}
+
+.logo{
+
+    width:90px;
+    height:90px;
+    border-radius:50%;
+    margin-top:-65px;
+    border:5px solid white;
+    object-fit:cover;
+    background:white;
+
+}
+
+h2{
+
+    margin-top:15px;
+    color:#123D7C;
+
+}
+
+p{
+
+    color:#666;
+    margin:15px 0;
+
+}
+
+.boton{
+
+    background:#123D7C;
+    color:white;
+    border:none;
+    padding:12px 25px;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:15px;
+    transition:.3s;
+
+}
+
+.boton:hover{
+
+    background:#0e2f5f;
+
+}

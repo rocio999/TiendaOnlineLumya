@@ -3,19 +3,40 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 
+interface Producto {
+  id: number;
+  nombre: string;
+  precio: number;
+  categoria?: string;
+  emoji?: string;
+  cantidad: number;
+}
 export default function Carrito() {
-  const [productos, setProductos] = useState<any[]>([]);
-
-  useEffect(() => {
-    const guardado = localStorage.getItem("carrito");
-    if (guardado) setProductos(JSON.parse(guardado));
-  }, []);
-
-  const guardar = (nuevos: any[]) => {
-    setProductos(nuevos);
+const [productos, setProductos] = useState<Producto[]>([]);
+ 
+const guardar = (nuevos: Producto[]) => {    setProductos(nuevos);
     localStorage.setItem("carrito", JSON.stringify(nuevos));
   };
+useEffect(() => {
 
+  const cargarCarrito = () => {
+
+    const guardado = localStorage.getItem("carrito");
+
+    if (guardado) {
+
+      const datos: Producto[] = JSON.parse(guardado);
+
+      setProductos(datos);
+
+    }
+
+  };
+
+
+  cargarCarrito();
+
+}, []);
   const eliminar = (id: number) => {
     guardar(productos.filter((p) => p.id !== id));
   };
@@ -35,7 +56,7 @@ export default function Carrito() {
       <div className="bg-gradient-to-r from-blue-700 to-cyan-500 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/cliente">
+            <Link href="/cliente/tiendas/id">
               <button className="text-white hover:bg-white/20 p-2 rounded-xl transition">
                 ← Volver
               </button>
@@ -66,7 +87,7 @@ export default function Carrito() {
             <p className="text-blue-400 text-sm mb-8">
               Agrega productos para continuar
             </p>
-            <Link href="/cliente">
+            <Link href="/cliente/tiendas/id">
               <button className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-lg">
                 Ver Productos
               </button>

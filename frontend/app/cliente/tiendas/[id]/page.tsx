@@ -1,12 +1,26 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
-
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import "../../cliente.css";
 
 export default function InicioCliente() {
   const [agregado, setAgregado] = useState<number | null>(null);
+  const [mensaje, setMensaje] = useState(false);
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
+  const router = useRouter();
+
+  // Actualizar página automáticamente cada cierto tiempo
+  useEffect(() => {
+
+    const intervalo = setInterval(() => {
+      window.location.reload();
+    }, 1); // 
+
+    return () => clearInterval(intervalo);
+
+  }, []);
 
   const todosProductos = [
     { id: 1, nombre: "Mochila Urbana", precio: 55, categoria: "Accesorios", emoji: "🎒" },
@@ -45,6 +59,52 @@ const actualizado = carritoActual.map((p: { id: number; cantidad: number }) =>  
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {mensaje && (
+        <div className="modal-overlay">
+
+    <div className="modal-box">
+
+        <div className="modal-icon">
+            🛒
+        </div>
+
+        <h2 className="modal-title">
+            Necesitas una cuenta
+        </h2>
+
+        <p className="modal-text">
+            Para agregar productos al carrito debes iniciar sesión o registrarte primero.
+        </p>
+
+        <div className="modal-buttons">
+
+            <Link href="/cliente/login">
+                <button className="btn-login">
+                    Iniciar sesión
+                </button>
+            </Link>
+
+            <Link href="/cliente/registro">
+                <button className="btn-register">
+                    Registrarse
+                </button>
+            </Link>
+
+        </div>
+
+        <button
+            onClick={() => setMensaje(false)}
+            className="btn-close"
+        >
+            Continuar viendo productos
+        </button>
+
+    </div>
+
+</div>
+  
+
+)}
 
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-700 to-cyan-500 px-4 py-4 sticky top-0 z-50 shadow-lg">
@@ -67,15 +127,33 @@ const actualizado = carritoActual.map((p: { id: number; cantidad: number }) =>  
       </button>
     </Link>
 
-    <Link href="/cliente/carrito">
-      <button className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-xl font-semibold transition-all text-sm">
-        🛒 Carrito
+    <Link href="/cliente/login">
+      <button className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-xl font-semibold transition-all text-sm">
+      Iniciar Sesion
       </button>
     </Link>
-  </div>
-</div>
-        {/* Barra de búsqueda */}
-        <div className="max-w-4xl mx-auto mt-3">
+
+    <button
+  onClick={() => {
+    const usuario = localStorage.getItem("usuario");
+
+    if (!usuario) {
+      setMensaje(true);
+      return;
+    }
+
+    router.push("/cliente/carrito");
+  }}
+  className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-xl font-semibold transition-all text-sm"
+>
+  🛒 Carrito
+</button>
+
+</div>   {/* Cierra: flex items-center gap-3 */}
+</div>   {/* Cierra: max-w-4xl mx-auto flex items-center justify-between */}
+
+{/* Barra de búsqueda */}
+<div className="max-w-4xl mx-auto mt-3">
           <input
             type="text"
             placeholder="Buscar productos..."
@@ -149,15 +227,29 @@ const actualizado = carritoActual.map((p: { id: number; cantidad: number }) =>  
                 <div className="flex items-center justify-between">
                   <p className="text-blue-700 font-bold">${producto.precio}</p>
                   <button
-                    onClick={() => handleAgregar(producto)}
-                    className={`text-white text-xs px-3 py-1 rounded-lg transition font-semibold ${
-                      agregado === producto.id
-                        ? "bg-green-500"
-                        : "bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90"
-                    }`}
-                  >
-                    {agregado === producto.id ? "✓ Agregado" : "+ Carrito"}
-                  </button>
+  onClick={() => {
+
+    const usuario = localStorage.getItem("usuario");
+
+    if (!usuario) {
+
+  setMensaje(true);
+
+  return;
+}
+
+
+    handleAgregar(producto);
+
+  }}
+  className={`text-white text-xs px-3 py-1 rounded-lg transition font-semibold ${
+    agregado === producto.id
+      ? "bg-green-500"
+      : "bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90"
+  }`}
+>
+  {agregado === producto.id ? "✓ Agregado" : "+ Carrito"}
+</button>
                 </div>
               </div>
             </div>
@@ -170,12 +262,12 @@ const actualizado = carritoActual.map((p: { id: number; cantidad: number }) =>  
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto grid grid-cols-4 gap-2">
           <button
-            onClick={() => setCategoriaActiva(null)}
-            className="flex flex-col items-center text-blue-700"
+          onClick={() => router.push("/cliente/tiendas")}
+          className="flex flex-col items-center text-blue-700"
           >
-            <span className="text-xl">🏠</span>
-            <span className="text-xs font-semibold">Inicio</span>
-          </button>
+        <span className="text-xl">🏠</span>
+        <span className="text-xs font-semibold">Inicio</span>
+        </button>
           <button
             onClick={() => setCategoriaActiva(null)}
             className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition"
@@ -183,14 +275,38 @@ const actualizado = carritoActual.map((p: { id: number; cantidad: number }) =>  
             <span className="text-xl">📦</span>
             <span className="text-xs">Categorías</span>
           </button>
-          <Link href="/cliente/carrito" className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-            <span className="text-xl">🛒</span>
-            <span className="text-xs">Carrito</span>
-          </Link>
-          <Link href="/cliente/perfil" className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-            <span className="text-xl">👤</span>
-            <span className="text-xs">Perfil</span>
-          </Link>
+          <button
+  onClick={() => {
+    const usuario = localStorage.getItem("usuario");
+
+    if (!usuario) {
+      setMensaje(true);
+      return;
+    }
+
+    router.push("/cliente/carrito");
+  }}
+  className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition"
+>
+  <span className="text-xl">🛒</span>
+  <span className="text-xs">Carrito</span>
+</button>
+          <button
+  onClick={() => {
+    const usuario = localStorage.getItem("usuario");
+
+    if (!usuario) {
+      setMensaje(true);
+      return;
+    }
+
+    router.push("/cliente/perfil");
+  }}
+  className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition"
+>
+  <span className="text-xl">👤</span>
+  <span className="text-xs">Perfil</span>
+</button>
         </div>
       </div>
 
