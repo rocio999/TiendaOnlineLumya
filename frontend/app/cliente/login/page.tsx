@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import "./Login.css";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [mostrarPassword, setMostrarPassword] = useState(false);
+  const router = useRouter();
 
   const handleLogin = async () => {
     try {
@@ -35,9 +37,8 @@ export default function Login() {
 
 
       setMensaje("Login exitoso 🚀");
-
-      window.location.href = "/dashboard";
-
+      
+      router.push("/cliente/tiendas/id");
     } catch (error) {
       setMensaje("Error de conexión con el servidor");
     }

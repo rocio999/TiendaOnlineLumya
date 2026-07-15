@@ -31,8 +31,7 @@ export default function Tiendas() {
   ];
 
   return (
-    <div className="contenedor">
-      <h1 className="titulo">Tiendas Disponibles</h1>
+    <div className="tiendas-page contenedor">      <h1 className="titulo">Tiendas Disponibles</h1>
 
       <div className="gridTiendas">
         {tiendas.map((tienda) => (

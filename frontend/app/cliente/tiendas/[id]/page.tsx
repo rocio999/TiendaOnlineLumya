@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import "../../cliente.css";
+import { useSyncExternalStore } from "react";
 
 export default function InicioCliente() {
   const [agregado, setAgregado] = useState<number | null>(null);
@@ -11,16 +12,28 @@ export default function InicioCliente() {
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
   const router = useRouter();
 
-  // Actualizar página automáticamente cada cierto tiempo
-  useEffect(() => {
+  
 
-    const intervalo = setInterval(() => {
-      window.location.reload();
-    }, 1); // 
+function suscribirseUsuario(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
 
-    return () => clearInterval(intervalo);
+function obtenerUsuarioCliente() {
+  return !!localStorage.getItem("usuario");
+}
 
-  }, []);
+function obtenerUsuarioServidor() {
+  return false;
+}
+
+// dentro del componente:
+const usuarioLogueado = useSyncExternalStore(
+  suscribirseUsuario,
+  obtenerUsuarioCliente,
+  obtenerUsuarioServidor
+);
+  
 
   const todosProductos = [
     { id: 1, nombre: "Mochila Urbana", precio: 55, categoria: "Accesorios", emoji: "🎒" },
@@ -56,7 +69,13 @@ const actualizado = carritoActual.map((p: { id: number; cantidad: number }) =>  
     setAgregado(producto.id);
     setTimeout(() => setAgregado(null), 1500);
   };
+  const cerrarSesion = () => {
+  localStorage.removeItem("usuario");
+  localStorage.removeItem("token");
 
+  window.dispatchEvent(new Event("storage")); // ✅ notifica el cambio
+  router.push("/cliente/tiendas");
+};
   return (
     <div className="min-h-screen bg-gray-50">
       {mensaje && (
@@ -121,37 +140,41 @@ const actualizado = carritoActual.map((p: { id: number; cantidad: number }) =>  
   </div>
 
   <div className="flex items-center gap-3">
-    <Link href="/cliente/registro">
-      <button className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-xl font-semibold transition-all text-sm">
-        Registrarse
+
+  {!usuarioLogueado ? (
+    <>
+      <Link href="/cliente/registro">
+        <button className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-xl font-semibold transition-all text-sm">
+          Registrarse
+        </button>
+      </Link>
+
+      <Link href="/cliente/login">
+        <button className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-xl font-semibold transition-all text-sm">
+          Iniciar Sesión
+        </button>
+      </Link>
+    </>
+  ) : (
+    <>
+      <button
+        onClick={() => router.push("/cliente/carrito")}
+        className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-xl font-semibold transition-all text-sm"
+      >
+        🛒 Carrito
       </button>
-    </Link>
 
-    <Link href="/cliente/login">
-      <button className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-xl font-semibold transition-all text-sm">
-      Iniciar Sesion
+      <button
+        onClick={cerrarSesion}
+        className="bg-red-500 text-white hover:bg-red-600 px-4 py-2 rounded-xl font-semibold transition-all text-sm"
+      >
+        🚪 Cerrar sesión
       </button>
-    </Link>
+    </>
+  )}
 
-    <button
-  onClick={() => {
-    const usuario = localStorage.getItem("usuario");
-
-    if (!usuario) {
-      setMensaje(true);
-      return;
-    }
-
-    router.push("/cliente/carrito");
-  }}
-  className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-xl font-semibold transition-all text-sm"
->
-  🛒 Carrito
-</button>
-
-</div>   {/* Cierra: flex items-center gap-3 */}
-</div>   {/* Cierra: max-w-4xl mx-auto flex items-center justify-between */}
-
+</div>
+</div>
 {/* Barra de búsqueda */}
 <div className="max-w-4xl mx-auto mt-3">
           <input
@@ -161,6 +184,8 @@ const actualizado = carritoActual.map((p: { id: number; cantidad: number }) =>  
           />
         </div>
       </div>
+      
+
 
       <div className="max-w-4xl mx-auto px-4 py-6">
 
@@ -312,4 +337,5 @@ const actualizado = carritoActual.map((p: { id: number; cantidad: number }) =>  
 
     </div>
   );
+
 }
