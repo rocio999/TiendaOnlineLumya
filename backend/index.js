@@ -38,7 +38,19 @@ app.post("/login", async (req, res) => {
     const userDoc = snapshot.docs[0];
     const user = userDoc.data();
     if (!bcrypt.compareSync(password, user.password)) return res.status(401).json({ message: "Clave incorrecta" });
-    res.json({ message: "Login exitoso", user: { id: userDoc.id, nombre: user.nombre } });
+
+    const token = jwt.sign({ id: userDoc.id }, "clave_secreta_lumya", { expiresIn: "7d" });
+
+    res.json({
+      message: "Login exitoso",
+      token,
+      usuario: {
+        id: userDoc.id,
+        nombre: user.nombre,
+        apellido: user.apellido,
+        correo: user.correo,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
