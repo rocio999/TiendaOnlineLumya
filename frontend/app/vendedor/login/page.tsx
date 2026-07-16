@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -10,49 +11,57 @@ export default function LoginVendedor() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí luego conectamos con el backend/Firestore
     console.log("Login vendedor:", { correo, password });
     router.push("/vendedor");
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center">
-      <div className="absolute inset-0 z-0">
-        <Image src="/fondo-lumya.png" alt="Fondo" fill className="object-cover" />
-        <div className="absolute inset-0 bg-black/70" />
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-50 to-slate-50 flex items-center justify-center px-4">
+      <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row w-full max-w-4xl">
 
-      <div className="relative z-10 w-full max-w-md px-8">
-        <div className="flex flex-col items-center mb-8">
-          <Image src="/logo-lumya.png" alt="Lumya" width={90} height={90} className="rounded-xl mb-4" />
-          <h1 className="text-3xl font-bold text-white tracking-wide">Panel de Vendedor</h1>
-          <p className="text-yellow-300 text-sm mt-1">Inicia sesión para gestionar tus productos</p>
+        <div className="w-full md:w-1/2 p-10 flex flex-col justify-center items-center">
+          <Image src="/logo-lumya.png" alt="Lumya" width={100} height={100} className="mb-6 rounded-xl" />
+          <div className="w-20 h-20 rounded-full bg-blue-800 flex items-center justify-center text-white text-3xl mb-6">
+            🏪
+          </div>
+
+          <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+            <input
+              type="email"
+              placeholder="Correo"
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
+              className="w-full border border-slate-200 rounded-full px-5 py-3 text-slate-700 focus:outline-none focus:border-cyan-400"
+              required
+            />
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border border-slate-200 rounded-full px-5 py-3 text-slate-700 focus:outline-none focus:border-cyan-400"
+              required
+            />
+            <button
+              type="submit"
+              className="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded-full transition"
+            >
+              Iniciar Sesión
+            </button>
+            <p className="text-center text-slate-500 text-sm mt-1">
+              ¿No tienes cuenta?{" "}
+              <Link href="/vendedor/registro" className="text-blue-700 font-semibold hover:underline">
+                Regístrate
+              </Link>
+            </p>
+          </form>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <input
-            type="email"
-            placeholder="Correo"
-            value={correo}
-            onChange={(e) => setCorreo(e.target.value)}
-            className="w-full bg-slate-800/80 border-2 border-cyan-500/50 text-white rounded-xl p-3 placeholder-slate-400 focus:outline-none focus:border-cyan-300 transition"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-slate-800/80 border-2 border-cyan-500/50 text-white rounded-xl p-3 placeholder-slate-400 focus:outline-none focus:border-cyan-300 transition"
-            required
-          />
-          <button
-            type="submit"
-            className="w-full bg-cyan-500 hover:bg-cyan-400 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-cyan-500/30"
-          >
-            Iniciar Sesión
-          </button>
-        </form>
+        <div className="w-full md:w-1/2 bg-gradient-to-br from-blue-900 to-blue-700 flex flex-col justify-center items-center text-white p-10 text-center">
+          <h1 className="text-4xl font-bold mb-3">Bienvenido, Vendedor</h1>
+          <p className="text-lg text-blue-100">Gestiona tus productos en Lumya</p>
+        </div>
+
       </div>
     </div>
   );
