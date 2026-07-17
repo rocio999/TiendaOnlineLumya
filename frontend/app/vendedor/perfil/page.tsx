@@ -1,7 +1,9 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 const BANCOS = [
   "Banco Pichincha", "Banco Guayaquil", "Banco del Pacífico", "Banco Bolivariano",
@@ -17,35 +19,93 @@ const COOPERATIVAS = [
   "Cooperativa Mego", "Cooperativa Cámara de Comercio de Ambato",
 ];
 
+interface Perfil {
+  nombre: string;
+  nombreNegocio: string;
+  correo: string;
+  telefono: string;
+  descripcion: string;
+  cedula: string;
+  banco: string;
+  numeroCuenta: string;
+}
+
 export default function PerfilVendedor() {
   const [editando, setEditando] = useState(false);
   const [mensaje, setMensaje] = useState("");
+  const [perfil, setPerfil] = useState<Perfil | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [guardando, setGuardando] = useState(false);
+  const [vendedorId, setVendedorId] = useState<string | null>(null);
 
-  // Datos de ejemplo — luego vendrán de Firestore según el vendedor logueado
-  const [perfil, setPerfil] = useState({
-    nombrePropietario: "Carlos Ramírez",
-    nombreNegocio: "Tienda Carlos",
-    correo: "carlos.vendedor@lumya.com",
-    telefono: "0991234567",
-    descripcion: "Venta de mochilas, cámaras y accesorios tecnológicos.",
-    cedula: "1712345678",
-    banco: "Banco Pichincha",
-    numeroCuenta: "2201234567",
-  });
+  useEffect(() => {
+    const cargarPerfil = async () => {
+      const id = localStorage.getItem("vendedorId");
+      setVendedorId(id);
+
+      if (!id) {
+        setCargando(false);
+        return;
+      }
+
+      try {
+        const docSnap = await getDoc(doc(db, "usuarios", id));
+        if (docSnap.exists()) {
+          setPerfil(docSnap.data() as Perfil);
+        }
+      } catch (error) {
+        console.error("Error al cargar perfil:", error);
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarPerfil();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
+    if (!perfil) return;
     setPerfil({ ...perfil, [e.target.name]: e.target.value });
   };
 
-  const guardarCambios = () => {
-    // Aquí luego conectamos con el backend para actualizar el perfil
-    console.log("Perfil actualizado:", perfil);
-    setEditando(false);
-    setMensaje("Perfil actualizado correctamente");
-    setTimeout(() => setMensaje(""), 3000);
+  const guardarCambios = async () => {
+    if (!vendedorId || !perfil) return;
+    setGuardando(true);
+    try {
+      await updateDoc(doc(db, "usuarios", vendedorId), { ...perfil });
+      setEditando(false);
+      setMensaje("Perfil actualizado correctamente");
+      setTimeout(() => setMensaje(""), 3000);
+    } catch (error) {
+      console.error("Error al guardar perfil:", error);
+      setMensaje("Ocurrió un error al guardar. Intenta de nuevo.");
+    } finally {
+      setGuardando(false);
+    }
   };
+
+  if (cargando) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-50 to-slate-50 flex items-center justify-center">
+        <p className="text-slate-500">Cargando perfil...</p>
+      </div>
+    );
+  }
+
+  if (!vendedorId || !perfil) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-50 to-slate-50 flex items-center justify-center flex-col gap-4">
+        <p className="text-slate-500">Debes iniciar sesión para ver tu perfil.</p>
+        <Link href="/vendedor/login">
+          <button className="bg-blue-800 hover:bg-blue-900 text-white font-semibold px-5 py-3 rounded-xl transition">
+            Ir al login
+          </button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-50 to-slate-50">
@@ -66,8 +126,12 @@ export default function PerfilVendedor() {
       <div className="max-w-3xl mx-auto px-4 py-8">
 
         {mensaje && (
-          <div className="bg-emerald-100 border border-emerald-300 text-emerald-700 p-3 rounded-xl mb-5 text-center font-semibold text-sm">
-            ✅ {mensaje}
+          <div className={`p-3 rounded-xl mb-5 text-center font-semibold text-sm ${
+            mensaje.includes("error")
+              ? "bg-red-100 border border-red-300 text-red-700"
+              : "bg-emerald-100 border border-emerald-300 text-emerald-700"
+          }`}>
+            {mensaje.includes("error") ? "⚠️" : "✅"} {mensaje}
           </div>
         )}
 
@@ -76,11 +140,11 @@ export default function PerfilVendedor() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-blue-800 flex items-center justify-center text-white text-2xl font-bold">
-                {perfil.nombreNegocio.charAt(0)}
+                {perfil.nombreNegocio?.charAt(0) || "?"}
               </div>
               <div>
                 <h1 className="text-xl font-bold text-blue-900">{perfil.nombreNegocio}</h1>
-                <p className="text-slate-400 text-sm">{perfil.nombrePropietario}</p>
+                <p className="text-slate-400 text-sm">{perfil.nombre}</p>
               </div>
             </div>
             {!editando && (
@@ -100,7 +164,7 @@ export default function PerfilVendedor() {
             <div>
               <label className="text-slate-500 text-xs block mb-1">Nombre del propietario</label>
               <input
-                type="text" name="nombrePropietario" value={perfil.nombrePropietario}
+                type="text" name="nombre" value={perfil.nombre}
                 onChange={handleChange} disabled={!editando}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 disabled:bg-slate-100 disabled:text-slate-500 focus:outline-none focus:border-cyan-400"
               />
@@ -118,7 +182,7 @@ export default function PerfilVendedor() {
             <div>
               <label className="text-slate-500 text-xs block mb-1">Correo</label>
               <input
-                type="email" name="correo" value={perfil.correo}
+                type="email" value={perfil.correo}
                 disabled
                 className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-slate-500"
               />
@@ -152,16 +216,6 @@ export default function PerfilVendedor() {
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 disabled:bg-slate-100 disabled:text-slate-500 focus:outline-none focus:border-cyan-400"
               />
             </div>
-
-            {editando && (
-              <div>
-                <label className="text-slate-500 text-xs block mb-1">Cambiar foto o logo</label>
-                <input
-                  type="file" accept="image/*"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-blue-800 file:text-white file:font-semibold hover:file:bg-blue-900 transition cursor-pointer"
-                />
-              </div>
-            )}
 
             <p className="text-blue-800 font-semibold text-xs uppercase tracking-wide mt-2">Información de pago</p>
 
@@ -200,9 +254,10 @@ export default function PerfilVendedor() {
               <div className="flex gap-4 mt-2">
                 <button
                   onClick={guardarCambios}
-                  className="flex-1 bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition"
+                  disabled={guardando}
+                  className="flex-1 bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition disabled:opacity-50"
                 >
-                  Guardar Cambios
+                  {guardando ? "Guardando..." : "Guardar Cambios"}
                 </button>
                 <button
                   onClick={() => setEditando(false)}

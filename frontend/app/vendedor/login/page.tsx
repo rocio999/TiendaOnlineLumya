@@ -3,16 +3,81 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 export default function LoginVendedor() {
   const router = useRouter();
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
+  const [mensaje, setMensaje] = useState("");
+  const [cargando, setCargando] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login vendedor:", { correo, password });
-    router.push("/vendedor");
+    setMensaje("");
+    setCargando(true);
+
+    try {
+      const q = query(
+        collection(db, "usuarios"),
+        where("correo", "==", correo),
+        where("rol", "==", "vendedor")
+      );
+      const resultado = await getDocs(q);
+
+      if (resultado.empty) {
+        setMensaje("Correo o contraseña incorrectos");
+        setCargando(false);
+        return;
+      }
+
+      const vendedorDoc = resultado.docs[0];
+      const vendedor = vendedorDoc.data();
+
+      // NOTA: comparación directa de texto plano por ahora.
+      // Se debe reemplazar por verificación con hash (bcrypt) desde el backend.
+      if (vendedor.password !== password) {
+        setMensaje("Correo o contraseña incorrectos");
+        setCargando(false);
+        return;
+      }
+
+      if (vendedor.estado === "pendiente") {
+        setMensaje("Tu solicitud aún está pendiente de aprobación por el administrador.");
+        setCargando(false);
+        return;
+      }
+
+      if (vendedor.estado === "suspendido") {
+        setMensaje("Tu cuenta está suspendida. Contacta al administrador.");
+        setCargando(false);
+        return;
+      }
+
+      if (vendedor.estado === "rechazado") {
+        setMensaje("Tu solicitud fue rechazada. Contacta al administrador si crees que es un error.");
+        setCargando(false);
+        return;
+      }
+
+      if (vendedor.estado !== "activo") {
+        setMensaje("Tu cuenta no tiene acceso habilitado. Contacta al administrador.");
+        setCargando(false);
+        return;
+      }
+
+      // Login exitoso — guardamos el id del vendedor para usarlo en el resto del panel
+      localStorage.setItem("vendedorId", vendedorDoc.id);
+      localStorage.setItem("vendedorNombre", vendedor.nombreNegocio || vendedor.nombre);
+
+      router.push("/vendedor");
+    } catch (error) {
+      console.error("Error en login:", error);
+      setMensaje("Ocurrió un error al iniciar sesión. Intenta de nuevo.");
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
@@ -24,6 +89,12 @@ export default function LoginVendedor() {
           <div className="w-20 h-20 rounded-full bg-blue-800 flex items-center justify-center text-white text-3xl mb-6">
             🏪
           </div>
+
+          {mensaje && (
+            <div className="w-full bg-red-100 border border-red-300 text-red-700 p-3 rounded-xl mb-4 text-center text-sm font-semibold">
+              ⚠️ {mensaje}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
             <input
@@ -44,9 +115,10 @@ export default function LoginVendedor() {
             />
             <button
               type="submit"
-              className="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded-full transition"
+              disabled={cargando}
+              className="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded-full transition disabled:opacity-50"
             >
-              Iniciar Sesión
+              {cargando ? "Verificando..." : "Iniciar Sesión"}
             </button>
             <p className="text-center text-slate-500 text-sm mt-1">
               ¿No tienes cuenta?{" "}

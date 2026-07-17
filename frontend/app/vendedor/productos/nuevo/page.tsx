@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export default function NuevoProducto() {
   const router = useRouter();
@@ -9,12 +11,40 @@ export default function NuevoProducto() {
   const [precio, setPrecio] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [categoria, setCategoria] = useState("");
+  const [stock, setStock] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [cargando, setCargando] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMensaje(`Producto "${nombre}" publicado correctamente`);
-    setTimeout(() => router.push("/vendedor/productos"), 2000);
+
+    const vendedorId = localStorage.getItem("vendedorId");
+    if (!vendedorId) {
+      setMensaje("Debes iniciar sesión para subir productos.");
+      return;
+    }
+
+    setCargando(true);
+    try {
+      await addDoc(collection(db, "productos"), {
+        nombre,
+        precio: Number(precio),
+        descripcion,
+        categoria,
+        stock: Number(stock),
+        vendedorId,
+        estado: "activo",
+        createdAt: serverTimestamp(),
+      });
+
+      setMensaje(`Producto "${nombre}" publicado correctamente`);
+      setTimeout(() => router.push("/vendedor/productos"), 2000);
+    } catch (error) {
+      console.error("Error al publicar producto:", error);
+      setMensaje("Ocurrió un error al publicar el producto. Intenta de nuevo.");
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
@@ -29,8 +59,12 @@ export default function NuevoProducto() {
       <div className="max-w-xl mx-auto px-4 py-8">
         <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-200">
           {mensaje && (
-            <div className="bg-emerald-100 border border-emerald-300 text-emerald-700 p-3 rounded-xl mb-5 text-center font-semibold text-sm">
-              ✅ {mensaje}
+            <div className={`p-3 rounded-xl mb-5 text-center font-semibold text-sm ${
+              mensaje.includes("error") || mensaje.includes("Debes")
+                ? "bg-red-100 border border-red-300 text-red-700"
+                : "bg-emerald-100 border border-emerald-300 text-emerald-700"
+            }`}>
+              {mensaje.includes("error") || mensaje.includes("Debes") ? "⚠️" : "✅"} {mensaje}
             </div>
           )}
 
@@ -44,8 +78,15 @@ export default function NuevoProducto() {
 
             <div>
               <label className="text-blue-800 font-semibold text-sm block mb-1">Precio ($)</label>
-              <input type="number" value={precio} onChange={(e) => setPrecio(e.target.value)}
+              <input type="number" step="0.01" value={precio} onChange={(e) => setPrecio(e.target.value)}
                 placeholder="Ej: 29.99"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400" required />
+            </div>
+
+            <div>
+              <label className="text-blue-800 font-semibold text-sm block mb-1">Stock</label>
+              <input type="number" value={stock} onChange={(e) => setStock(e.target.value)}
+                placeholder="Ej: 10"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400" required />
             </div>
 
@@ -54,13 +95,13 @@ export default function NuevoProducto() {
               <select value={categoria} onChange={(e) => setCategoria(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400" required>
                 <option value="">Selecciona una categoría</option>
-                <option value="ropa">👕 Ropa</option>
-                <option value="electronica">📱 Electrónica</option>
-                <option value="calzado">👟 Calzado</option>
-                <option value="hogar">🏠 Hogar</option>
-                <option value="deportes">⚽ Deportes</option>
-                <option value="accesorios">👜 Accesorios</option>
-                <option value="otros">📦 Otros</option>
+                <option value="Ropa">👕 Ropa</option>
+                <option value="Electrónica">📱 Electrónica</option>
+                <option value="Calzado">👟 Calzado</option>
+                <option value="Hogar">🏠 Hogar</option>
+                <option value="Deportes">⚽ Deportes</option>
+                <option value="Accesorios">👜 Accesorios</option>
+                <option value="Otros">📦 Otros</option>
               </select>
             </div>
 
@@ -75,12 +116,15 @@ export default function NuevoProducto() {
               <label className="text-blue-800 font-semibold text-sm block mb-1">Imagen del producto</label>
               <input type="file" accept="image/*"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-blue-800 file:text-white file:font-semibold hover:file:bg-blue-900 transition cursor-pointer" />
+              <p className="text-slate-400 text-xs mt-1">
+                Nota: la imagen aún no se sube a almacenamiento, se agrega en la siguiente fase.
+              </p>
             </div>
 
             <div className="flex gap-4 mt-2">
-              <button type="submit"
-                className="flex-1 bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition shadow-lg">
-                Publicar Producto
+              <button type="submit" disabled={cargando}
+                className="flex-1 bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition shadow-lg disabled:opacity-50">
+                {cargando ? "Publicando..." : "Publicar Producto"}
               </button>
               <button type="button" onClick={() => router.push("/vendedor")}
                 className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition">
