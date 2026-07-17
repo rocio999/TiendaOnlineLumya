@@ -1,7 +1,11 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 const BANCOS = [
   "Banco Pichincha", "Banco Guayaquil", "Banco del Pacífico", "Banco Bolivariano",
@@ -17,33 +21,84 @@ const COOPERATIVAS = [
   "Cooperativa Mego", "Cooperativa Cámara de Comercio de Ambato",
 ];
 
-const vendedorMock = {
-  nombrePropietario: "Carlos Ramírez",
-  nombreNegocio: "Tienda Carlos",
-  correo: "carlos.vendedor@lumya.com",
-  telefono: "0991234567",
-  descripcion: "Venta de mochilas, cámaras y accesorios tecnológicos.",
-  cedula: "1712345678",
-  banco: "Banco Pichincha",
-  numeroCuenta: "2201234567",
-  estado: "activo",
-};
+interface Vendedor {
+  nombre: string;
+  nombreNegocio: string;
+  correo: string;
+  telefono: string;
+  descripcion: string;
+  cedula: string;
+  banco: string;
+  numeroCuenta: string;
+}
 
 export default function EditarVendedor() {
-  const [vendedor, setVendedor] = useState(vendedorMock);
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
+
+  const [vendedor, setVendedor] = useState<Vendedor | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState("");
+
+  useEffect(() => {
+    const cargarVendedor = async () => {
+      if (!id) {
+        setCargando(false);
+        return;
+      }
+      try {
+        const docSnap = await getDoc(doc(db, "usuarios", id));
+        if (docSnap.exists()) {
+          setVendedor(docSnap.data() as Vendedor);
+        }
+      } catch (error) {
+        console.error("Error al cargar vendedor:", error);
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargarVendedor();
+  }, [id]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
+    if (!vendedor) return;
     setVendedor({ ...vendedor, [e.target.name]: e.target.value });
   };
 
-  const guardarCambios = () => {
-    console.log("Vendedor actualizado por admin:", vendedor);
-    setMensaje("Cambios guardados correctamente");
-    setTimeout(() => setMensaje(""), 3000);
+  const guardarCambios = async () => {
+    if (!id || !vendedor) return;
+    setGuardando(true);
+    try {
+      await updateDoc(doc(db, "usuarios", id), { ...vendedor });
+      await registrarAuditoria(id, `Editó los datos del vendedor ${vendedor.nombreNegocio}`, "vendedor");
+      setMensaje("Cambios guardados correctamente");
+      setTimeout(() => setMensaje(""), 3000);
+    } catch (error) {
+      console.error("Error al guardar cambios:", error);
+      setMensaje("Ocurrió un error al guardar. Intenta de nuevo.");
+    } finally {
+      setGuardando(false);
+    }
   };
+
+  if (cargando) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-50 to-slate-50 flex items-center justify-center">
+        <p className="text-slate-500">Cargando vendedor...</p>
+      </div>
+    );
+  }
+
+  if (!vendedor) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-50 to-slate-50 flex items-center justify-center">
+        <p className="text-slate-500">No se encontró el vendedor.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-50 to-slate-50">
@@ -70,8 +125,12 @@ export default function EditarVendedor() {
         </div>
 
         {mensaje && (
-          <div className="bg-emerald-100 border border-emerald-300 text-emerald-700 p-3 rounded-xl mb-5 text-center font-semibold text-sm">
-            ✅ {mensaje}
+          <div className={`p-3 rounded-xl mb-5 text-center font-semibold text-sm ${
+            mensaje.includes("error")
+              ? "bg-red-100 border border-red-300 text-red-700"
+              : "bg-emerald-100 border border-emerald-300 text-emerald-700"
+          }`}>
+            {mensaje.includes("error") ? "⚠️" : "✅"} {mensaje}
           </div>
         )}
 
@@ -83,7 +142,7 @@ export default function EditarVendedor() {
             <div>
               <label className="text-slate-500 text-xs block mb-1">Nombre del propietario</label>
               <input
-                type="text" name="nombrePropietario" value={vendedor.nombrePropietario}
+                type="text" name="nombre" value={vendedor.nombre}
                 onChange={handleChange}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400"
               />
@@ -161,9 +220,10 @@ export default function EditarVendedor() {
             <div className="flex gap-4 mt-2">
               <button
                 onClick={guardarCambios}
-                className="flex-1 bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition"
+                disabled={guardando}
+                className="flex-1 bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition disabled:opacity-50"
               >
-                Guardar Cambios
+                {guardando ? "Guardando..." : "Guardar Cambios"}
               </button>
               <Link href="/admin/vendedores" className="flex-1">
                 <button className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition">

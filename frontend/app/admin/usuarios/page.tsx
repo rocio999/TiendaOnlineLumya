@@ -1,41 +1,110 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { registrarAuditoria } from "@/lib/auditoria";
+
+interface Usuario {
+  id: string;
+  nombre: string;
+  correo: string;
+  rol: string;
+  estado: string;
+}
+
+const estiloEstado: Record<string, string> = {
+  activo: "bg-green-100 text-green-700",
+  pendiente: "bg-yellow-100 text-yellow-700",
+  suspendido: "bg-red-100 text-red-600",
+  rechazado: "bg-slate-200 text-slate-600",
+};
+
+const textoEstado: Record<string, string> = {
+  activo: "Activo",
+  pendiente: "Pendiente",
+  suspendido: "Suspendido",
+  rechazado: "Rechazado",
+};
+
+const estiloRol: Record<string, string> = {
+  vendedor: "bg-cyan-100 text-cyan-700",
+  cliente: "bg-blue-100 text-blue-700",
+  admin: "bg-purple-100 text-purple-700",
+};
+
+const textoRol: Record<string, string> = {
+  vendedor: "Vendedor",
+  cliente: "Cliente",
+  admin: "Admin",
+};
 
 export default function GestionUsuarios() {
-  const [usuarios, setUsuarios] = useState([
-    { id: 1, nombre: "María García", email: "maria@gmail.com", rol: "Cliente", estado: "Activo", fecha: "15/01/2026" },
-    { id: 2, nombre: "Carlos López", email: "carlos@gmail.com", rol: "Vendedor", estado: "Activo", fecha: "20/01/2026" },
-    { id: 3, nombre: "Ana Martínez", email: "ana@gmail.com", rol: "Cliente", estado: "Activo", fecha: "25/01/2026" },
-    { id: 4, nombre: "Pedro Rodríguez", email: "pedro@gmail.com", rol: "Vendedor", estado: "Suspendido", fecha: "01/02/2026" },
-    { id: 5, nombre: "Laura Sánchez", email: "laura@gmail.com", rol: "Cliente", estado: "Activo", fecha: "05/02/2026" },
-    { id: 6, nombre: "Juan Torres", email: "juan@gmail.com", rol: "Cliente", estado: "Suspendido", fecha: "10/02/2026" },
-  ]);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [actualizandoId, setActualizandoId] = useState<string | null>(null);
 
   const [filtro, setFiltro] = useState("Todos");
   const [busqueda, setBusqueda] = useState("");
 
-  const toggleEstado = (id: number) => {
-    setUsuarios(usuarios.map((u) =>
-      u.id === id
-        ? { ...u, estado: u.estado === "Activo" ? "Suspendido" : "Activo" }
-        : u
-    ));
+  useEffect(() => {
+    const cargarUsuarios = async () => {
+      try {
+        const snap = await getDocs(collection(db, "usuarios"));
+        const lista: Usuario[] = snap.docs.map((d) => ({
+          id: d.id,
+          nombre: d.data().nombre || d.data().nombreNegocio || "Sin nombre",
+          correo: d.data().correo || "",
+          rol: d.data().rol || "cliente",
+          estado: d.data().estado || "activo",
+        }));
+        setUsuarios(lista);
+      } catch (error) {
+        console.error("Error al cargar usuarios:", error);
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargarUsuarios();
+  }, []);
+
+  const toggleEstado = async (id: string, estadoActual: string) => {
+    const nuevoEstado = estadoActual === "activo" ? "suspendido" : "activo";
+    setActualizandoId(id);
+    try {
+      await updateDoc(doc(db, "usuarios", id), { estado: nuevoEstado });
+      const usuario = usuarios.find((u) => u.id === id);
+      const accion = nuevoEstado === "suspendido" ? "Suspendió" : "Activó";
+      await registrarAuditoria(id, `${accion} al usuario ${usuario?.nombre}`, "usuario");
+      setUsuarios((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, estado: nuevoEstado } : u))
+      );
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+    } finally {
+      setActualizandoId(null);
+    }
   };
 
   const usuariosFiltrados = usuarios.filter((u) => {
-    const coincideFiltro = filtro === "Todos" || u.rol === filtro || u.estado === filtro;
-    const coincideBusqueda = u.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      u.email.toLowerCase().includes(busqueda.toLowerCase());
+    const coincideFiltro =
+      filtro === "Todos" ||
+      (filtro === "Cliente" && u.rol === "cliente") ||
+      (filtro === "Vendedor" && u.rol === "vendedor") ||
+      (filtro === "Activo" && u.estado === "activo") ||
+      (filtro === "Suspendido" && u.estado === "suspendido");
+    const coincideBusqueda =
+      u.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+      u.correo.toLowerCase().includes(busqueda.toLowerCase());
     return coincideFiltro && coincideBusqueda;
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-4 py-4 sticky top-0 z-50 shadow-lg">
+      <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/admin">
@@ -46,7 +115,7 @@ export default function GestionUsuarios() {
             <Image src="/logo-lumya.png" alt="Lumya" width={40} height={40} className="rounded-xl" />
             <span className="text-xl font-bold text-white">Gestión de Usuarios</span>
           </div>
-          <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full">
+          <span className="bg-cyan-400 text-blue-900 text-xs font-bold px-2 py-0.5 rounded-full">
             ADMIN
           </span>
         </div>
@@ -58,10 +127,10 @@ export default function GestionUsuarios() {
         <div className="mb-6">
           <input
             type="text"
-            placeholder="Buscar por nombre o email..."
+            placeholder="Buscar por nombre o correo..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-400 shadow-sm"
+            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:border-cyan-400 shadow-sm"
           />
         </div>
 
@@ -73,8 +142,8 @@ export default function GestionUsuarios() {
               onClick={() => setFiltro(f)}
               className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
                 filtro === f
-                  ? "bg-blue-700 text-white shadow-md"
-                  : "bg-white text-gray-600 border border-gray-200 hover:border-blue-300"
+                  ? "bg-blue-800 text-white shadow-md"
+                  : "bg-white text-slate-600 border border-slate-200 hover:border-cyan-300"
               }`}
             >
               {f}
@@ -84,73 +153,74 @@ export default function GestionUsuarios() {
 
         {/* Stats rápidos */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-            <p className="text-2xl font-bold text-blue-700">{usuarios.length}</p>
-            <p className="text-gray-400 text-sm">Total</p>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-center">
+            <p className="text-2xl font-bold text-blue-800">{usuarios.length}</p>
+            <p className="text-slate-400 text-sm">Total</p>
           </div>
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-            <p className="text-2xl font-bold text-green-600">{usuarios.filter(u => u.estado === "Activo").length}</p>
-            <p className="text-gray-400 text-sm">Activos</p>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-center">
+            <p className="text-2xl font-bold text-green-600">{usuarios.filter(u => u.estado === "activo").length}</p>
+            <p className="text-slate-400 text-sm">Activos</p>
           </div>
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-            <p className="text-2xl font-bold text-red-500">{usuarios.filter(u => u.estado === "Suspendido").length}</p>
-            <p className="text-gray-400 text-sm">Suspendidos</p>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-center">
+            <p className="text-2xl font-bold text-red-500">{usuarios.filter(u => u.estado === "suspendido").length}</p>
+            <p className="text-slate-400 text-sm">Suspendidos</p>
           </div>
         </div>
 
         {/* Lista de usuarios */}
-        <div className="flex flex-col gap-3">
-          {usuariosFiltrados.map((usuario) => (
-            <div
-              key={usuario.id}
-              className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4"
-            >
-              {/* Avatar */}
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-lg ${
-                usuario.rol === "Vendedor" ? "bg-cyan-100 text-cyan-700" : "bg-blue-100 text-blue-700"
-              }`}>
-                {usuario.nombre.charAt(0)}
-              </div>
+        {cargando ? (
+          <div className="text-center py-16 text-slate-400">Cargando usuarios...</div>
+        ) : usuariosFiltrados.length === 0 ? (
+          <div className="text-center py-16 text-slate-400">No hay usuarios que coincidan.</div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {usuariosFiltrados.map((usuario) => (
+              <div
+                key={usuario.id}
+                className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4"
+              >
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-lg ${
+                  estiloRol[usuario.rol] || "bg-slate-100 text-slate-600"
+                }`}>
+                  {usuario.nombre.charAt(0)}
+                </div>
 
-              {/* Info */}
-              <div className="flex-1">
-                <p className="font-bold text-gray-800">{usuario.nombre}</p>
-                <p className="text-gray-400 text-sm">{usuario.email}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                    usuario.rol === "Vendedor"
-                      ? "bg-cyan-100 text-cyan-700"
-                      : "bg-blue-100 text-blue-700"
+                <div className="flex-1">
+                  <p className="font-bold text-slate-800">{usuario.nombre}</p>
+                  <p className="text-slate-400 text-sm">{usuario.correo}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      estiloRol[usuario.rol] || "bg-slate-100 text-slate-600"
+                    }`}>
+                      {textoRol[usuario.rol] || usuario.rol}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-2">
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap ${
+                    estiloEstado[usuario.estado] || "bg-slate-100 text-slate-600"
                   }`}>
-                    {usuario.rol}
+                    {textoEstado[usuario.estado] || usuario.estado}
                   </span>
-                  <span className="text-xs text-gray-400">Desde {usuario.fecha}</span>
+                  {(usuario.estado === "activo" || usuario.estado === "suspendido") && (
+                    <button
+                      onClick={() => toggleEstado(usuario.id, usuario.estado)}
+                      disabled={actualizandoId === usuario.id}
+                      className={`text-xs font-semibold px-3 py-1 rounded-lg transition whitespace-nowrap disabled:opacity-50 ${
+                        usuario.estado === "activo"
+                          ? "bg-red-50 text-red-500 hover:bg-red-100"
+                          : "bg-green-50 text-green-600 hover:bg-green-100"
+                      }`}
+                    >
+                      {actualizandoId === usuario.id ? "..." : usuario.estado === "activo" ? "Suspender" : "Activar"}
+                    </button>
+                  )}
                 </div>
               </div>
-
-              {/* Estado y acción */}
-              <div className="flex flex-col items-end gap-2">
-                <span className={`text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap ${
-                  usuario.estado === "Activo"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-600"
-                }`}>
-                  {usuario.estado}
-                </span>
-                <button
-                  onClick={() => toggleEstado(usuario.id)}
-                  className={`text-xs font-semibold px-3 py-1 rounded-lg transition whitespace-nowrap ${
-                    usuario.estado === "Activo"
-                      ? "bg-red-50 text-red-500 hover:bg-red-100"
-                      : "bg-green-50 text-green-600 hover:bg-green-100"
-                  }`}
-                >
-                  {usuario.estado === "Activo" ? "Suspender" : "Activar"}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
       </div>
     </div>

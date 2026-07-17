@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 const BANCOS = [
   "Banco Pichincha", "Banco Guayaquil", "Banco del Pacífico", "Banco Bolivariano",
@@ -27,6 +29,7 @@ export default function RegistroVendedor() {
   });
   const [logo, setLogo] = useState<File | null>(null);
   const [mensaje, setMensaje] = useState("");
+  const [cargando, setCargando] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -34,15 +37,43 @@ export default function RegistroVendedor() {
     setFormulario({ ...formulario, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (formulario.password !== formulario.confirmarPassword) {
       setMensaje("Las contraseñas no coinciden");
       return;
     }
-    console.log("Solicitud de vendedor:", formulario, "Logo:", logo);
-    setMensaje("¡Solicitud enviada! Un administrador revisará tu cuenta pronto.");
-    setTimeout(() => router.push("/vendedor/login"), 2500);
+
+    setCargando(true);
+    try {
+      // NOTA: por ahora guardamos la contraseña en texto plano.
+      // Esto se debe reemplazar por un hash (bcrypt) desde el backend
+      // antes de usarse en producción real.
+      await addDoc(collection(db, "usuarios"), {
+        nombre: formulario.nombrePropietario,
+        apellido: "",
+        correo: formulario.correo,
+        password: formulario.password,
+        telefono: formulario.telefono,
+        rol: "vendedor",
+        estado: "pendiente",
+        nombreNegocio: formulario.nombreNegocio,
+        descripcion: formulario.descripcion,
+        cedula: formulario.cedula,
+        banco: formulario.banco,
+        numeroCuenta: formulario.numeroCuenta,
+        createdAt: serverTimestamp(),
+      });
+
+      setMensaje("¡Solicitud enviada! Un administrador revisará tu cuenta pronto.");
+      setTimeout(() => router.push("/vendedor/login"), 2500);
+    } catch (error) {
+      console.error("Error al registrar vendedor:", error);
+      setMensaje("Ocurrió un error al enviar la solicitud. Intenta de nuevo.");
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
@@ -57,11 +88,11 @@ export default function RegistroVendedor() {
 
         {mensaje && (
           <div className={`p-4 rounded-xl mb-5 text-center font-semibold text-sm ${
-            mensaje.includes("no coinciden")
+            mensaje.includes("no coinciden") || mensaje.includes("error")
               ? "bg-red-100 text-red-700 border border-red-300"
               : "bg-emerald-100 text-emerald-700 border border-emerald-300"
           }`}>
-            {mensaje.includes("no coinciden") ? "⚠️" : "✅"} {mensaje}
+            {mensaje.includes("no coinciden") || mensaje.includes("error") ? "⚠️" : "✅"} {mensaje}
           </div>
         )}
 
@@ -107,6 +138,9 @@ export default function RegistroVendedor() {
             <label className="text-blue-800 font-semibold text-xs block mb-1">Foto o logo de tu negocio</label>
             <input type="file" accept="image/*" onChange={(e) => setLogo(e.target.files?.[0] || null)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-blue-800 file:text-white file:font-semibold hover:file:bg-blue-900 transition cursor-pointer" />
+            <p className="text-slate-400 text-xs mt-1">
+              Nota: la imagen aún no se sube a almacenamiento, esto se agrega en la siguiente fase.
+            </p>
           </div>
 
           <p className="text-blue-800 font-semibold text-xs uppercase tracking-wide mt-2">Información de pago</p>
@@ -126,9 +160,9 @@ export default function RegistroVendedor() {
             value={formulario.numeroCuenta} onChange={handleChange}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400" required />
 
-          <button type="submit"
-            className="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition mt-2">
-            Solicitar Registro
+          <button type="submit" disabled={cargando}
+            className="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition mt-2 disabled:opacity-50">
+            {cargando ? "Enviando..." : "Solicitar Registro"}
           </button>
 
           <p className="text-center text-slate-500 text-sm mt-1">

@@ -1,37 +1,103 @@
 "use client";
 
-import "./CrearVendedor.css";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import "./CrearVendedor.module.css";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { registrarAuditoria } from "@/lib/auditoria";
 
-// Datos de ejemplo — luego vendrá de Firestore según el id de la solicitud
-const solicitudMock = {
-  nombrePropietario: "María Jiménez",
-  nombreNegocio: "Artesanías María",
-  correo: "maria.tienda@lumya.com",
-  telefono: "0987654321",
-  descripcion: "Venta de artesanías hechas a mano, bolsos y accesorios tejidos.",
-  estado: "pendiente",
-};
+interface Solicitud {
+  nombre: string;
+  nombreNegocio: string;
+  correo: string;
+  telefono: string;
+  descripcion: string;
+  cedula: string;
+  banco: string;
+  numeroCuenta: string;
+  estado: string;
+}
 
 export default function RevisarSolicitudVendedor() {
   const router = useRouter();
-  const [solicitud] = useState(solicitudMock);
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
+
+  const [solicitud, setSolicitud] = useState<Solicitud | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [procesando, setProcesando] = useState(false);
   const [mensaje, setMensaje] = useState("");
 
-  const aprobar = () => {
-    // Aquí luego conectamos con el backend: actualizar estado a "activo"
-    console.log("Vendedor aprobado:", solicitud.correo);
-    setMensaje("Vendedor aprobado. Ya puede iniciar sesión.");
-    setTimeout(() => router.push("/admin/vendedores"), 2000);
+  useEffect(() => {
+    const cargarSolicitud = async () => {
+      if (!id) {
+        setCargando(false);
+        return;
+      }
+      try {
+        const docRef = doc(db, "usuarios", id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setSolicitud(docSnap.data() as Solicitud);
+        }
+      } catch (error) {
+        console.error("Error al cargar solicitud:", error);
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarSolicitud();
+  }, [id]);
+
+  const aprobar = async () => {
+    if (!id) return;
+    setProcesando(true);
+    try {
+      await updateDoc(doc(db, "usuarios", id), { estado: "activo" });
+      await registrarAuditoria(id, `Aprobó al vendedor ${solicitud?.nombreNegocio || solicitud?.nombre}`, "vendedor");
+      setMensaje("Vendedor aprobado. Ya puede iniciar sesión.");
+      setTimeout(() => router.push("/admin/vendedores"), 2000);
+    } catch (error) {
+      console.error("Error al aprobar:", error);
+      setMensaje("Ocurrió un error al aprobar. Intenta de nuevo.");
+    } finally {
+      setProcesando(false);
+    }
   };
 
-  const rechazar = () => {
-    // Aquí luego conectamos con el backend: actualizar estado a "rechazado"
-    console.log("Vendedor rechazado:", solicitud.correo);
-    setMensaje("Solicitud rechazada.");
-    setTimeout(() => router.push("/admin/vendedores"), 2000);
+  const rechazar = async () => {
+    if (!id) return;
+    setProcesando(true);
+    try {
+      await updateDoc(doc(db, "usuarios", id), { estado: "rechazado" });
+      await registrarAuditoria(id, `Rechazó al vendedor ${solicitud?.nombreNegocio || solicitud?.nombre}`, "vendedor");
+      setMensaje("Solicitud rechazada.");
+      setTimeout(() => router.push("/admin/vendedores"), 2000);
+    } catch (error) {
+      console.error("Error al rechazar:", error);
+      setMensaje("Ocurrió un error al rechazar. Intenta de nuevo.");
+    } finally {
+      setProcesando(false);
+    }
   };
+
+  if (cargando) {
+    return (
+      <div className="container">
+        <div className="card" style={{ textAlign: "center" }}>Cargando solicitud...</div>
+      </div>
+    );
+  }
+
+  if (!solicitud) {
+    return (
+      <div className="container">
+        <div className="card" style={{ textAlign: "center" }}>No se encontró la solicitud.</div>
+      </div>
+    );
+  }
 
   return (
     <div className="container">
@@ -59,7 +125,7 @@ export default function RevisarSolicitudVendedor() {
         )}
 
         <div className="fila">
-          <input type="text" value={solicitud.nombrePropietario} disabled />
+          <input type="text" value={solicitud.nombre} disabled />
           <input type="text" value={solicitud.nombreNegocio} disabled />
         </div>
 
@@ -82,12 +148,19 @@ export default function RevisarSolicitudVendedor() {
           }}
         />
 
+        <div className="separador">Información de pago</div>
+
+        <input type="text" className="full" value={solicitud.cedula} disabled />
+        <input type="text" className="full" value={solicitud.banco} disabled />
+        <input type="text" className="full" value={solicitud.numeroCuenta} disabled />
+
         <div className="separador">Decisión</div>
 
         <div style={{ display: "flex", gap: "15px", justifyContent: "center", marginTop: "10px" }}>
           <button
             type="button"
             onClick={aprobar}
+            disabled={procesando}
             style={{ background: "#059669", width: "180px" }}
           >
             ✓ Aprobar
@@ -95,6 +168,7 @@ export default function RevisarSolicitudVendedor() {
           <button
             type="button"
             onClick={rechazar}
+            disabled={procesando}
             style={{ background: "#dc2626", width: "180px" }}
           >
             ✕ Rechazar
