@@ -1,16 +1,42 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useSyncExternalStore } from "react";
+
+function suscribirseUsuario(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+function obtenerUsuarioCliente() {
+  return localStorage.getItem("usuario");
+}
+function obtenerUsuarioServidor() {
+  return null;
+}
 
 export default function Perfil() {
+  const router = useRouter();
+  const usuarioRaw = useSyncExternalStore(suscribirseUsuario, obtenerUsuarioCliente, obtenerUsuarioServidor);
+let usuario = null;
+  try {
+    usuario = usuarioRaw ? JSON.parse(usuarioRaw) : null;
+  } catch {
+    usuario = null;
+  }
+  const cerrarSesion = () => {
+    localStorage.removeItem("usuario");
+    localStorage.removeItem("token");
+    window.dispatchEvent(new Event("storage"));
+    router.push("/cliente/tiendas");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-700 to-cyan-500 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/cliente">
+            <Link href="/cliente/tiendas/id">
               <button className="text-white hover:bg-white/20 p-2 rounded-xl transition">
                 ← Volver
               </button>
@@ -32,11 +58,13 @@ export default function Perfil() {
           <div className="flex flex-col gap-3 text-left">
             <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
               <p className="text-xs text-gray-400 mb-1">Nombre</p>
-              <p className="font-semibold text-gray-800">Usuario Lumya</p>
+              <p className="font-semibold text-gray-800">
+                {usuario ? `${usuario.nombre} ${usuario.apellido ?? ""}` : "Invitado"}
+              </p>
             </div>
             <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
               <p className="text-xs text-gray-400 mb-1">Correo</p>
-              <p className="font-semibold text-gray-800">usuario@lumya.com</p>
+              <p className="font-semibold text-gray-800">{usuario?.correo ?? "Sin correo"}</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
               <p className="text-xs text-gray-400 mb-1">Mis pedidos</p>
@@ -47,12 +75,14 @@ export default function Perfil() {
           <button className="mt-6 w-full bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold py-3 rounded-xl hover:opacity-90 transition">
             Editar Perfil
           </button>
-          <button className="mt-3 w-full border-2 border-red-200 text-red-400 font-bold py-3 rounded-xl hover:bg-red-50 transition">
+          <button
+            onClick={cerrarSesion}
+            className="mt-3 w-full border-2 border-red-200 text-red-400 font-bold py-3 rounded-xl hover:bg-red-50 transition"
+          >
             Cerrar Sesión
           </button>
         </div>
       </div>
-
     </div>
   );
 }

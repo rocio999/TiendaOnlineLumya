@@ -1,11 +1,39 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import "../../cliente.css";
+import { useSyncExternalStore } from "react";
 
 export default function InicioCliente() {
   const [agregado, setAgregado] = useState<number | null>(null);
+  const [mensaje, setMensaje] = useState(false);
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
+  const router = useRouter();
+
+  
+
+function suscribirseUsuario(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function obtenerUsuarioCliente() {
+  return !!localStorage.getItem("usuario");
+}
+
+function obtenerUsuarioServidor() {
+  return false;
+}
+
+// dentro del componente:
+const usuarioLogueado = useSyncExternalStore(
+  suscribirseUsuario,
+  obtenerUsuarioCliente,
+  obtenerUsuarioServidor
+);
+  
 
   const todosProductos = [
     { id: 1, nombre: "Mochila Urbana", precio: 55, categoria: "Accesorios", emoji: "🎒" },
@@ -29,11 +57,9 @@ export default function InicioCliente() {
 
   const handleAgregar = (producto: typeof todosProductos[0]) => {
     const carritoActual = JSON.parse(localStorage.getItem("carrito") || "[]");
-    const existe = carritoActual.find((p: any) => p.id === producto.id);
-
+const existe = carritoActual.find((p: { id: number; cantidad: number }) => p.id === producto.id);
     if (existe) {
-      const actualizado = carritoActual.map((p: any) =>
-        p.id === producto.id ? { ...p, cantidad: p.cantidad + 1 } : p
+const actualizado = carritoActual.map((p: { id: number; cantidad: number }) =>        p.id === producto.id ? { ...p, cantidad: p.cantidad + 1 } : p
       );
       localStorage.setItem("carrito", JSON.stringify(actualizado));
     } else {
@@ -43,32 +69,114 @@ export default function InicioCliente() {
     setAgregado(producto.id);
     setTimeout(() => setAgregado(null), 1500);
   };
+  const cerrarSesion = () => {
+  localStorage.removeItem("usuario");
+  localStorage.removeItem("token");
 
+  window.dispatchEvent(new Event("storage")); // ✅ notifica el cambio
+  router.push("/cliente/tiendas");
+};
   return (
     <div className="min-h-screen bg-gray-50">
+      {mensaje && (
+        <div className="modal-overlay">
+
+    <div className="modal-box">
+
+        <div className="modal-icon">
+            🛒
+        </div>
+
+        <h2 className="modal-title">
+            Necesitas una cuenta
+        </h2>
+
+        <p className="modal-text">
+            Para agregar productos al carrito debes iniciar sesión o registrarte primero.
+        </p>
+
+        <div className="modal-buttons">
+
+            <Link href="/cliente/login">
+                <button className="btn-login">
+                    Iniciar sesión
+                </button>
+            </Link>
+
+            <Link href="/cliente/registro">
+                <button className="btn-register">
+                    Registrarse
+                </button>
+            </Link>
+
+        </div>
+
+        <button
+            onClick={() => setMensaje(false)}
+            className="btn-close"
+        >
+            Continuar viendo productos
+        </button>
+
+    </div>
+
+</div>
+  
+
+)}
 
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-700 to-cyan-500 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/logo-lumya.png"
-              alt="Lumya"
-              width={40}
-              height={40}
-              className="rounded-xl"
-            />
-            <span className="text-xl font-bold text-white">lumya</span>
-          </div>
-          <Link href="/cliente/carrito">
-            <button className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-xl font-semibold transition-all text-sm">
-              🛒 Carrito
-            </button>
-          </Link>
-        </div>
+  <div className="flex items-center gap-2">
+    <Image
+      src="/logo-lumya.png"
+      alt="Lumya"
+      width={40}
+      height={40}
+      className="rounded-xl"
+    />
+    <span className="text-xl font-bold text-white">lumya</span>
+  </div>
 
-        {/* Barra de búsqueda */}
-        <div className="max-w-4xl mx-auto mt-3">
+  <div className="flex items-center gap-3">
+
+  {!usuarioLogueado ? (
+    <>
+      <Link href="/cliente/registro">
+        <button className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-xl font-semibold transition-all text-sm">
+          Registrarse
+        </button>
+      </Link>
+
+      <Link href="/cliente/login">
+        <button className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-xl font-semibold transition-all text-sm">
+          Iniciar Sesión
+        </button>
+      </Link>
+    </>
+  ) : (
+    <>
+      <button
+        onClick={() => router.push("/cliente/carrito")}
+        className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-xl font-semibold transition-all text-sm"
+      >
+        🛒 Carrito
+      </button>
+
+      <button
+        onClick={cerrarSesion}
+        className="bg-red-500 text-white hover:bg-red-600 px-4 py-2 rounded-xl font-semibold transition-all text-sm"
+      >
+        🚪 Cerrar sesión
+      </button>
+    </>
+  )}
+
+</div>
+</div>
+{/* Barra de búsqueda */}
+<div className="max-w-4xl mx-auto mt-3">
           <input
             type="text"
             placeholder="Buscar productos..."
@@ -76,6 +184,8 @@ export default function InicioCliente() {
           />
         </div>
       </div>
+      
+
 
       <div className="max-w-4xl mx-auto px-4 py-6">
 
@@ -142,15 +252,29 @@ export default function InicioCliente() {
                 <div className="flex items-center justify-between">
                   <p className="text-blue-700 font-bold">${producto.precio}</p>
                   <button
-                    onClick={() => handleAgregar(producto)}
-                    className={`text-white text-xs px-3 py-1 rounded-lg transition font-semibold ${
-                      agregado === producto.id
-                        ? "bg-green-500"
-                        : "bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90"
-                    }`}
-                  >
-                    {agregado === producto.id ? "✓ Agregado" : "+ Carrito"}
-                  </button>
+  onClick={() => {
+
+    const usuario = localStorage.getItem("usuario");
+
+    if (!usuario) {
+
+  setMensaje(true);
+
+  return;
+}
+
+
+    handleAgregar(producto);
+
+  }}
+  className={`text-white text-xs px-3 py-1 rounded-lg transition font-semibold ${
+    agregado === producto.id
+      ? "bg-green-500"
+      : "bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90"
+  }`}
+>
+  {agregado === producto.id ? "✓ Agregado" : "+ Carrito"}
+</button>
                 </div>
               </div>
             </div>
@@ -163,12 +287,12 @@ export default function InicioCliente() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto grid grid-cols-4 gap-2">
           <button
-            onClick={() => setCategoriaActiva(null)}
-            className="flex flex-col items-center text-blue-700"
+          onClick={() => router.push("/cliente/tiendas")}
+          className="flex flex-col items-center text-blue-700"
           >
-            <span className="text-xl">🏠</span>
-            <span className="text-xs font-semibold">Inicio</span>
-          </button>
+        <span className="text-xl">🏠</span>
+        <span className="text-xs font-semibold">Inicio</span>
+        </button>
           <button
             onClick={() => setCategoriaActiva(null)}
             className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition"
@@ -176,17 +300,42 @@ export default function InicioCliente() {
             <span className="text-xl">📦</span>
             <span className="text-xs">Categorías</span>
           </button>
-          <Link href="/cliente/carrito" className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-            <span className="text-xl">🛒</span>
-            <span className="text-xs">Carrito</span>
-          </Link>
-          <Link href="/cliente/perfil" className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-            <span className="text-xl">👤</span>
-            <span className="text-xs">Perfil</span>
-          </Link>
+          <button
+  onClick={() => {
+    const usuario = localStorage.getItem("usuario");
+
+    if (!usuario) {
+      setMensaje(true);
+      return;
+    }
+
+    router.push("/cliente/carrito");
+  }}
+  className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition"
+>
+  <span className="text-xl">🛒</span>
+  <span className="text-xs">Carrito</span>
+</button>
+          <button
+  onClick={() => {
+    const usuario = localStorage.getItem("usuario");
+
+    if (!usuario) {
+      setMensaje(true);
+      return;
+    }
+
+    router.push("/cliente/perfil");
+  }}
+  className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition"
+>
+  <span className="text-xl">👤</span>
+  <span className="text-xs">Perfil</span>
+</button>
         </div>
       </div>
 
     </div>
   );
+
 }

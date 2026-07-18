@@ -1,20 +1,12 @@
-const mysql = require("mysql2");
-require("dotenv").config();
+const { initializeApp, cert } = require("firebase-admin/app");
+const { getFirestore } = require("firebase-admin/firestore");
 
-const connection = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT
+const serviceAccount = require("./serviceAccountKey.json");
+
+initializeApp({
+  credential: cert(serviceAccount),
 });
 
-connection.connect((err) => {
-  if (err) {
-    console.error("Error conectando a MySQL:", err);
-    return;
-  }
-  console.log("Conectado a MySQL");
-});
+const db = getFirestore();
 
-module.exports = connection;
+module.exports = db;
