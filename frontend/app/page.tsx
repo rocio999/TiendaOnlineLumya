@@ -24,7 +24,7 @@ export default function Home() {
 
         <div className="flex flex-col gap-3 items-end"> 
     
-    <Link href="/login">
+    <Link href="/cliente/login">
       <span className="bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-200 cursor-pointer text-center w-full min-w-[140px]">
         Iniciar sesión
       </span>
@@ -32,7 +32,7 @@ export default function Home() {
 
     <div className="text-sm text-white text-right">
       <p>¿No tienes cuenta aún?</p>
-      <Link href="/registro">
+      <Link href="/cliente/registro">
         <span className="text-blue-500 underline hover:text-blue-400 cursor-pointer font-bold">
           Regístrate 
         </span>

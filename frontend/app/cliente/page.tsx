@@ -1,20 +1,36 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+interface Producto {
+  id: string;
+  nombre: string;
+  precio: number;
+  categoria: string;
+  stock: number;
+}
 
 export default function InicioCliente() {
-  const [agregado, setAgregado] = useState<number | null>(null);
+  const [agregado, setAgregado] = useState<string | null>(null);
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [cargando, setCargando] = useState(true);
 
-  const todosProductos = [
-    { id: 1, nombre: "Mochila Urbana", precio: 55, categoria: "Accesorios", emoji: "🎒" },
-    { id: 2, nombre: "Zapatillas Runner", precio: 90, categoria: "Calzado", emoji: "👟" },
-    { id: 3, nombre: "Cámara Digital", precio: 350, categoria: "Electrónica", emoji: "📷" },
-    { id: 4, nombre: "Auriculares BT", precio: 110, categoria: "Electrónica", emoji: "🎧" },
-    { id: 5, nombre: "Camiseta Deportiva", precio: 25, categoria: "Ropa", emoji: "👕" },
-    { id: 6, nombre: "Reloj Inteligente", precio: 199, categoria: "Electrónica", emoji: "⌚" },
-  ];
+  useEffect(() => {
+    const cargarProductos = async () => {
+      try {
+        const res = await fetch("http://localhost:3001/productos");
+        const data = await res.json();
+        setProductos(data.filter((p: any) => p.stock > 0));
+      } catch (error) {
+        console.error("Error al cargar productos:", error);
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargarProductos();
+  }, []);
 
   const categorias = [
     { nombre: "Ropa", emoji: "👕" },
@@ -24,10 +40,10 @@ export default function InicioCliente() {
   ];
 
   const productosFiltrados = categoriaActiva
-    ? todosProductos.filter((p) => p.categoria === categoriaActiva)
-    : todosProductos;
+    ? productos.filter((p) => p.categoria === categoriaActiva)
+    : productos;
 
-  const handleAgregar = (producto: typeof todosProductos[0]) => {
+  const handleAgregar = (producto: Producto) => {
     const carritoActual = JSON.parse(localStorage.getItem("carrito") || "[]");
     const existe = carritoActual.find((p: any) => p.id === producto.id);
 
@@ -47,17 +63,10 @@ export default function InicioCliente() {
   return (
     <div className="min-h-screen bg-gray-50">
 
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-700 to-cyan-500 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Image
-              src="/logo-lumya.png"
-              alt="Lumya"
-              width={40}
-              height={40}
-              className="rounded-xl"
-            />
+            <Image src="/logo-lumya.png" alt="Lumya" width={40} height={40} className="rounded-xl" />
             <span className="text-xl font-bold text-white">lumya</span>
           </div>
           <Link href="/cliente/carrito">
@@ -67,7 +76,6 @@ export default function InicioCliente() {
           </Link>
         </div>
 
-        {/* Barra de búsqueda */}
         <div className="max-w-4xl mx-auto mt-3">
           <input
             type="text"
@@ -79,19 +87,6 @@ export default function InicioCliente() {
 
       <div className="max-w-4xl mx-auto px-4 py-6">
 
-        {/* Oferta Flash */}
-        <div
-          onClick={() => setCategoriaActiva("Calzado")}
-          className="bg-gradient-to-r from-blue-600 to-cyan-400 rounded-2xl p-4 mb-6 flex items-center justify-between shadow-lg cursor-pointer hover:opacity-90 transition"
-        >
-          <div>
-            <p className="text-white font-bold text-lg">⚡ Oferta Flash</p>
-            <p className="text-blue-100 text-sm">20% OFF en Zapatillas hoy</p>
-          </div>
-          <span className="text-4xl">👟</span>
-        </div>
-
-        {/* Categorías */}
         <h2 className="text-xl font-bold text-blue-900 mb-3">Categorías Populares</h2>
         <div className="grid grid-cols-4 gap-3 mb-6">
           {categorias.map((cat) => (
@@ -112,7 +107,6 @@ export default function InicioCliente() {
           ))}
         </div>
 
-        {/* Productos */}
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xl font-bold text-blue-900">
             {categoriaActiva ? `Categoría: ${categoriaActiva}` : "Productos para ti"}
@@ -127,39 +121,44 @@ export default function InicioCliente() {
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-24">
-          {productosFiltrados.map((producto) => (
-            <div
-              key={producto.id}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition border border-gray-100"
-            >
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 h-32 flex items-center justify-center">
-                <span className="text-6xl">{producto.emoji}</span>
-              </div>
-              <div className="p-3">
-                <p className="font-semibold text-gray-800 text-sm">{producto.nombre}</p>
-                <p className="text-xs text-gray-400 mb-1">{producto.categoria}</p>
-                <div className="flex items-center justify-between">
-                  <p className="text-blue-700 font-bold">${producto.precio}</p>
-                  <button
-                    onClick={() => handleAgregar(producto)}
-                    className={`text-white text-xs px-3 py-1 rounded-lg transition font-semibold ${
-                      agregado === producto.id
-                        ? "bg-green-500"
-                        : "bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90"
-                    }`}
-                  >
-                    {agregado === producto.id ? "✓ Agregado" : "+ Carrito"}
-                  </button>
+        {cargando ? (
+          <div className="text-center py-20 text-gray-400">Cargando productos...</div>
+        ) : productosFiltrados.length === 0 ? (
+          <div className="text-center py-20 text-gray-400">No hay productos disponibles.</div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 mb-24">
+            {productosFiltrados.map((producto) => (
+              <div
+                key={producto.id}
+                className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition border border-gray-100"
+              >
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 h-32 flex items-center justify-center">
+                  <span className="text-6xl">📦</span>
+                </div>
+                <div className="p-3">
+                  <p className="font-semibold text-gray-800 text-sm">{producto.nombre}</p>
+                  <p className="text-xs text-gray-400 mb-1">{producto.categoria}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-blue-700 font-bold">${producto.precio}</p>
+                    <button
+                      onClick={() => handleAgregar(producto)}
+                      className={`text-white text-xs px-3 py-1 rounded-lg transition font-semibold ${
+                        agregado === producto.id
+                          ? "bg-green-500"
+                          : "bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90"
+                      }`}
+                    >
+                      {agregado === producto.id ? "✓ Agregado" : "+ Carrito"}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
       </div>
 
-      {/* Barra navegación inferior */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto grid grid-cols-4 gap-2">
           <button
