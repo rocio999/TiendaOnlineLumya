@@ -2,12 +2,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import {
-  collection, getDocs, doc, updateDoc, deleteDoc, addDoc,
-  query, where, serverTimestamp,
-} from "firebase/firestore";
-import { registrarAuditoria } from "@/lib/auditoria";
 
 interface ProductoReal {
   id: string;
@@ -56,42 +50,16 @@ export default function GestionProductos() {
     nombre: "", precio: "", descripcion: "", categoria: "", stock: "", vendedorId: ""
   });
 
-  const construirMapaVendedores = (docs: any[]) => {
-    const mapa: Record<string, string> = {};
-    docs.forEach((v) => {
-      mapa[v.id] = v.data().nombreNegocio || v.data().nombre || "Vendedor";
-    });
-    return mapa;
-  };
-
   const cargarProductos = async () => {
     try {
-      const productosSnap = await getDocs(collection(db, "productos"));
-      const vendedoresQ = query(collection(db, "usuarios"), where("rol", "==", "vendedor"));
-      const vendedoresSnap = await getDocs(vendedoresQ);
-      const mapaVendedores = construirMapaVendedores(vendedoresSnap.docs);
+      const res = await fetch("http://localhost:3001/productos");
+      const data = await res.json();
+      setProductosReales(data);
 
-      const lista: ProductoReal[] = productosSnap.docs.map((p) => {
-        const data = p.data();
-        return {
-          id: p.id,
-          nombre: data.nombre,
-          precio: data.precio,
-          stock: data.stock,
-          categoria: data.categoria,
-          vendedorId: data.vendedorId,
-          vendedorNombre: mapaVendedores[data.vendedorId] || "Desconocido",
-          estado: data.estado || "activo",
-        };
-      });
-
-      setProductosReales(lista);
-
+      const vendRes = await fetch("http://localhost:3001/vendedores");
+      const vendData = await vendRes.json();
       setVendedoresOpciones(
-        vendedoresSnap.docs.map((v) => ({
-          id: v.id,
-          nombreNegocio: v.data().nombreNegocio || v.data().nombre || "Vendedor",
-        }))
+        vendData.map((v: any) => ({ id: v.id, nombreNegocio: v.nombreNegocio || v.nombre }))
       );
     } catch (error) {
       console.error("Error al cargar productos:", error);
@@ -102,15 +70,9 @@ export default function GestionProductos() {
 
   const cargarCategorias = async () => {
     try {
-      const snap = await getDocs(collection(db, "categorias"));
-      const lista = snap.docs.map((c) => ({
-        id: c.id,
-        nombre: c.data().nombre,
-        descripcion: c.data().descripcion,
-        emoji: c.data().emoji || "📦",
-        estado: c.data().estado || "Activa",
-      }));
-      setCategorias(lista);
+      const res = await fetch("http://localhost:3001/categorias");
+      const data = await res.json();
+      setCategorias(data);
     } catch (error) {
       console.error("Error al cargar categorías:", error);
     } finally {
@@ -127,10 +89,12 @@ export default function GestionProductos() {
     const nuevoEstado = estadoActual === "activo" ? "suspendido" : "activo";
     setActualizandoId(id);
     try {
-      await updateDoc(doc(db, "productos", id), { estado: nuevoEstado });
-      const producto = productosReales.find((p) => p.id === id);
-      const accion = nuevoEstado === "suspendido" ? "Suspendió" : "Activó";
-      await registrarAuditoria("admin", `${accion} el producto ${producto?.nombre}`, "producto");
+      const res = await fetch(`http://localhost:3001/productos/${id}/estado`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+      if (!res.ok) return;
       setProductosReales((prev) =>
         prev.map((p) => (p.id === id ? { ...p, estado: nuevoEstado } : p))
       );
@@ -144,10 +108,12 @@ export default function GestionProductos() {
   const toggleEstadoCategoria = async (id: string, estadoActual: string) => {
     const nuevoEstado = estadoActual === "Activa" ? "Inactiva" : "Activa";
     try {
-      await updateDoc(doc(db, "categorias", id), { estado: nuevoEstado });
-      const categoria = categorias.find((c) => c.id === id);
-      const accion = nuevoEstado === "Inactiva" ? "Desactivó" : "Activó";
-      await registrarAuditoria("admin", `${accion} la categoría ${categoria?.nombre}`, "categoria");
+      const res = await fetch(`http://localhost:3001/categorias/${id}/estado`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+      if (!res.ok) return;
       setCategorias(categorias.map((c) => (c.id === id ? { ...c, estado: nuevoEstado } : c)));
     } catch (error) {
       console.error("Error al cambiar estado de categoría:", error);
@@ -160,16 +126,20 @@ export default function GestionProductos() {
       return;
     }
     try {
-      const docRef = await addDoc(collection(db, "categorias"), {
-        nombre: nuevaCategoria.nombre,
-        descripcion: nuevaCategoria.descripcion,
-        emoji: nuevaCategoria.emoji || "📦",
-        estado: "Activa",
-        createdAt: serverTimestamp(),
+      const res = await fetch("http://localhost:3001/categorias", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nuevaCategoria),
       });
-      await registrarAuditoria("admin", `Creó categoría ${nuevaCategoria.nombre}`, "categoria");
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMensaje(data.message || "Ocurrió un error al agregar la categoría");
+        return;
+      }
+
       setCategorias([...categorias, {
-        id: docRef.id,
+        id: data.id,
         nombre: nuevaCategoria.nombre,
         descripcion: nuevaCategoria.descripcion,
         emoji: nuevaCategoria.emoji || "📦",
@@ -181,15 +151,16 @@ export default function GestionProductos() {
       setTimeout(() => setMensaje(""), 3000);
     } catch (error) {
       console.error("Error al agregar categoría:", error);
-      setMensaje("Ocurrió un error al agregar la categoría");
+      setMensaje("No se pudo conectar con el servidor.");
     }
   };
 
   const eliminarCategoria = async (id: string) => {
     try {
-      const categoria = categorias.find((c) => c.id === id);
-      await deleteDoc(doc(db, "categorias", id));
-      await registrarAuditoria("admin", `Eliminó la categoría ${categoria?.nombre}`, "categoria");
+      const res = await fetch(`http://localhost:3001/categorias/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) return;
       setCategorias(categorias.filter((c) => c.id !== id));
     } catch (error) {
       console.error("Error al eliminar categoría:", error);
@@ -204,18 +175,19 @@ export default function GestionProductos() {
     }
     setPublicando(true);
     try {
-      await addDoc(collection(db, "productos"), {
-        nombre: nuevoProducto.nombre,
-        precio: Number(nuevoProducto.precio),
-        descripcion: nuevoProducto.descripcion,
-        categoria: nuevoProducto.categoria,
-        stock: Number(nuevoProducto.stock),
-        vendedorId: nuevoProducto.vendedorId,
-        estado: "activo",
-        createdAt: serverTimestamp(),
+      const res = await fetch("http://localhost:3001/productos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nuevoProducto),
       });
 
-      await registrarAuditoria("admin", `Subió el producto ${nuevoProducto.nombre}`, "producto");
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMensaje(data.message || "Ocurrió un error al subir el producto");
+        setPublicando(false);
+        return;
+      }
 
       setNuevoProducto({ nombre: "", precio: "", descripcion: "", categoria: "", stock: "", vendedorId: "" });
       setVista("productos");
@@ -225,7 +197,7 @@ export default function GestionProductos() {
       cargarProductos();
     } catch (error) {
       console.error("Error al subir producto:", error);
-      setMensaje("Ocurrió un error al subir el producto");
+      setMensaje("No se pudo conectar con el servidor.");
     } finally {
       setPublicando(false);
     }
@@ -246,7 +218,6 @@ export default function GestionProductos() {
   return (
     <div className="min-h-screen bg-slate-50">
 
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -263,7 +234,6 @@ export default function GestionProductos() {
           </span>
         </div>
 
-        {/* Tabs */}
         <div className="max-w-6xl mx-auto mt-3 flex gap-2">
           <button
             onClick={() => setVista("productos")}
@@ -294,7 +264,6 @@ export default function GestionProductos() {
 
       <div className="max-w-6xl mx-auto px-4 py-8">
 
-        {/* Mensaje */}
         {mensaje && (
           <div className={`px-4 py-3 rounded-xl mb-6 font-semibold ${
             mensaje.includes("completa") || mensaje.includes("error")
@@ -305,7 +274,6 @@ export default function GestionProductos() {
           </div>
         )}
 
-        {/* VISTA PRODUCTOS */}
         {vista === "productos" && (
           <>
             <div className="mb-6">
@@ -390,7 +358,6 @@ export default function GestionProductos() {
           </>
         )}
 
-        {/* VISTA SUBIR PRODUCTO */}
         {vista === "nuevo" && (
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
             <h2 className="text-xl font-bold text-blue-900 mb-6">Subir Nuevo Producto</h2>
@@ -493,7 +460,6 @@ export default function GestionProductos() {
           </div>
         )}
 
-        {/* VISTA CATEGORIAS */}
         {vista === "categorias" && (
           <>
             <div className="flex justify-between items-center mb-6">

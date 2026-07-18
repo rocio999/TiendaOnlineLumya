@@ -1,11 +1,8 @@
 "use client";
 
-import "./CrearVendedor.module.css";
+import styles from "./CrearVendedor.module.css";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { registrarAuditoria } from "@/lib/auditoria";
 
 interface Solicitud {
   nombre: string;
@@ -36,10 +33,10 @@ export default function RevisarSolicitudVendedor() {
         return;
       }
       try {
-        const docRef = doc(db, "usuarios", id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setSolicitud(docSnap.data() as Solicitud);
+        const res = await fetch(`http://localhost:3001/vendedores/${id}`);
+        const data = await res.json();
+        if (res.ok) {
+          setSolicitud(data);
         }
       } catch (error) {
         console.error("Error al cargar solicitud:", error);
@@ -51,33 +48,31 @@ export default function RevisarSolicitudVendedor() {
     cargarSolicitud();
   }, [id]);
 
-  const aprobar = async () => {
+  const cambiarEstado = async (nuevoEstado: string) => {
     if (!id) return;
     setProcesando(true);
     try {
-      await updateDoc(doc(db, "usuarios", id), { estado: "activo" });
-      await registrarAuditoria(id, `Aprobó al vendedor ${solicitud?.nombreNegocio || solicitud?.nombre}`, "vendedor");
-      setMensaje("Vendedor aprobado. Ya puede iniciar sesión.");
-      setTimeout(() => router.push("/admin/vendedores"), 2000);
-    } catch (error) {
-      console.error("Error al aprobar:", error);
-      setMensaje("Ocurrió un error al aprobar. Intenta de nuevo.");
-    } finally {
-      setProcesando(false);
-    }
-  };
+      const res = await fetch(`http://localhost:3001/vendedores/${id}/estado`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
 
-  const rechazar = async () => {
-    if (!id) return;
-    setProcesando(true);
-    try {
-      await updateDoc(doc(db, "usuarios", id), { estado: "rechazado" });
-      await registrarAuditoria(id, `Rechazó al vendedor ${solicitud?.nombreNegocio || solicitud?.nombre}`, "vendedor");
-      setMensaje("Solicitud rechazada.");
+      if (!res.ok) {
+        setMensaje("Ocurrió un error al procesar la solicitud.");
+        setProcesando(false);
+        return;
+      }
+
+      setMensaje(
+        nuevoEstado === "activo"
+          ? "Vendedor aprobado. Ya puede iniciar sesión."
+          : "Solicitud rechazada."
+      );
       setTimeout(() => router.push("/admin/vendedores"), 2000);
     } catch (error) {
-      console.error("Error al rechazar:", error);
-      setMensaje("Ocurrió un error al rechazar. Intenta de nuevo.");
+      console.error("Error al actualizar estado:", error);
+      setMensaje("No se pudo conectar con el servidor.");
     } finally {
       setProcesando(false);
     }
@@ -85,29 +80,29 @@ export default function RevisarSolicitudVendedor() {
 
   if (cargando) {
     return (
-      <div className="container">
-        <div className="card" style={{ textAlign: "center" }}>Cargando solicitud...</div>
+      <div className={styles.container}>
+        <div className={styles.card} style={{ textAlign: "center" }}>Cargando solicitud...</div>
       </div>
     );
   }
 
   if (!solicitud) {
     return (
-      <div className="container">
-        <div className="card" style={{ textAlign: "center" }}>No se encontró la solicitud.</div>
+      <div className={styles.container}>
+        <div className={styles.card} style={{ textAlign: "center" }}>No se encontró la solicitud.</div>
       </div>
     );
   }
 
   return (
-    <div className="container">
-      <div className="card">
-        <div className="avatar">🏪</div>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <div className={styles.avatar}>🏪</div>
 
-        <div className="titulo">
-          <div className="linea"></div>
+        <div className={styles.titulo}>
+          <div className={styles.linea}></div>
           <h2>SOLICITUD DE VENDEDOR</h2>
-          <div className="linea"></div>
+          <div className={styles.linea}></div>
         </div>
 
         {mensaje && (
@@ -124,16 +119,16 @@ export default function RevisarSolicitudVendedor() {
           </div>
         )}
 
-        <div className="fila">
+        <div className={styles.fila}>
           <input type="text" value={solicitud.nombre} disabled />
           <input type="text" value={solicitud.nombreNegocio} disabled />
         </div>
 
-        <input type="email" className="full" value={solicitud.correo} disabled />
-        <input type="text" className="full" value={solicitud.telefono} disabled />
+        <input type="email" className={styles.full} value={solicitud.correo} disabled />
+        <input type="text" className={styles.full} value={solicitud.telefono} disabled />
 
         <textarea
-          className="full"
+          className={styles.full}
           value={solicitud.descripcion}
           disabled
           rows={3}
@@ -148,18 +143,18 @@ export default function RevisarSolicitudVendedor() {
           }}
         />
 
-        <div className="separador">Información de pago</div>
+        <div className={styles.separador}>Información de pago</div>
 
-        <input type="text" className="full" value={solicitud.cedula} disabled />
-        <input type="text" className="full" value={solicitud.banco} disabled />
-        <input type="text" className="full" value={solicitud.numeroCuenta} disabled />
+        <input type="text" className={styles.full} value={solicitud.cedula} disabled />
+        <input type="text" className={styles.full} value={solicitud.banco} disabled />
+        <input type="text" className={styles.full} value={solicitud.numeroCuenta} disabled />
 
-        <div className="separador">Decisión</div>
+        <div className={styles.separador}>Decisión</div>
 
         <div style={{ display: "flex", gap: "15px", justifyContent: "center", marginTop: "10px" }}>
           <button
             type="button"
-            onClick={aprobar}
+            onClick={() => cambiarEstado("activo")}
             disabled={procesando}
             style={{ background: "#059669", width: "180px" }}
           >
@@ -167,7 +162,7 @@ export default function RevisarSolicitudVendedor() {
           </button>
           <button
             type="button"
-            onClick={rechazar}
+            onClick={() => cambiarEstado("rechazado")}
             disabled={procesando}
             style={{ background: "#dc2626", width: "180px" }}
           >

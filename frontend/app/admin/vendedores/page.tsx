@@ -2,9 +2,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
-import { registrarAuditoria } from "@/lib/auditoria";
 
 interface Vendedor {
   id: string;
@@ -30,21 +27,20 @@ export default function GestionVendedores() {
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [cargando, setCargando] = useState(true);
   const [actualizandoId, setActualizandoId] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   const cargarVendedores = async () => {
     try {
-      const q = query(collection(db, "usuarios"), where("rol", "==", "vendedor"));
-      const resultado = await getDocs(q);
-      const lista: Vendedor[] = resultado.docs.map((doc) => ({
-        id: doc.id,
-        nombreNegocio: doc.data().nombreNegocio || "Sin nombre",
-        nombre: doc.data().nombre || "",
-        correo: doc.data().correo || "",
-        estado: doc.data().estado || "pendiente",
-      }));
-      setVendedores(lista);
-    } catch (error) {
-      console.error("Error al cargar vendedores:", error);
+      const res = await fetch("http://localhost:3001/vendedores");
+      const data = await res.json();
+      if (!res.ok) {
+        setError("No se pudieron cargar los vendedores");
+        return;
+      }
+      setVendedores(data);
+    } catch (err) {
+      console.error("Error al cargar vendedores:", err);
+      setError("No se pudo conectar con el servidor.");
     } finally {
       setCargando(false);
     }
@@ -57,15 +53,22 @@ export default function GestionVendedores() {
   const cambiarEstado = async (id: string, nuevoEstado: string) => {
     setActualizandoId(id);
     try {
-      await updateDoc(doc(db, "usuarios", id), { estado: nuevoEstado });
-      const vendedor = vendedores.find((v) => v.id === id);
-      const accion = nuevoEstado === "suspendido" ? "Suspendió" : "Reactivó";
-      await registrarAuditoria(id, `${accion} al vendedor ${vendedor?.nombreNegocio || vendedor?.nombre}`, "vendedor");
+      const res = await fetch(`http://localhost:3001/vendedores/${id}/estado`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+
+      if (!res.ok) {
+        console.error("Error al cambiar estado");
+        return;
+      }
+
       setVendedores((prev) =>
         prev.map((v) => (v.id === id ? { ...v, estado: nuevoEstado } : v))
       );
-    } catch (error) {
-      console.error("Error al cambiar estado:", error);
+    } catch (err) {
+      console.error("Error al cambiar estado:", err);
     } finally {
       setActualizandoId(null);
     }
@@ -94,6 +97,12 @@ export default function GestionVendedores() {
           <h1 className="text-3xl font-bold text-blue-900">Gestión de Vendedores</h1>
           <p className="text-slate-500 mt-1">Revisa solicitudes y administra las tiendas de Lumya</p>
         </div>
+
+        {error && (
+          <div className="bg-red-100 border border-red-300 text-red-700 p-3 rounded-xl mb-5 text-center font-semibold text-sm">
+            ⚠️ {error}
+          </div>
+        )}
 
         {cargando ? (
           <div className="text-center py-16 text-slate-400">Cargando vendedores...</div>

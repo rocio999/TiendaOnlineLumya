@@ -1,146 +1,541 @@
 const express = require("express");
 const cors = require("cors");
-const db = require("./db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { db, FieldValue } = require("./firebase");
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
+
+const JWT_SECRET = "secreto123";
+
+// ======================
+// FUNCION AUXILIAR: REGISTRAR AUDITORIA
+// ======================
+async function registrarAuditoria(usuarioId, accion, tipo) {
+  try {
+    await db.collection("historial").add({
+      usuarioId,
+      accion,
+      tipo,
+      fecha: FieldValue.serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("Error al registrar auditoría:", error);
+  }
+}
 
 // ======================
 // PRUEBA
 // ======================
 app.get("/", (req, res) => {
-  res.send("Backend funcionando 🚀");
+  res.send("Backend funcionando 🚀 (Firestore)");
 });
 
 // ======================
-// REGISTRO (SEGURO)
-app.post("/registro", (req, res) => {
-  console.log("BODY RECIBIDO:", req.body);
+// REGISTRO DE VENDEDOR
+// ======================
+app.post("/registro-vendedor", async (req, res) => {
+  try {
+    const {
+      nombre, cedula, correo, telefono, password,
+      nombreNegocio, descripcion, banco, numeroCuenta,
+    } = req.body;
 
-  const { nombre, apellido, correo, password, rol } = req.body;
-
-  if (!nombre || !apellido || !correo || !password || !rol) {
-    return res.status(400).json({ message: "Faltan datos" });
-  }
-
-  const hash = bcrypt.hashSync(password, 10);
-
-  const sql =
-    "INSERT INTO usuarios (nombre, apellido, correo, password, rol) VALUES (?, ?, ?, ?, ?)";
-
-  db.query(sql, [nombre, apellido, correo, hash, rol], (err) => {
-    if (err) {
-      console.log(err);
-      return res.status(500).json(err);
+    if (!nombre || !correo || !password || !nombreNegocio) {
+      return res.status(400).json({ message: "Faltan datos obligatorios" });
     }
 
-    res.json({ message: "Usuario creado correctamente" });
-  });
+    const existente = await db.collection("usuarios")
+      .where("correo", "==", correo)
+      .get();
+
+    if (!existente.empty) {
+      return res.status(409).json({ message: "Ese correo ya está registrado" });
+    }
+
+    const hash = bcrypt.hashSync(password, 10);
+
+    const nuevoDoc = await db.collection("usuarios").add({
+      nombre,
+      cedula: cedula || "",
+      correo,
+      telefono: telefono || "",
+      password: hash,
+      rol: "vendedor",
+      estado: "pendiente",
+      nombreNegocio,
+      descripcion: descripcion || "",
+      banco: banco || "",
+      numeroCuenta: numeroCuenta || "",
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    res.json({ message: "Solicitud enviada correctamente", id: nuevoDoc.id });
+  } catch (error) {
+    console.error("Error en /registro-vendedor:", error);
+    res.status(500).json({ message: "Error al registrar vendedor" });
+  }
 });
 
-
 // ======================
-// LOGIN
+// LOGIN DE VENDEDOR
 // ======================
-app.post("/login", (req, res) => {
-  const { correo, password } = req.body;
+app.post("/login-vendedor", async (req, res) => {
+  try {
+    const { correo, password } = req.body;
 
-  if (!correo || !password) {
-    return res.status(400).json({ message: "Faltan datos" });
-  }
-
-  const sql = "SELECT * FROM usuarios WHERE correo = ?";
-
-  db.query(sql, [correo], (err, results) => {
-    if (err) return res.status(500).json(err);
-
-if (results.length === 0) {
-          return res.status(404).json({ message: "Usuario no encontrado" });
+    if (!correo || !password) {
+      return res.status(400).json({ message: "Faltan datos" });
     }
 
-    const user = results[0];
+    const resultado = await db.collection("usuarios")
+      .where("correo", "==", correo)
+      .where("rol", "==", "vendedor")
+      .get();
 
-    // 🔥 DEBUG (MUY IMPORTANTE)
-    console.log("PASSWORD BD:", user.password);
-    console.log("PASSWORD INPUT:", password);
+    if (resultado.empty) {
+      return res.status(404).json({ message: "Correo o contraseña incorrectos" });
+    }
 
-    const passwordValida = bcrypt.compareSync(password, user.password);
+    const doc = resultado.docs[0];
+    const vendedor = doc.data();
 
+    const passwordValida = bcrypt.compareSync(password, vendedor.password);
     if (!passwordValida) {
-      return res.status(401).json({ message: "Contraseña incorrecta" });
+      return res.status(401).json({ message: "Correo o contraseña incorrectos" });
+    }
+
+    if (vendedor.estado === "pendiente") {
+      return res.status(403).json({ message: "Tu solicitud aún está pendiente de aprobación" });
+    }
+    if (vendedor.estado === "suspendido") {
+      return res.status(403).json({ message: "Tu cuenta está suspendida" });
+    }
+    if (vendedor.estado === "rechazado") {
+      return res.status(403).json({ message: "Tu solicitud fue rechazada" });
+    }
+    if (vendedor.estado !== "activo") {
+      return res.status(403).json({ message: "Tu cuenta no tiene acceso habilitado" });
     }
 
     const token = jwt.sign(
-      { id: user.id, correo: user.correo },
-      "secreto123",
-      { expiresIn: "1h" }
+      { id: doc.id, correo: vendedor.correo, rol: vendedor.rol },
+      JWT_SECRET,
+      { expiresIn: "8h" }
     );
 
-    res.json({ message: "Login exitoso 🔐", token });
-  });
+    res.json({
+      message: "Login exitoso 🔐",
+      token,
+      vendedor: {
+        id: doc.id,
+        nombre: vendedor.nombre,
+        nombreNegocio: vendedor.nombreNegocio,
+        correo: vendedor.correo,
+      },
+    });
+  } catch (error) {
+    console.error("Error en /login-vendedor:", error);
+    res.status(500).json({ message: "Error al iniciar sesión" });
+  }
 });
 
 // ======================
-// GET USUARIOS
+// LISTAR VENDEDORES
 // ======================
-app.get("/usuarios", (req, res) => {
-  db.query("SELECT * FROM usuarios", (err, results) => {
-    if (err) return res.status(500).json(err);
-    res.json(results);
-  });
+app.get("/vendedores", async (req, res) => {
+  try {
+    const snap = await db.collection("usuarios").where("rol", "==", "vendedor").get();
+    const lista = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    res.json(lista);
+  } catch (error) {
+    console.error("Error en GET /vendedores:", error);
+    res.status(500).json({ message: "Error al listar vendedores" });
+  }
 });
 
 // ======================
-// CREATE USUARIO (ADMIN)
+// OBTENER UN VENDEDOR
 // ======================
-app.post("/usuarios", (req, res) => {
-  const { nombre, correo, password } = req.body;
-
-  const hash = bcrypt.hashSync(password, 10);
-
-  const sql =
-    "INSERT INTO usuarios (nombre, correo, password) VALUES (?, ?, ?)";
-
-  db.query(sql, [nombre, correo, hash], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Usuario creado" });
-  });
+app.get("/vendedores/:id", async (req, res) => {
+  try {
+    const docSnap = await db.collection("usuarios").doc(req.params.id).get();
+    if (!docSnap.exists) {
+      return res.status(404).json({ message: "Vendedor no encontrado" });
+    }
+    res.json({ id: docSnap.id, ...docSnap.data() });
+  } catch (error) {
+    console.error("Error en GET /vendedores/:id:", error);
+    res.status(500).json({ message: "Error al obtener vendedor" });
+  }
 });
 
 // ======================
-// UPDATE
+// CAMBIAR ESTADO DE VENDEDOR (aprobar/rechazar/suspender/reactivar)
 // ======================
-app.put("/usuarios/:id", (req, res) => {
-  const { nombre, correo, password } = req.body;
+app.put("/vendedores/:id/estado", async (req, res) => {
+  try {
+    const { estado } = req.body;
+    const estadosValidos = ["activo", "rechazado", "suspendido", "pendiente"];
+    if (!estadosValidos.includes(estado)) {
+      return res.status(400).json({ message: "Estado inválido" });
+    }
+    const docSnap = await db.collection("usuarios").doc(req.params.id).get();
+    const vendedor = docSnap.data();
+    await db.collection("usuarios").doc(req.params.id).update({ estado });
 
-  const hash = bcrypt.hashSync(password, 10);
+    const acciones = {
+      activo: "Aprobó",
+      rechazado: "Rechazó",
+      suspendido: "Suspendió",
+      pendiente: "Marcó como pendiente a",
+    };
+    await registrarAuditoria(
+      req.params.id,
+      `${acciones[estado]} al vendedor ${vendedor?.nombreNegocio || vendedor?.nombre}`,
+      "vendedor"
+    );
 
-  const sql =
-    "UPDATE usuarios SET nombre=?, correo=?, password=? WHERE id=?";
-
-  db.query(sql, [nombre, correo, hash, req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Usuario actualizado" });
-  });
+    res.json({ message: "Estado actualizado correctamente" });
+  } catch (error) {
+    console.error("Error en PUT /vendedores/:id/estado:", error);
+    res.status(500).json({ message: "Error al actualizar estado" });
+  }
 });
 
 // ======================
-// DELETE
+// EDITAR DATOS DE VENDEDOR
 // ======================
-app.delete("/usuarios/:id", (req, res) => {
-  db.query("DELETE FROM usuarios WHERE id=?", [req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Usuario eliminado" });
-  });
+app.put("/vendedores/:id", async (req, res) => {
+  try {
+    const datos = { ...req.body };
+    delete datos.password;
+    await db.collection("usuarios").doc(req.params.id).update(datos);
+    await registrarAuditoria(
+      req.params.id,
+      `Editó los datos del vendedor ${datos.nombreNegocio || ""}`,
+      "vendedor"
+    );
+    res.json({ message: "Vendedor actualizado correctamente" });
+  } catch (error) {
+    console.error("Error en PUT /vendedores/:id:", error);
+    res.status(500).json({ message: "Error al actualizar vendedor" });
+  }
+});
+
+// ======================
+// LISTAR TODOS LOS USUARIOS (clientes, vendedores, admin)
+// ======================
+app.get("/usuarios", async (req, res) => {
+  try {
+    const snap = await db.collection("usuarios").get();
+    const lista = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    res.json(lista);
+  } catch (error) {
+    console.error("Error en GET /usuarios:", error);
+    res.status(500).json({ message: "Error al listar usuarios" });
+  }
+});
+
+// ======================
+// SUSPENDER / ACTIVAR USUARIO
+// ======================
+app.put("/usuarios/:id/estado", async (req, res) => {
+  try {
+    const { estado } = req.body;
+    const estadosValidos = ["activo", "suspendido"];
+    if (!estadosValidos.includes(estado)) {
+      return res.status(400).json({ message: "Estado inválido" });
+    }
+    const docSnap = await db.collection("usuarios").doc(req.params.id).get();
+    const usuario = docSnap.data();
+    await db.collection("usuarios").doc(req.params.id).update({ estado });
+
+    const accion = estado === "suspendido" ? "Suspendió" : "Activó";
+    await registrarAuditoria(
+      req.params.id,
+      `${accion} al usuario ${usuario?.nombreNegocio || usuario?.nombre}`,
+      "usuario"
+    );
+
+    res.json({ message: "Estado actualizado correctamente" });
+  } catch (error) {
+    console.error("Error en PUT /usuarios/:id/estado:", error);
+    res.status(500).json({ message: "Error al actualizar estado" });
+  }
+});
+
+// ======================
+// LISTAR PRODUCTOS (con nombre de negocio del vendedor)
+// ======================
+app.get("/productos", async (req, res) => {
+  try {
+    const productosSnap = await db.collection("productos").get();
+    const vendedoresSnap = await db.collection("usuarios").where("rol", "==", "vendedor").get();
+
+    const mapaVendedores = {};
+    vendedoresSnap.docs.forEach((v) => {
+      mapaVendedores[v.id] = v.data().nombreNegocio || v.data().nombre || "Vendedor";
+    });
+
+    const lista = productosSnap.docs.map((p) => {
+      const data = p.data();
+      return {
+        id: p.id,
+        ...data,
+        vendedorNombre: mapaVendedores[data.vendedorId] || "Desconocido",
+      };
+    });
+
+    res.json(lista);
+  } catch (error) {
+    console.error("Error en GET /productos:", error);
+    res.status(500).json({ message: "Error al listar productos" });
+  }
+});
+
+// ======================
+// CREAR PRODUCTO
+// ======================
+app.post("/productos", async (req, res) => {
+  try {
+    const { nombre, precio, descripcion, categoria, stock, vendedorId } = req.body;
+
+    if (!nombre || !precio || !categoria || stock === undefined || !vendedorId) {
+      return res.status(400).json({ message: "Faltan datos obligatorios" });
+    }
+
+    const nuevoDoc = await db.collection("productos").add({
+      nombre,
+      precio: Number(precio),
+      descripcion: descripcion || "",
+      categoria,
+      stock: Number(stock),
+      vendedorId,
+      estado: "activo",
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    await registrarAuditoria("admin", `Subió el producto ${nombre}`, "producto");
+
+    res.json({ message: "Producto creado correctamente", id: nuevoDoc.id });
+  } catch (error) {
+    console.error("Error en POST /productos:", error);
+    res.status(500).json({ message: "Error al crear producto" });
+  }
+});
+
+// ======================
+// CAMBIAR ESTADO DE PRODUCTO (suspender/activar)
+// ======================
+app.put("/productos/:id/estado", async (req, res) => {
+  try {
+    const { estado } = req.body;
+    const estadosValidos = ["activo", "suspendido"];
+    if (!estadosValidos.includes(estado)) {
+      return res.status(400).json({ message: "Estado inválido" });
+    }
+    const docSnap = await db.collection("productos").doc(req.params.id).get();
+    const producto = docSnap.data();
+    await db.collection("productos").doc(req.params.id).update({ estado });
+
+    const accion = estado === "suspendido" ? "Suspendió" : "Activó";
+    await registrarAuditoria("admin", `${accion} el producto ${producto?.nombre}`, "producto");
+
+    res.json({ message: "Estado actualizado correctamente" });
+  } catch (error) {
+    console.error("Error en PUT /productos/:id/estado:", error);
+    res.status(500).json({ message: "Error al actualizar estado" });
+  }
+});
+
+// ======================
+// LISTAR CATEGORIAS
+// ======================
+app.get("/categorias", async (req, res) => {
+  try {
+    const snap = await db.collection("categorias").get();
+    const lista = snap.docs.map((c) => ({ id: c.id, ...c.data() }));
+    res.json(lista);
+  } catch (error) {
+    console.error("Error en GET /categorias:", error);
+    res.status(500).json({ message: "Error al listar categorías" });
+  }
+});
+
+// ======================
+// CREAR CATEGORIA
+// ======================
+app.post("/categorias", async (req, res) => {
+  try {
+    const { nombre, descripcion, emoji } = req.body;
+
+    if (!nombre || !descripcion) {
+      return res.status(400).json({ message: "Faltan datos obligatorios" });
+    }
+
+    const nuevoDoc = await db.collection("categorias").add({
+      nombre,
+      descripcion,
+      emoji: emoji || "📦",
+      estado: "Activa",
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    await registrarAuditoria("admin", `Creó categoría ${nombre}`, "categoria");
+
+    res.json({ message: "Categoría creada correctamente", id: nuevoDoc.id });
+  } catch (error) {
+    console.error("Error en POST /categorias:", error);
+    res.status(500).json({ message: "Error al crear categoría" });
+  }
+});
+
+// ======================
+// CAMBIAR ESTADO DE CATEGORIA
+// ======================
+app.put("/categorias/:id/estado", async (req, res) => {
+  try {
+    const { estado } = req.body;
+    const estadosValidos = ["Activa", "Inactiva"];
+    if (!estadosValidos.includes(estado)) {
+      return res.status(400).json({ message: "Estado inválido" });
+    }
+    const docSnap = await db.collection("categorias").doc(req.params.id).get();
+    const categoria = docSnap.data();
+    await db.collection("categorias").doc(req.params.id).update({ estado });
+
+    const accion = estado === "Inactiva" ? "Desactivó" : "Activó";
+    await registrarAuditoria("admin", `${accion} la categoría ${categoria?.nombre}`, "categoria");
+
+    res.json({ message: "Estado actualizado correctamente" });
+  } catch (error) {
+    console.error("Error en PUT /categorias/:id/estado:", error);
+    res.status(500).json({ message: "Error al actualizar estado" });
+  }
+});
+
+// ======================
+// ELIMINAR CATEGORIA
+// ======================
+app.delete("/categorias/:id", async (req, res) => {
+  try {
+    const docSnap = await db.collection("categorias").doc(req.params.id).get();
+    const categoria = docSnap.data();
+    await db.collection("categorias").doc(req.params.id).delete();
+
+    await registrarAuditoria("admin", `Eliminó la categoría ${categoria?.nombre}`, "categoria");
+
+    res.json({ message: "Categoría eliminada correctamente" });
+  } catch (error) {
+    console.error("Error en DELETE /categorias/:id:", error);
+    res.status(500).json({ message: "Error al eliminar categoría" });
+  }
+});
+
+// ======================
+// LISTAR PAGOS (con nombres de cliente y vendedor)
+// ======================
+app.get("/pagos", async (req, res) => {
+  try {
+    const pagosSnap = await db.collection("pagos").get();
+    const usuariosSnap = await db.collection("usuarios").get();
+
+    const mapaUsuarios = {};
+    usuariosSnap.docs.forEach((u) => {
+      mapaUsuarios[u.id] = u.data().nombreNegocio || u.data().nombre || "Desconocido";
+    });
+
+    const lista = pagosSnap.docs.map((p) => {
+      const data = p.data();
+      return {
+        id: p.id,
+        ...data,
+        clienteNombreResuelto: mapaUsuarios[data.usuarioId] || "Cliente desconocido",
+        vendedorNombreResuelto: mapaUsuarios[data.vendedorId] || "Vendedor desconocido",
+      };
+    });
+
+    res.json(lista);
+  } catch (error) {
+    console.error("Error en GET /pagos:", error);
+    res.status(500).json({ message: "Error al listar pagos" });
+  }
+});
+
+// ======================
+// CAMBIAR ESTADO DE PAGO (aprobar/rechazar/revertir)
+// ======================
+app.put("/pagos/:id/estado", async (req, res) => {
+  try {
+    const { estado } = req.body;
+    const estadosValidos = ["pendiente", "aprobado", "rechazado"];
+    if (!estadosValidos.includes(estado)) {
+      return res.status(400).json({ message: "Estado inválido" });
+    }
+    const docSnap = await db.collection("pagos").doc(req.params.id).get();
+    const pago = docSnap.data();
+    await db.collection("pagos").doc(req.params.id).update({ estado });
+
+    const acciones = {
+      aprobado: "Aprobó",
+      rechazado: "Rechazó",
+      pendiente: "Revirtió a pendiente",
+    };
+    await registrarAuditoria(
+      pago?.usuarioId || "admin",
+      `${acciones[estado]} el pago de ${pago?.producto} - $${pago?.monto}`,
+      "pago"
+    );
+
+    res.json({ message: "Estado actualizado correctamente" });
+  } catch (error) {
+    console.error("Error en PUT /pagos/:id/estado:", error);
+    res.status(500).json({ message: "Error al actualizar estado" });
+  }
+});
+
+// ======================
+// LISTAR HISTORIAL DE AUDITORIA
+// ======================
+app.get("/historial", async (req, res) => {
+  try {
+    const historialSnap = await db.collection("historial").orderBy("fecha", "desc").get();
+    const usuariosSnap = await db.collection("usuarios").get();
+
+    const mapaUsuarios = {};
+    usuariosSnap.docs.forEach((u) => {
+      mapaUsuarios[u.id] = {
+        nombre: u.data().nombreNegocio || u.data().nombre || "Usuario",
+        rol: u.data().rol || "cliente",
+      };
+    });
+
+    const lista = historialSnap.docs.map((h) => {
+      const data = h.data();
+      const usuarioInfo = mapaUsuarios[data.usuarioId] || { nombre: "Sistema", rol: "admin" };
+      return {
+        id: h.id,
+        accion: data.accion,
+        tipo: data.tipo,
+        fecha: data.fecha,
+        usuario: usuarioInfo.nombre,
+        rol: usuarioInfo.rol,
+      };
+    });
+
+    res.json(lista);
+  } catch (error) {
+    console.error("Error en GET /historial:", error);
+    res.status(500).json({ message: "Error al listar historial" });
+  }
 });
 
 // ======================
 // SERVER
 // ======================
 app.listen(3001, () => {
-  console.log("Servidor en http://localhost:3001");
+  console.log("Servidor en http://localhost:3001 (conectado a Firestore)");
 });

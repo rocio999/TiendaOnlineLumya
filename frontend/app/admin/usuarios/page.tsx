@@ -2,9 +2,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
-import { registrarAuditoria } from "@/lib/auditoria";
 
 interface Usuario {
   id: string;
@@ -44,6 +41,7 @@ export default function GestionUsuarios() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [cargando, setCargando] = useState(true);
   const [actualizandoId, setActualizandoId] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   const [filtro, setFiltro] = useState("Todos");
   const [busqueda, setBusqueda] = useState("");
@@ -51,17 +49,23 @@ export default function GestionUsuarios() {
   useEffect(() => {
     const cargarUsuarios = async () => {
       try {
-        const snap = await getDocs(collection(db, "usuarios"));
-        const lista: Usuario[] = snap.docs.map((d) => ({
+        const res = await fetch("http://localhost:3001/usuarios");
+        const data = await res.json();
+        if (!res.ok) {
+          setError("No se pudieron cargar los usuarios");
+          return;
+        }
+        const lista: Usuario[] = data.map((d: any) => ({
           id: d.id,
-          nombre: d.data().nombre || d.data().nombreNegocio || "Sin nombre",
-          correo: d.data().correo || "",
-          rol: d.data().rol || "cliente",
-          estado: d.data().estado || "activo",
+          nombre: d.nombre || d.nombreNegocio || "Sin nombre",
+          correo: d.correo || "",
+          rol: d.rol || "cliente",
+          estado: d.estado || "activo",
         }));
         setUsuarios(lista);
-      } catch (error) {
-        console.error("Error al cargar usuarios:", error);
+      } catch (err) {
+        console.error("Error al cargar usuarios:", err);
+        setError("No se pudo conectar con el servidor.");
       } finally {
         setCargando(false);
       }
@@ -73,15 +77,22 @@ export default function GestionUsuarios() {
     const nuevoEstado = estadoActual === "activo" ? "suspendido" : "activo";
     setActualizandoId(id);
     try {
-      await updateDoc(doc(db, "usuarios", id), { estado: nuevoEstado });
-      const usuario = usuarios.find((u) => u.id === id);
-      const accion = nuevoEstado === "suspendido" ? "Suspendió" : "Activó";
-      await registrarAuditoria(id, `${accion} al usuario ${usuario?.nombre}`, "usuario");
+      const res = await fetch(`http://localhost:3001/usuarios/${id}/estado`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+
+      if (!res.ok) {
+        console.error("Error al cambiar estado");
+        return;
+      }
+
       setUsuarios((prev) =>
         prev.map((u) => (u.id === id ? { ...u, estado: nuevoEstado } : u))
       );
-    } catch (error) {
-      console.error("Error al cambiar estado:", error);
+    } catch (err) {
+      console.error("Error al cambiar estado:", err);
     } finally {
       setActualizandoId(null);
     }
@@ -103,7 +114,6 @@ export default function GestionUsuarios() {
   return (
     <div className="min-h-screen bg-slate-50">
 
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -123,7 +133,12 @@ export default function GestionUsuarios() {
 
       <div className="max-w-6xl mx-auto px-4 py-8">
 
-        {/* Búsqueda */}
+        {error && (
+          <div className="bg-red-100 border border-red-300 text-red-700 p-3 rounded-xl mb-5 text-center font-semibold text-sm">
+            ⚠️ {error}
+          </div>
+        )}
+
         <div className="mb-6">
           <input
             type="text"
@@ -134,7 +149,6 @@ export default function GestionUsuarios() {
           />
         </div>
 
-        {/* Filtros */}
         <div className="flex gap-3 mb-6 flex-wrap">
           {["Todos", "Cliente", "Vendedor", "Activo", "Suspendido"].map((f) => (
             <button
@@ -151,7 +165,6 @@ export default function GestionUsuarios() {
           ))}
         </div>
 
-        {/* Stats rápidos */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-center">
             <p className="text-2xl font-bold text-blue-800">{usuarios.length}</p>
@@ -167,7 +180,6 @@ export default function GestionUsuarios() {
           </div>
         </div>
 
-        {/* Lista de usuarios */}
         {cargando ? (
           <div className="text-center py-16 text-slate-400">Cargando usuarios...</div>
         ) : usuariosFiltrados.length === 0 ? (
