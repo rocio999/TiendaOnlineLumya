@@ -34,6 +34,114 @@ app.get("/", (req, res) => {
 });
 
 // ======================
+// REGISTRO DE CLIENTE
+// ======================
+app.post("/registro-cliente", async (req, res) => {
+  try {
+    const { nombre, apellido, correo, password } = req.body;
+
+    if (!nombre || !correo || !password) {
+      return res.status(400).json({ message: "Faltan datos obligatorios" });
+    }
+
+    const existente = await db.collection("usuarios")
+      .where("correo", "==", correo)
+      .get();
+
+    if (!existente.empty) {
+      return res.status(409).json({ message: "Ese correo ya está registrado" });
+    }
+
+    const hash = bcrypt.hashSync(password, 10);
+
+    const nuevoDoc = await db.collection("usuarios").add({
+      nombre,
+      apellido: apellido || "",
+      correo,
+      password: hash,
+      rol: "cliente",
+      estado: "activo",
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    res.json({ message: "Usuario creado correctamente", id: nuevoDoc.id });
+  } catch (error) {
+    console.error("Error en /registro-cliente:", error);
+    res.status(500).json({ message: "Error al registrar cliente" });
+  }
+});
+
+// ======================
+// LOGIN GENERICO (clientes)
+// ======================
+app.post("/login", async (req, res) => {
+  try {
+    const { correo, password } = req.body;
+
+    if (!correo || !password) {
+      return res.status(400).json({ message: "Faltan datos" });
+    }
+
+    const resultado = await db.collection("usuarios")
+      .where("correo", "==", correo)
+      .get();
+
+    if (resultado.empty) {
+      return res.status(404).json({ message: "Correo o contraseña incorrectos" });
+    }
+
+    const doc = resultado.docs[0];
+    const usuario = doc.data();
+
+    const passwordValida = bcrypt.compareSync(password, usuario.password);
+    if (!passwordValida) {
+      return res.status(401).json({ message: "Correo o contraseña incorrectos" });
+    }
+
+    if (usuario.estado === "suspendido") {
+      return res.status(403).json({ message: "Tu cuenta está suspendida" });
+    }
+
+    const token = jwt.sign(
+      { id: doc.id, correo: usuario.correo, rol: usuario.rol },
+      JWT_SECRET,
+      { expiresIn: "8h" }
+    );
+
+    res.json({
+      message: "Login exitoso 🔐",
+      token,
+      usuario: {
+        id: doc.id,
+        nombre: usuario.nombre,
+        apellido: usuario.apellido || "",
+        correo: usuario.correo,
+        rol: usuario.rol,
+      },
+    });
+  } catch (error) {
+    console.error("Error en /login:", error);
+    res.status(500).json({ message: "Error al iniciar sesión" });
+  }
+});
+
+// ======================
+// OBTENER PERFIL DE CLIENTE
+// ======================
+app.get("/clientes/:id", async (req, res) => {
+  try {
+    const docSnap = await db.collection("usuarios").doc(req.params.id).get();
+    if (!docSnap.exists) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+    res.json({ id: docSnap.id, ...docSnap.data() });
+  } catch (error) {
+    console.error("Error en GET /clientes/:id:", error);
+    res.status(500).json({ message: "Error al obtener cliente" });
+  }
+});
+
+// ======================
 // REGISTRO DE VENDEDOR
 // ======================
 app.post("/registro-vendedor", async (req, res) => {
@@ -280,14 +388,16 @@ app.get("/productos", async (req, res) => {
       mapaVendedores[v.id] = v.data().nombreNegocio || v.data().nombre || "Vendedor";
     });
 
-    const lista = productosSnap.docs.map((p) => {
-      const data = p.data();
-      return {
-        id: p.id,
-        ...data,
-        vendedorNombre: mapaVendedores[data.vendedorId] || "Desconocido",
-      };
-    });
+    const lista = productosSnap.docs
+      .filter((p) => p.data().estado !== "suspendido")
+      .map((p) => {
+        const data = p.data();
+        return {
+          id: p.id,
+          ...data,
+          vendedorNombre: mapaVendedores[data.vendedorId] || "Desconocido",
+        };
+      });
 
     res.json(lista);
   } catch (error) {
@@ -462,6 +572,37 @@ app.get("/pagos", async (req, res) => {
   } catch (error) {
     console.error("Error en GET /pagos:", error);
     res.status(500).json({ message: "Error al listar pagos" });
+  }
+});
+
+// ======================
+// CREAR PAGO (desde el checkout del cliente)
+// ======================
+app.post("/pagos", async (req, res) => {
+  try {
+    const { usuarioId, vendedorId, producto, monto, metodo } = req.body;
+
+    if (!usuarioId || !producto || !monto) {
+      return res.status(400).json({ message: "Faltan datos obligatorios" });
+    }
+
+    const nuevoDoc = await db.collection("pagos").add({
+      usuarioId,
+      vendedorId: vendedorId || "",
+      producto,
+      monto: Number(monto),
+      metodo: metodo || "efectivo",
+      comprobante: "sin_comprobante.jpg",
+      estado: "pendiente",
+      fecha: FieldValue.serverTimestamp(),
+    });
+
+    await registrarAuditoria(usuarioId, `Realizó una compra: ${producto} - $${monto}`, "pago");
+
+    res.json({ message: "Pedido registrado correctamente", id: nuevoDoc.id });
+  } catch (error) {
+    console.error("Error en POST /pagos:", error);
+    res.status(500).json({ message: "Error al crear pago" });
   }
 });
 
