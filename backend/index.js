@@ -1,6 +1,5 @@
 const express = require("express");
 const cors = require("cors");
-
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { db, FieldValue } = require("./firebase");
@@ -8,7 +7,6 @@ const { db, FieldValue } = require("./firebase");
 const app = express();
 app.use(cors());
 app.use(express.json());
-
 
 const JWT_SECRET = "secreto123";
 const ADMIN_KEY = "lumya-admin-2026";
@@ -36,10 +34,10 @@ async function registrarAuditoria(usuarioId, accion, tipo) {
 
 app.get("/", (req, res) => {
   res.send("Backend funcionando 🚀 (Firestore)");
-
 });
 
 
+// ======================
 // REGISTRO DE ADMIN (protegido con clave)
 
 app.post("/registro-admin", verificarAdmin, async (req, res) => {
