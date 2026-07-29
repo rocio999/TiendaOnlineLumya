@@ -10,9 +10,14 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [mostrarPassword, setMostrarPassword] = useState(false);
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const router = useRouter();
 
   const handleLogin = async () => {
+    if (!aceptaTerminos) {
+  setMensaje("Debes aceptar los términos y condiciones para ingresar.");
+  return;
+}
     try {
       const res = await fetch("http://localhost:3001/login", {
         method: "POST",
@@ -136,11 +141,6 @@ export default function Login() {
 
             <div className="options">
 
-              <label>
-                <input type="checkbox"/>
-                Remember me
-              </label>
-
 
               <div>
                 <Link href="/recuperar-correo">
@@ -153,6 +153,21 @@ export default function Login() {
               </div>
 
             </div>
+            <div className="terms-login">
+  <label>
+    <input
+      type="checkbox"
+      checked={aceptaTerminos}
+      onChange={(e) => setAceptaTerminos(e.target.checked)}
+    />
+
+    Acepto los{" "}
+    <Link href="/terminos" target="_blank">
+      términos y condiciones
+    </Link>
+    {" "}y la política de privacidad.
+  </label>
+</div>
 
 
 
