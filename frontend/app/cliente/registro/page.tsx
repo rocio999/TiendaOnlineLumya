@@ -11,7 +11,7 @@ export default function Registro() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [loading, setLoading] = useState(false);
-
+const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -20,6 +20,12 @@ export default function Registro() {
   const handleRegistro = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+
+    if (!aceptaTerminos) {
+  setMensaje("Debes aceptar los términos y condiciones para registrarte.");
+  setLoading(false);
+  return;
+}
 
     if (!nombre.trim() || !apellido.trim() || !correo.trim() || !password.trim()) {
       setMensaje("Todos los campos son obligatorios");
@@ -140,6 +146,25 @@ export default function Registro() {
               </button>
             </div>
 
+            <div className="terms-container">
+               <label>
+  <input
+    type="checkbox"
+    checked={aceptaTerminos}
+    onChange={(e) => setAceptaTerminos(e.target.checked)}
+  />
+
+  Acepto los{" "}y autorizo el tratamiento de mis datos personales.
+  <a 
+    href="/terminos" 
+    target="_blank"
+    className="text-blue-600 underline"
+  >
+    términos y condiciones
+  </a>{" "}
+  
+</label>
+              </div>
             <button type="submit" className="submit-btn" disabled={loading}>
               {loading ? "CREANDO..." : "Registrarse"}
             </button>
