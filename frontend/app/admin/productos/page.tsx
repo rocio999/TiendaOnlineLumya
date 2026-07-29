@@ -91,7 +91,7 @@ export default function GestionProductos() {
     try {
       const res = await fetch(`http://localhost:3001/productos/${id}/estado`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
         body: JSON.stringify({ estado: nuevoEstado }),
       });
       if (!res.ok) return;
@@ -110,7 +110,7 @@ export default function GestionProductos() {
     try {
       const res = await fetch(`http://localhost:3001/categorias/${id}/estado`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
         body: JSON.stringify({ estado: nuevoEstado }),
       });
       if (!res.ok) return;
@@ -128,7 +128,7 @@ export default function GestionProductos() {
     try {
       const res = await fetch("http://localhost:3001/categorias", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
         body: JSON.stringify(nuevaCategoria),
       });
       const data = await res.json();
@@ -159,6 +159,7 @@ export default function GestionProductos() {
     try {
       const res = await fetch(`http://localhost:3001/categorias/${id}`, {
         method: "DELETE",
+        headers: { "x-admin-key": "lumya-admin-2026" },
       });
       if (!res.ok) return;
       setCategorias(categorias.filter((c) => c.id !== id));

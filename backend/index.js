@@ -9,10 +9,16 @@ app.use(cors());
 app.use(express.json());
 
 const JWT_SECRET = "secreto123";
+const ADMIN_KEY = "lumya-admin-2026";
 
-// ======================
-// FUNCION AUXILIAR: REGISTRAR AUDITORIA
-// ======================
+function verificarAdmin(req, res, next) {
+  const key = req.headers["x-admin-key"];
+  if (key !== ADMIN_KEY) {
+    return res.status(403).json({ message: "No autorizado" });
+  }
+  next();
+}
+
 async function registrarAuditoria(usuarioId, accion, tipo) {
   try {
     await db.collection("historial").add({
@@ -26,16 +32,10 @@ async function registrarAuditoria(usuarioId, accion, tipo) {
   }
 }
 
-// ======================
-// PRUEBA
-// ======================
 app.get("/", (req, res) => {
   res.send("Backend funcionando 🚀 (Firestore)");
 });
 
-// ======================
-// REGISTRO DE CLIENTE
-// ======================
 app.post("/registro-cliente", async (req, res) => {
   try {
     const { nombre, apellido, correo, password } = req.body;
@@ -71,9 +71,6 @@ app.post("/registro-cliente", async (req, res) => {
   }
 });
 
-// ======================
-// LOGIN GENERICO (clientes)
-// ======================
 app.post("/login", async (req, res) => {
   try {
     const { correo, password } = req.body;
@@ -125,9 +122,6 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ======================
-// OBTENER PERFIL DE CLIENTE
-// ======================
 app.get("/clientes/:id", async (req, res) => {
   try {
     const docSnap = await db.collection("usuarios").doc(req.params.id).get();
@@ -141,9 +135,6 @@ app.get("/clientes/:id", async (req, res) => {
   }
 });
 
-// ======================
-// REGISTRO DE VENDEDOR
-// ======================
 app.post("/registro-vendedor", async (req, res) => {
   try {
     const {
@@ -187,9 +178,6 @@ app.post("/registro-vendedor", async (req, res) => {
   }
 });
 
-// ======================
-// LOGIN DE VENDEDOR
-// ======================
 app.post("/login-vendedor", async (req, res) => {
   try {
     const { correo, password } = req.body;
@@ -250,9 +238,6 @@ app.post("/login-vendedor", async (req, res) => {
   }
 });
 
-// ======================
-// LISTAR VENDEDORES
-// ======================
 app.get("/vendedores", async (req, res) => {
   try {
     const snap = await db.collection("usuarios").where("rol", "==", "vendedor").get();
@@ -264,9 +249,6 @@ app.get("/vendedores", async (req, res) => {
   }
 });
 
-// ======================
-// OBTENER UN VENDEDOR
-// ======================
 app.get("/vendedores/:id", async (req, res) => {
   try {
     const docSnap = await db.collection("usuarios").doc(req.params.id).get();
@@ -280,10 +262,7 @@ app.get("/vendedores/:id", async (req, res) => {
   }
 });
 
-// ======================
-// CAMBIAR ESTADO DE VENDEDOR (aprobar/rechazar/suspender/reactivar)
-// ======================
-app.put("/vendedores/:id/estado", async (req, res) => {
+app.put("/vendedores/:id/estado", verificarAdmin, async (req, res) => {
   try {
     const { estado } = req.body;
     const estadosValidos = ["activo", "rechazado", "suspendido", "pendiente"];
@@ -313,10 +292,7 @@ app.put("/vendedores/:id/estado", async (req, res) => {
   }
 });
 
-// ======================
-// EDITAR DATOS DE VENDEDOR
-// ======================
-app.put("/vendedores/:id", async (req, res) => {
+app.put("/vendedores/:id", verificarAdmin, async (req, res) => {
   try {
     const datos = { ...req.body };
     delete datos.password;
@@ -333,9 +309,6 @@ app.put("/vendedores/:id", async (req, res) => {
   }
 });
 
-// ======================
-// LISTAR TODOS LOS USUARIOS (clientes, vendedores, admin)
-// ======================
 app.get("/usuarios", async (req, res) => {
   try {
     const snap = await db.collection("usuarios").get();
@@ -347,10 +320,7 @@ app.get("/usuarios", async (req, res) => {
   }
 });
 
-// ======================
-// SUSPENDER / ACTIVAR USUARIO
-// ======================
-app.put("/usuarios/:id/estado", async (req, res) => {
+app.put("/usuarios/:id/estado", verificarAdmin, async (req, res) => {
   try {
     const { estado } = req.body;
     const estadosValidos = ["activo", "suspendido"];
@@ -375,9 +345,6 @@ app.put("/usuarios/:id/estado", async (req, res) => {
   }
 });
 
-// ======================
-// LISTAR PRODUCTOS (con nombre de negocio del vendedor)
-// ======================
 app.get("/productos", async (req, res) => {
   try {
     const productosSnap = await db.collection("productos").get();
@@ -406,9 +373,6 @@ app.get("/productos", async (req, res) => {
   }
 });
 
-// ======================
-// CREAR PRODUCTO
-// ======================
 app.post("/productos", async (req, res) => {
   try {
     const { nombre, precio, descripcion, categoria, stock, vendedorId } = req.body;
@@ -428,7 +392,7 @@ app.post("/productos", async (req, res) => {
       createdAt: FieldValue.serverTimestamp(),
     });
 
-    await registrarAuditoria("admin", `Subió el producto ${nombre}`, "producto");
+    await registrarAuditoria(vendedorId, `Subió el producto ${nombre}`, "producto");
 
     res.json({ message: "Producto creado correctamente", id: nuevoDoc.id });
   } catch (error) {
@@ -437,10 +401,7 @@ app.post("/productos", async (req, res) => {
   }
 });
 
-// ======================
-// CAMBIAR ESTADO DE PRODUCTO (suspender/activar)
-// ======================
-app.put("/productos/:id/estado", async (req, res) => {
+app.put("/productos/:id/estado", verificarAdmin, async (req, res) => {
   try {
     const { estado } = req.body;
     const estadosValidos = ["activo", "suspendido"];
@@ -461,9 +422,6 @@ app.put("/productos/:id/estado", async (req, res) => {
   }
 });
 
-// ======================
-// LISTAR CATEGORIAS
-// ======================
 app.get("/categorias", async (req, res) => {
   try {
     const snap = await db.collection("categorias").get();
@@ -475,10 +433,7 @@ app.get("/categorias", async (req, res) => {
   }
 });
 
-// ======================
-// CREAR CATEGORIA
-// ======================
-app.post("/categorias", async (req, res) => {
+app.post("/categorias", verificarAdmin, async (req, res) => {
   try {
     const { nombre, descripcion, emoji } = req.body;
 
@@ -503,10 +458,7 @@ app.post("/categorias", async (req, res) => {
   }
 });
 
-// ======================
-// CAMBIAR ESTADO DE CATEGORIA
-// ======================
-app.put("/categorias/:id/estado", async (req, res) => {
+app.put("/categorias/:id/estado", verificarAdmin, async (req, res) => {
   try {
     const { estado } = req.body;
     const estadosValidos = ["Activa", "Inactiva"];
@@ -527,10 +479,7 @@ app.put("/categorias/:id/estado", async (req, res) => {
   }
 });
 
-// ======================
-// ELIMINAR CATEGORIA
-// ======================
-app.delete("/categorias/:id", async (req, res) => {
+app.delete("/categorias/:id", verificarAdmin, async (req, res) => {
   try {
     const docSnap = await db.collection("categorias").doc(req.params.id).get();
     const categoria = docSnap.data();
@@ -545,9 +494,6 @@ app.delete("/categorias/:id", async (req, res) => {
   }
 });
 
-// ======================
-// LISTAR PAGOS (con nombres de cliente y vendedor)
-// ======================
 app.get("/pagos", async (req, res) => {
   try {
     const pagosSnap = await db.collection("pagos").get();
@@ -575,9 +521,6 @@ app.get("/pagos", async (req, res) => {
   }
 });
 
-// ======================
-// CREAR PAGO (desde el checkout del cliente)
-// ======================
 app.post("/pagos", async (req, res) => {
   try {
     const { usuarioId, vendedorId, producto, monto, metodo } = req.body;
@@ -606,10 +549,7 @@ app.post("/pagos", async (req, res) => {
   }
 });
 
-// ======================
-// CAMBIAR ESTADO DE PAGO (aprobar/rechazar/revertir)
-// ======================
-app.put("/pagos/:id/estado", async (req, res) => {
+app.put("/pagos/:id/estado", verificarAdmin, async (req, res) => {
   try {
     const { estado } = req.body;
     const estadosValidos = ["pendiente", "aprobado", "rechazado"];
@@ -638,9 +578,6 @@ app.put("/pagos/:id/estado", async (req, res) => {
   }
 });
 
-// ======================
-// LISTAR HISTORIAL DE AUDITORIA
-// ======================
 app.get("/historial", async (req, res) => {
   try {
     const historialSnap = await db.collection("historial").orderBy("fecha", "desc").get();
@@ -674,9 +611,6 @@ app.get("/historial", async (req, res) => {
   }
 });
 
-// ======================
-// SERVER
-// ======================
 app.listen(3001, () => {
   console.log("Servidor en http://localhost:3001 (conectado a Firestore)");
 });

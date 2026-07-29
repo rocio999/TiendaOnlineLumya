@@ -72,7 +72,7 @@ export default function EditarVendedor() {
     try {
       const res = await fetch(`http://localhost:3001/vendedores/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
         body: JSON.stringify(vendedor),
       });
 

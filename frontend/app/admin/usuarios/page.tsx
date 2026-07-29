@@ -79,7 +79,7 @@ export default function GestionUsuarios() {
     try {
       const res = await fetch(`http://localhost:3001/usuarios/${id}/estado`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
         body: JSON.stringify({ estado: nuevoEstado }),
       });
 

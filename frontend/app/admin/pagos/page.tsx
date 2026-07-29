@@ -47,7 +47,7 @@ export default function AprobarPagos() {
     try {
       const res = await fetch(`http://localhost:3001/pagos/${id}/estado`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
         body: JSON.stringify({ estado: nuevoEstado }),
       });
 
