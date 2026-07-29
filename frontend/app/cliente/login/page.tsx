@@ -38,7 +38,7 @@ export default function Login() {
 
       setMensaje("Login exitoso 🚀");
       
-      router.push("/cliente/tiendas/id");
+      router.push("/cliente");
     } catch (error) {
       setMensaje("Error de conexión con el servidor");
     }

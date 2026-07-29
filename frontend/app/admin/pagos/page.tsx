@@ -2,20 +2,16 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
-import { registrarAuditoria } from "@/lib/auditoria";
 
 interface Pago {
   id: string;
-  cliente: string;
-  vendedor: string;
+  clienteNombreResuelto: string;
+  vendedorNombreResuelto: string;
   producto: string;
   monto: number;
-  fecha: string;
+  fecha: any;
   comprobante: string;
   estado: string;
-  usuarioId: string;
 }
 
 export default function AprobarPagos() {
@@ -23,40 +19,21 @@ export default function AprobarPagos() {
   const [cargando, setCargando] = useState(true);
   const [actualizandoId, setActualizandoId] = useState<string | null>(null);
   const [filtro, setFiltro] = useState("Todos");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const cargarPagos = async () => {
       try {
-        const pagosSnap = await getDocs(collection(db, "pagos"));
-
-        const usuariosSnap = await getDocs(collection(db, "usuarios"));
-        const mapaUsuarios: Record<string, string> = {};
-        usuariosSnap.docs.forEach((u) => {
-          mapaUsuarios[u.id] = u.data().nombreNegocio || u.data().nombre || "Desconocido";
-        });
-
-        const lista: Pago[] = pagosSnap.docs.map((p) => {
-          const data = p.data();
-          const fechaTexto = data.fecha?.toDate
-            ? data.fecha.toDate().toLocaleDateString("es-EC")
-            : (data.fecha || "Sin fecha");
-
-          return {
-            id: p.id,
-            cliente: mapaUsuarios[data.usuarioId] || data.clienteNombre || "Cliente desconocido",
-            vendedor: mapaUsuarios[data.vendedorId] || data.vendedorNombre || "Vendedor desconocido",
-            producto: data.producto || data.productoNombre || "Producto",
-            monto: data.monto || 0,
-            fecha: fechaTexto,
-            comprobante: data.comprobante || "sin_comprobante.jpg",
-            estado: data.estado || "pendiente",
-            usuarioId: data.usuarioId || "",
-          };
-        });
-
-        setPagos(lista);
-      } catch (error) {
-        console.error("Error al cargar pagos:", error);
+        const res = await fetch("http://localhost:3001/pagos");
+        const data = await res.json();
+        if (!res.ok) {
+          setError("No se pudieron cargar los pagos");
+          return;
+        }
+        setPagos(data);
+      } catch (err) {
+        console.error("Error al cargar pagos:", err);
+        setError("No se pudo conectar con el servidor.");
       } finally {
         setCargando(false);
       }
@@ -68,22 +45,22 @@ export default function AprobarPagos() {
   const cambiarEstado = async (id: string, nuevoEstado: string) => {
     setActualizandoId(id);
     try {
-      await updateDoc(doc(db, "pagos", id), { estado: nuevoEstado });
-      const pago = pagos.find((p) => p.id === id);
-      const accion =
-        nuevoEstado === "aprobado" ? "Aprobó" :
-        nuevoEstado === "rechazado" ? "Rechazó" :
-        "Revirtió a pendiente";
-      await registrarAuditoria(
-        pago?.usuarioId || "admin",
-        `${accion} el pago de ${pago?.producto} - $${pago?.monto} (${pago?.cliente})`,
-        "pago"
-      );
+      const res = await fetch(`http://localhost:3001/pagos/${id}/estado`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+
+      if (!res.ok) {
+        console.error("Error al cambiar estado");
+        return;
+      }
+
       setPagos((prev) =>
         prev.map((p) => (p.id === id ? { ...p, estado: nuevoEstado } : p))
       );
-    } catch (error) {
-      console.error("Error al cambiar estado del pago:", error);
+    } catch (err) {
+      console.error("Error al cambiar estado:", err);
     } finally {
       setActualizandoId(null);
     }
@@ -108,10 +85,18 @@ export default function AprobarPagos() {
     rechazado: "Rechazado",
   };
 
+  const formatearFecha = (fecha: any) => {
+    if (!fecha) return "Sin fecha";
+    if (typeof fecha === "string") return fecha;
+    if (fecha._seconds) {
+      return new Date(fecha._seconds * 1000).toLocaleDateString("es-EC");
+    }
+    return "Sin fecha";
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
 
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -131,7 +116,12 @@ export default function AprobarPagos() {
 
       <div className="max-w-6xl mx-auto px-4 py-8">
 
-        {/* Stats */}
+        {error && (
+          <div className="bg-red-100 border border-red-300 text-red-700 p-3 rounded-xl mb-5 text-center font-semibold text-sm">
+            ⚠️ {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-center">
             <p className="text-2xl font-bold text-yellow-500">{pagos.filter(p => p.estado === "pendiente").length}</p>
@@ -149,7 +139,6 @@ export default function AprobarPagos() {
           </div>
         </div>
 
-        {/* Filtros */}
         <div className="flex gap-3 mb-6 flex-wrap">
           {["Todos", "Pendiente", "Aprobado", "Rechazado"].map((f) => (
             <button
@@ -166,7 +155,6 @@ export default function AprobarPagos() {
           ))}
         </div>
 
-        {/* Lista pagos */}
         {cargando ? (
           <div className="text-center py-16 text-slate-400">Cargando pagos...</div>
         ) : pagosFiltrados.length === 0 ? (
@@ -181,9 +169,9 @@ export default function AprobarPagos() {
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <p className="font-bold text-slate-800 text-lg">{pago.producto}</p>
-                    <p className="text-slate-400 text-sm">Cliente: {pago.cliente}</p>
-                    <p className="text-slate-400 text-sm">Vendedor: {pago.vendedor}</p>
-                    <p className="text-slate-400 text-sm">Fecha: {pago.fecha}</p>
+                    <p className="text-slate-400 text-sm">Cliente: {pago.clienteNombreResuelto}</p>
+                    <p className="text-slate-400 text-sm">Vendedor: {pago.vendedorNombreResuelto}</p>
+                    <p className="text-slate-400 text-sm">Fecha: {formatearFecha(pago.fecha)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-blue-900">${pago.monto}</p>

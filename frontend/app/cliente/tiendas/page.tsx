@@ -1,71 +1,83 @@
 "use client";
-
 import "./tiendas.css";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+interface Tienda {
+  id: string;
+  nombreNegocio: string;
+  descripcion: string;
+}
 
 export default function Tiendas() {
   const router = useRouter();
+  const [tiendas, setTiendas] = useState<Tienda[]>([]);
+  const [cargando, setCargando] = useState(true);
 
-  const tiendas = [
-    {
-      id: 1,
-      nombre: "Lumya Fashion",
-      descripcion: "Accesorios para dama",
-      logo: "/logo.png",
-      portada: "/portada1.jpg",
-    },
-    {
-      id: 2,
-      nombre: "Mundo Gamer",
-      descripcion: "Todo para gamers",
-      logo: "/logo.png",
-      portada: "/portada2.jpg",
-    },
-    {
-      id: 3,
-      nombre: "Artesanías Ecuador",
-      descripcion: "Productos hechos a mano",
-      logo: "/logo.png",
-      portada: "/portada3.jpg",
-    },
-  ];
+  useEffect(() => {
+    const cargarTiendas = async () => {
+      try {
+        const res = await fetch("http://localhost:3001/vendedores");
+        const data = await res.json();
+        const activos = data
+          .filter((v: any) => v.estado === "activo")
+          .map((v: any) => ({
+            id: v.id,
+            nombreNegocio: v.nombreNegocio || v.nombre,
+            descripcion: v.descripcion || "Tienda en Lumya",
+          }));
+        setTiendas(activos);
+      } catch (error) {
+        console.error("Error al cargar tiendas:", error);
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargarTiendas();
+  }, []);
 
   return (
-    <div className="tiendas-page contenedor">      <h1 className="titulo">Tiendas Disponibles</h1>
+    <div className="tiendas-page contenedor">
+      <h1 className="titulo">Tiendas Disponibles</h1>
 
-      <div className="gridTiendas">
-        {tiendas.map((tienda) => (
-          <div
-            key={tienda.id}
-            className="card"
-            onClick={() => router.push(`/cliente/tiendas/${tienda.id}`)}
-          >
-            <img
-              src={tienda.portada}
-              alt="Portada"
-              className="portada"
-            />
-
-            <div className="contenido">
-
-              <img
-                src={tienda.logo}
-                alt="Logo"
-                className="logo"
-              />
-
-              <h2>{tienda.nombre}</h2>
-
-              <p>{tienda.descripcion}</p>
-
-              <button className="boton">
-                Entrar a la tienda
-              </button>
-
+      {cargando ? (
+        <p style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>
+          Cargando tiendas...
+        </p>
+      ) : tiendas.length === 0 ? (
+        <p style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>
+          Aún no hay tiendas disponibles.
+        </p>
+      ) : (
+        <div className="gridTiendas">
+          {tiendas.map((tienda) => (
+            <div
+              key={tienda.id}
+              className="card"
+              onClick={() => router.push(`/cliente/tiendas/${tienda.id}`)}
+            >
+              <div
+                className="portada"
+                style={{
+                  background: "linear-gradient(135deg, #2563eb, #06b6d4)",
+                  height: "140px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "48px",
+                }}
+              >
+                🏪
+              </div>
+              <div className="contenido">
+                <h2>{tienda.nombreNegocio}</h2>
+                <p>{tienda.descripcion}</p>
+                <button className="boton">Entrar a la tienda</button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
