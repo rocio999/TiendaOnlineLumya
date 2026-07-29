@@ -36,6 +36,94 @@ app.get("/", (req, res) => {
   res.send("Backend funcionando 🚀 (Firestore)");
 });
 
+
+// ======================
+// REGISTRO DE ADMIN (protegido con clave)
+// ======================
+app.post("/registro-admin", verificarAdmin, async (req, res) => {
+  try {
+    const { nombre, apellido, correo, password } = req.body;
+
+    if (!nombre || !correo || !password) {
+      return res.status(400).json({ message: "Faltan datos obligatorios" });
+    }
+
+    const existente = await db.collection("usuarios")
+      .where("correo", "==", correo)
+      .get();
+
+    if (!existente.empty) {
+      return res.status(409).json({ message: "Ese correo ya está registrado" });
+    }
+
+    const hash = bcrypt.hashSync(password, 10);
+
+    const nuevoDoc = await db.collection("usuarios").add({
+      nombre,
+      apellido: apellido || "",
+      correo,
+      password: hash,
+      rol: "admin",
+      estado: "activo",
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    res.json({ message: "Administrador creado correctamente", id: nuevoDoc.id });
+  } catch (error) {
+    console.error("Error en /registro-admin:", error);
+    res.status(500).json({ message: "Error al registrar administrador" });
+  }
+});
+
+// ======================
+// LOGIN DE ADMIN
+// ======================
+app.post("/login-admin", async (req, res) => {
+  try {
+    const { correo, password } = req.body;
+
+    if (!correo || !password) {
+      return res.status(400).json({ message: "Faltan datos" });
+    }
+
+    const resultado = await db.collection("usuarios")
+      .where("correo", "==", correo)
+      .where("rol", "==", "admin")
+      .get();
+
+    if (resultado.empty) {
+      return res.status(404).json({ message: "Correo o contraseña incorrectos" });
+    }
+
+    const doc = resultado.docs[0];
+    const admin = doc.data();
+
+    const passwordValida = bcrypt.compareSync(password, admin.password);
+    if (!passwordValida) {
+      return res.status(401).json({ message: "Correo o contraseña incorrectos" });
+    }
+
+    const token = jwt.sign(
+      { id: doc.id, correo: admin.correo, rol: admin.rol },
+      JWT_SECRET,
+      { expiresIn: "8h" }
+    );
+
+    res.json({
+      message: "Login exitoso 🔐",
+      token,
+      admin: {
+        id: doc.id,
+        nombre: admin.nombre,
+        correo: admin.correo,
+      },
+    });
+  } catch (error) {
+    console.error("Error en /login-admin:", error);
+    res.status(500).json({ message: "Error al iniciar sesión" });
+  }
+});
+
 app.post("/registro-cliente", async (req, res) => {
   try {
     const { nombre, apellido, correo, password } = req.body;

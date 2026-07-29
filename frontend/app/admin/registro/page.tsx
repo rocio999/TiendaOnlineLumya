@@ -30,9 +30,9 @@ export default function Registro() {
     }
     setCargando(true);
     try {
-      const res = await fetch("http://localhost:3001/registro-cliente", {
+      const res = await fetch("http://localhost:3001/registro-admin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
         body: JSON.stringify({ nombre, apellido, correo, password }),
       });
       const data = await res.json();
@@ -43,7 +43,7 @@ export default function Registro() {
       }
       setMensaje("Usuario creado 🚀. Redirigiendo a login...");
       setTimeout(() => {
-        router.push("/login");
+        router.push("/admin/login");
       }, 1500);
     } catch (error) {
       setMensaje("Error de conexión con el servidor");

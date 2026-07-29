@@ -14,7 +14,7 @@ export default function Login() {
     setMensaje("");
     setCargando(true);
     try {
-      const res = await fetch("http://localhost:3001/login", {
+      const res = await fetch("http://localhost:3001/login-admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo, password }),
@@ -26,9 +26,9 @@ export default function Login() {
         return;
       }
       localStorage.setItem("token", data.token);
-      localStorage.setItem("clienteId", data.usuario.id);
-      localStorage.setItem("clienteNombre", data.usuario.nombre);
-      window.location.href = "/cliente";
+      localStorage.setItem("adminId", data.admin.id);
+      localStorage.setItem("adminNombre", data.admin.nombre);
+      window.location.href = "/admin";
     } catch (error) {
       setMensaje("Error de conexión con el servidor");
       setCargando(false);
