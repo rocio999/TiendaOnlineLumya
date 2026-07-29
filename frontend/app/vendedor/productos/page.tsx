@@ -2,8 +2,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
 
 interface Producto {
   id: string;
@@ -11,11 +9,14 @@ interface Producto {
   precio: number;
   stock: number;
   categoria: string;
+  vendedorId: string;
+  estado: string;
 }
 
 export default function MisProductos() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const cargarProductos = async () => {
@@ -26,18 +27,20 @@ export default function MisProductos() {
       }
 
       try {
-        const q = query(collection(db, "productos"), where("vendedorId", "==", vendedorId));
-        const resultado = await getDocs(q);
-        const lista: Producto[] = resultado.docs.map((doc) => ({
-          id: doc.id,
-          nombre: doc.data().nombre,
-          precio: doc.data().precio,
-          stock: doc.data().stock,
-          categoria: doc.data().categoria,
-        }));
-        setProductos(lista);
-      } catch (error) {
-        console.error("Error al cargar productos:", error);
+        const res = await fetch("http://localhost:3001/productos");
+        const data = await res.json();
+
+        if (!res.ok) {
+          setError("No se pudieron cargar los productos");
+          setCargando(false);
+          return;
+        }
+
+        const misProductos = data.filter((p: Producto) => p.vendedorId === vendedorId);
+        setProductos(misProductos);
+      } catch (err) {
+        console.error("Error al cargar productos:", err);
+        setError("No se pudo conectar con el servidor. Verifica que el backend esté corriendo.");
       } finally {
         setCargando(false);
       }
@@ -68,6 +71,12 @@ export default function MisProductos() {
           </Link>
         </div>
 
+        {error && (
+          <div className="bg-red-100 border border-red-300 text-red-700 p-3 rounded-xl mb-5 text-center font-semibold text-sm">
+            ⚠️ {error}
+          </div>
+        )}
+
         {cargando ? (
           <div className="text-center py-20 text-slate-400">Cargando productos...</div>
         ) : productos.length > 0 ? (
@@ -85,6 +94,11 @@ export default function MisProductos() {
                     <span className="text-xs font-bold text-blue-900">${producto.precio}</span>
                   </div>
                 </div>
+                <span className={`text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap ${
+                  producto.estado === "activo" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
+                }`}>
+                  {producto.estado === "activo" ? "Activo" : "Suspendido"}
+                </span>
               </div>
             ))}
           </div>

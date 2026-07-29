@@ -36,7 +36,7 @@ export default function Registro() {
     const datos = { nombre, apellido, correo, password };
 
     try {
-      const res = await fetch("http://localhost:3001/registro", {
+      const res = await fetch("http://localhost:3001/registro-cliente", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(datos),

@@ -3,8 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
 
 export default function LoginVendedor() {
   const router = useRouter();
@@ -19,62 +17,28 @@ export default function LoginVendedor() {
     setCargando(true);
 
     try {
-      const q = query(
-        collection(db, "usuarios"),
-        where("correo", "==", correo),
-        where("rol", "==", "vendedor")
-      );
-      const resultado = await getDocs(q);
+      const res = await fetch("http://localhost:3001/login-vendedor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ correo, password }),
+      });
 
-      if (resultado.empty) {
-        setMensaje("Correo o contraseña incorrectos");
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMensaje(data.message || "Correo o contraseña incorrectos");
         setCargando(false);
         return;
       }
 
-      const vendedorDoc = resultado.docs[0];
-      const vendedor = vendedorDoc.data();
-
-      // NOTA: comparación directa de texto plano por ahora.
-      // Se debe reemplazar por verificación con hash (bcrypt) desde el backend.
-      if (vendedor.password !== password) {
-        setMensaje("Correo o contraseña incorrectos");
-        setCargando(false);
-        return;
-      }
-
-      if (vendedor.estado === "pendiente") {
-        setMensaje("Tu solicitud aún está pendiente de aprobación por el administrador.");
-        setCargando(false);
-        return;
-      }
-
-      if (vendedor.estado === "suspendido") {
-        setMensaje("Tu cuenta está suspendida. Contacta al administrador.");
-        setCargando(false);
-        return;
-      }
-
-      if (vendedor.estado === "rechazado") {
-        setMensaje("Tu solicitud fue rechazada. Contacta al administrador si crees que es un error.");
-        setCargando(false);
-        return;
-      }
-
-      if (vendedor.estado !== "activo") {
-        setMensaje("Tu cuenta no tiene acceso habilitado. Contacta al administrador.");
-        setCargando(false);
-        return;
-      }
-
-      // Login exitoso — guardamos el id del vendedor para usarlo en el resto del panel
-      localStorage.setItem("vendedorId", vendedorDoc.id);
-      localStorage.setItem("vendedorNombre", vendedor.nombreNegocio || vendedor.nombre);
+      localStorage.setItem("vendedorId", data.vendedor.id);
+      localStorage.setItem("vendedorNombre", data.vendedor.nombreNegocio || data.vendedor.nombre);
+      localStorage.setItem("vendedorToken", data.token);
 
       router.push("/vendedor");
     } catch (error) {
       console.error("Error en login:", error);
-      setMensaje("Ocurrió un error al iniciar sesión. Intenta de nuevo.");
+      setMensaje("No se pudo conectar con el servidor. Verifica que el backend esté corriendo.");
     } finally {
       setCargando(false);
     }

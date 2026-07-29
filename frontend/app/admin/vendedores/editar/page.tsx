@@ -3,9 +3,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { registrarAuditoria } from "@/lib/auditoria";
 
 const BANCOS = [
   "Banco Pichincha", "Banco Guayaquil", "Banco del Pacífico", "Banco Bolivariano",
@@ -48,9 +45,10 @@ export default function EditarVendedor() {
         return;
       }
       try {
-        const docSnap = await getDoc(doc(db, "usuarios", id));
-        if (docSnap.exists()) {
-          setVendedor(docSnap.data() as Vendedor);
+        const res = await fetch(`http://localhost:3001/vendedores/${id}`);
+        const data = await res.json();
+        if (res.ok) {
+          setVendedor(data);
         }
       } catch (error) {
         console.error("Error al cargar vendedor:", error);
@@ -72,13 +70,23 @@ export default function EditarVendedor() {
     if (!id || !vendedor) return;
     setGuardando(true);
     try {
-      await updateDoc(doc(db, "usuarios", id), { ...vendedor });
-      await registrarAuditoria(id, `Editó los datos del vendedor ${vendedor.nombreNegocio}`, "vendedor");
+      const res = await fetch(`http://localhost:3001/vendedores/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
+        body: JSON.stringify(vendedor),
+      });
+
+      if (!res.ok) {
+        setMensaje("Ocurrió un error al guardar. Intenta de nuevo.");
+        setGuardando(false);
+        return;
+      }
+
       setMensaje("Cambios guardados correctamente");
       setTimeout(() => setMensaje(""), 3000);
     } catch (error) {
       console.error("Error al guardar cambios:", error);
-      setMensaje("Ocurrió un error al guardar. Intenta de nuevo.");
+      setMensaje("No se pudo conectar con el servidor.");
     } finally {
       setGuardando(false);
     }
@@ -126,11 +134,11 @@ export default function EditarVendedor() {
 
         {mensaje && (
           <div className={`p-3 rounded-xl mb-5 text-center font-semibold text-sm ${
-            mensaje.includes("error")
+            mensaje.includes("error") || mensaje.includes("conectar")
               ? "bg-red-100 border border-red-300 text-red-700"
               : "bg-emerald-100 border border-emerald-300 text-emerald-700"
           }`}>
-            {mensaje.includes("error") ? "⚠️" : "✅"} {mensaje}
+            {mensaje.includes("error") || mensaje.includes("conectar") ? "⚠️" : "✅"} {mensaje}
           </div>
         )}
 

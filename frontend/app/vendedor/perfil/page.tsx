@@ -2,8 +2,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 const BANCOS = [
   "Banco Pichincha", "Banco Guayaquil", "Banco del Pacífico", "Banco Bolivariano",
@@ -49,12 +47,19 @@ export default function PerfilVendedor() {
       }
 
       try {
-        const docSnap = await getDoc(doc(db, "usuarios", id));
-        if (docSnap.exists()) {
-          setPerfil(docSnap.data() as Perfil);
+        const res = await fetch(`http://localhost:3001/vendedores/${id}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          setMensaje("No se pudo cargar el perfil");
+          setCargando(false);
+          return;
         }
+
+        setPerfil(data);
       } catch (error) {
         console.error("Error al cargar perfil:", error);
+        setMensaje("No se pudo conectar con el servidor.");
       } finally {
         setCargando(false);
       }
@@ -74,13 +79,26 @@ export default function PerfilVendedor() {
     if (!vendedorId || !perfil) return;
     setGuardando(true);
     try {
-      await updateDoc(doc(db, "usuarios", vendedorId), { ...perfil });
+      const res = await fetch(`http://localhost:3001/vendedores/${vendedorId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(perfil),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMensaje(data.message || "Ocurrió un error al guardar");
+        setGuardando(false);
+        return;
+      }
+
       setEditando(false);
       setMensaje("Perfil actualizado correctamente");
       setTimeout(() => setMensaje(""), 3000);
     } catch (error) {
       console.error("Error al guardar perfil:", error);
-      setMensaje("Ocurrió un error al guardar. Intenta de nuevo.");
+      setMensaje("No se pudo conectar con el servidor.");
     } finally {
       setGuardando(false);
     }
@@ -127,11 +145,11 @@ export default function PerfilVendedor() {
 
         {mensaje && (
           <div className={`p-3 rounded-xl mb-5 text-center font-semibold text-sm ${
-            mensaje.includes("error")
+            mensaje.includes("error") || mensaje.includes("conectar") || mensaje.includes("cargar")
               ? "bg-red-100 border border-red-300 text-red-700"
               : "bg-emerald-100 border border-emerald-300 text-emerald-700"
           }`}>
-            {mensaje.includes("error") ? "⚠️" : "✅"} {mensaje}
+            {mensaje.includes("error") || mensaje.includes("conectar") || mensaje.includes("cargar") ? "⚠️" : "✅"} {mensaje}
           </div>
         )}
 

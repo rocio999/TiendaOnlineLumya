@@ -2,8 +2,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export default function NuevoProducto() {
   const router = useRouter();
@@ -26,22 +24,32 @@ export default function NuevoProducto() {
 
     setCargando(true);
     try {
-      await addDoc(collection(db, "productos"), {
-        nombre,
-        precio: Number(precio),
-        descripcion,
-        categoria,
-        stock: Number(stock),
-        vendedorId,
-        estado: "activo",
-        createdAt: serverTimestamp(),
+      const res = await fetch("http://localhost:3001/productos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre,
+          precio: Number(precio),
+          descripcion,
+          categoria,
+          stock: Number(stock),
+          vendedorId,
+        }),
       });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMensaje(data.message || "Ocurrió un error al publicar el producto");
+        setCargando(false);
+        return;
+      }
 
       setMensaje(`Producto "${nombre}" publicado correctamente`);
       setTimeout(() => router.push("/vendedor/productos"), 2000);
     } catch (error) {
       console.error("Error al publicar producto:", error);
-      setMensaje("Ocurrió un error al publicar el producto. Intenta de nuevo.");
+      setMensaje("No se pudo conectar con el servidor. Verifica que el backend esté corriendo.");
     } finally {
       setCargando(false);
     }
@@ -60,11 +68,11 @@ export default function NuevoProducto() {
         <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-200">
           {mensaje && (
             <div className={`p-3 rounded-xl mb-5 text-center font-semibold text-sm ${
-              mensaje.includes("error") || mensaje.includes("Debes")
+              mensaje.includes("error") || mensaje.includes("Debes") || mensaje.includes("conectar")
                 ? "bg-red-100 border border-red-300 text-red-700"
                 : "bg-emerald-100 border border-emerald-300 text-emerald-700"
             }`}>
-              {mensaje.includes("error") || mensaje.includes("Debes") ? "⚠️" : "✅"} {mensaje}
+              {mensaje.includes("error") || mensaje.includes("Debes") || mensaje.includes("conectar") ? "⚠️" : "✅"} {mensaje}
             </div>
           )}
 
