@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import "../../cliente.css";
 import { useSyncExternalStore } from "react";
 
+
 interface Producto {
   id: string;
   nombre: string;
@@ -29,6 +30,13 @@ export default function TiendaDetalle() {
   const router = useRouter();
   const params = useParams();
   const vendedorId = params.id as string;
+  useEffect(() => {
+  if (vendedorId) {
+    // Guardar la última tienda visitada en localStorage
+    localStorage.setItem("ultimaTienda", vendedorId);
+  }
+}, [vendedorId]);
+
 
   function suscribirseUsuario(callback: () => void) {
     window.addEventListener("storage", callback);
@@ -62,9 +70,10 @@ export default function TiendaDetalle() {
           descripcion: dataVendedor.descripcion || "",
         });
 
-        const productosDeLaTienda = dataProductos.filter(
-          (p: any) => p.vendedorId === vendedorId && p.stock > 0
-        );
+       const productosDeLaTienda = dataProductos.filter(
+  (p: { vendedorId: string; stock: number }) =>
+    p.vendedorId === vendedorId && p.stock > 0
+);
         setProductos(productosDeLaTienda);
       } catch (error) {
         console.error("Error al cargar datos de la tienda:", error);
@@ -88,11 +97,16 @@ export default function TiendaDetalle() {
 
   const handleAgregar = (producto: Producto) => {
     const carritoActual = JSON.parse(localStorage.getItem("carrito") || "[]");
-    const existe = carritoActual.find((p: any) => p.id === producto.id);
+    const existe = carritoActual.find(
+  (p: Producto & { cantidad: number }) => p.id === producto.id
+);
     if (existe) {
-      const actualizado = carritoActual.map((p: any) =>
-        p.id === producto.id ? { ...p, cantidad: p.cantidad + 1 } : p
-      );
+      const actualizado = carritoActual.map(
+  (p: Producto & { cantidad: number }) =>
+    p.id === producto.id
+      ? { ...p, cantidad: p.cantidad + 1 }
+      : p
+);
       localStorage.setItem("carrito", JSON.stringify(actualizado));
     } else {
       localStorage.setItem("carrito", JSON.stringify([...carritoActual, { ...producto, cantidad: 1 }]));
@@ -150,11 +164,15 @@ export default function TiendaDetalle() {
                     Registrarse
                   </button>
                 </Link>
-                <Link href="/cliente/login">
-                  <button className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-xl font-semibold transition-all text-sm">
-                    Iniciar Sesión
-                  </button>
-                </Link>
+                <button
+                className="btn-login"
+                    onClick={() => {
+                    localStorage.setItem("redirectAfterLogin", window.location.pathname);
+                     router.push("/cliente/login");
+                     }}
+                    >
+                      Iniciar sesión
+                </button>
               </>
             ) : (
               <>

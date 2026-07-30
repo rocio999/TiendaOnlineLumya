@@ -69,6 +69,8 @@ export default function MisProductos() {
               + Nuevo Producto
             </button>
           </Link>
+         
+
         </div>
 
         {error && (

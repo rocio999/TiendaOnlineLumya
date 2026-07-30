@@ -50,6 +50,12 @@ export default function PanelVendedor() {
               <p className="text-slate-400 text-sm">Ver y editar tu información</p>
             </div>
           </Link>
+           <Link href="/vendedor/panel">
+  <button className="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700">
+    Panel del administracion
+    
+  </button>
+</Link>
         </div>
       </div>
     </div>

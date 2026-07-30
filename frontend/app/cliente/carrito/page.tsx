@@ -4,18 +4,47 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+
+
+
+
+
+interface ProductoCarrito {
+  id: string;
+  nombre: string;
+  precio: number;
+  cantidad: number;
+  vendedorId?: string;
+}
+
+
 export default function Carrito() {
-  const [productos, setProductos] = useState<any[]>([]);
-  const [procesando, setProcesando] = useState(false);
+const [productos, setProductos] = useState<ProductoCarrito[]>([]);  const [procesando, setProcesando] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const router = useRouter();
+  const [ultimaTienda, setUltimaTienda] = useState("");
+
+
 
   useEffect(() => {
+  const cargarCarrito = () => {
     const guardado = localStorage.getItem("carrito");
-    if (guardado) setProductos(JSON.parse(guardado));
-  }, []);
 
-  const guardar = (nuevos: any[]) => {
+    if (guardado) {
+      setProductos(JSON.parse(guardado) as ProductoCarrito[]);
+    }
+
+    const tienda = localStorage.getItem("ultimaTienda");
+
+    if (tienda) {
+      setUltimaTienda(tienda);
+    }
+  };
+
+  cargarCarrito();
+}, []);
+
+  const guardar = (nuevos: ProductoCarrito[]) => {
     setProductos(nuevos);
     localStorage.setItem("carrito", JSON.stringify(nuevos));
   };
@@ -83,11 +112,11 @@ export default function Carrito() {
       <div className="bg-gradient-to-r from-blue-700 to-cyan-500 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/cliente">
-              <button className="text-white hover:bg-white/20 p-2 rounded-xl transition">
-                ← Volver
-              </button>
-            </Link>
+  <Link href={ultimaTienda ? `/cliente/tiendas/${ultimaTienda}` : "/cliente/tiendas"}>
+    <button className="text-white hover:bg-white/20 p-2 rounded-xl transition">
+      ← Volver
+    </button>
+  </Link>
             <Image
               src="/logo-lumya.png"
               alt="Lumya"
@@ -124,7 +153,7 @@ export default function Carrito() {
             <p className="text-blue-400 text-sm mb-8">
               Agrega productos para continuar
             </p>
-            <Link href="/cliente">
+            <Link href={ultimaTienda ? `/cliente/tiendas/${ultimaTienda}` : "/cliente/tiendas"}>
               <button className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-lg">
                 Ver Productos
               </button>
