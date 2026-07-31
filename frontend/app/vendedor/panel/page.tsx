@@ -1,156 +1,381 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import "./panel.css";
 
+
+interface Producto {
+  id: string;
+  nombre: string;
+  cantidad: number;
+  precio: number;
+}
+
+
+interface Pedido {
+  id: string;
+  cliente: {
+    nombre?: string;
+    apellido?: string;
+    correo?: string;
+  };
+  productos: Producto[];
+  total: number;
+  metodoPago: string;
+
+  tipoEntrega?: string;
+  provincia?: string;
+  ciudad?: string;
+  direccion?: string;
+  referencia?: string;
+
+  cooperativa?: string;
+  ciudadDestino?: string;
+
+  estado: string;
+  fecha: string;
+}
+
+
 export default function PanelVendedor() {
-  return (
+
+const [pedidos, setPedidos] = useState<Pedido[]>([]);
+
+
+useEffect(() => {
+
+  const pedidosGuardados = JSON.parse(
+    localStorage.getItem("pedidos") || "[]"
+  );
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  setPedidos(pedidosGuardados);
+
+}, []);
+
+
+
+// cambiar estado pedido
+
+const cambiarEstado = (id:string, nuevoEstado:string)=>{
+
+const actualizados = pedidos.map((pedido)=>
+pedido.id === id
+? {...pedido, estado:nuevoEstado}
+: pedido
+);
+
+
+setPedidos(actualizados);
+
+
+localStorage.setItem(
+"pedidos",
+JSON.stringify(actualizados)
+);
+
+};
+
+
+
+const pendientes = pedidos.filter(
+(p)=>p.estado==="pendiente"
+).length;
+
+
+const preparando = pedidos.filter(
+(p)=>p.estado==="preparando"
+).length;
+
+
+const entregados = pedidos.filter(
+(p)=>p.estado==="entregado"
+).length;
+
+
+const ingresos = pedidos.reduce(
+(acc,p)=>acc+p.total,
+0
+);
+
+
+
+return (
+
 <div className="panel-container">
-      <h1 className="panel-title">
-    Panel del Vendedor
+
+
+<h1 className="panel-title">
+Panel del Vendedor
 </h1>
 
-      {/* Tarjetas */}
-            <div className="panel-cards">
-            <div className="card">
-              <h2 className="text-gray-500">Pedidos pendientes</h2>
-<p className="yellow">5</p>
-        </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-gray-500">En preparación</h2>
-<p className="blue">2</p>
-        </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-gray-500">Entregados</h2>
-<p className="green">18</p>
-        </div>
+<div className="panel-cards">
 
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-gray-500">Ingresos</h2>
-<p className="purple">$420</p>
-        </div>
 
-      </div>
+<div className="card">
+<h2>Pedidos pendientes</h2>
+<p className="yellow">
+{pendientes}
+</p>
+</div>
 
-      {/* Lista */}
+
+
+<div className="card">
+<h2>En preparación</h2>
+<p className="blue">
+{preparando}
+</p>
+</div>
+
+
+
+<div className="card">
+<h2>Entregados</h2>
+<p className="green">
+{entregados}
+</p>
+</div>
+
+
+
+<div className="card">
+<h2>Ingresos</h2>
+<p className="purple">
+${ingresos}
+</p>
+</div>
+
+
+</div>
+
+
+
+
+
 <div className="orders-box">
-<div className="orders-header">
-          <h2 className="text-2xl font-semibold">
-            Pedidos
-          </h2>
 
-          <input
-            type="text"
-            placeholder="Buscar pedido..."
-            className="border rounded-lg px-4 py-2"
-          />
 
-        </div>
+<h2 className="text-2xl font-semibold mb-5">
+Pedidos recibidos
+</h2>
+
+
 
 <table className="orders-table">
-          <thead>
 
-            <tr className="bg-blue-600 text-white">
 
-              <th className="p-3">Pedido</th>
-<th className="p-3">Cliente</th>
-<th className="p-3">Entrega</th>
-<th className="p-3">Pago</th>
-<th className="p-3">Total</th>
-<th className="p-3">Estado Pago</th>
-<th className="p-3">Estado Pedido</th>
-<th className="p-3">Acción</th>
-            </tr>
+<thead>
 
-          </thead>
+<tr className="bg-blue-600 text-white">
 
-          <tbody>
-
-            <tr className="border-b">
-
-  <td className="p-3">#001</td>
-
-  <td className="p-3">Juan Pérez</td>
-
-  <td className="p-3">🚚 Servientrega</td>
-
-  <td className="p-3">💳 Transferencia</td>
-
-  <td className="p-3">$30</td>
-
-  <td className="p-3">
-  <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full">
-    Pendiente
-  </span>
-</td>
-
-  <td className="p-3">
-    <span className="estado pendiente">
-      Pendiente
-    </span>
-  </td>
-
-  <td className="p-3">
-    <Link href="/vendedor/panel/1">
-  <button className="btn-ver">
-    Ver
-  </button>
-</Link>
-  </td>
+<th>Pedido</th>
+<th>Cliente</th>
+<th>Productos</th>
+<th>Entrega</th>
+<th>Pago</th>
+<th>Total</th>
+<th>Estado</th>
+<th>Acción</th>
 
 </tr>
 
-           <tr className="border-b">
+</thead>
 
-  <td className="p-3">#002</td>
 
-  <td className="p-3">María López</td>
 
-  <td className="p-3">🏪 Retiro en tienda</td>
+<tbody>
 
-  <td className="p-3">💵 Efectivo</td>
 
-  <td className="p-3">$42</td>
-  <td className="p-3">
-  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full">
-    Pagado
-  </span>
+{pedidos.map((pedido)=>(
+
+
+<tr key={pedido.id}>
+
+
+<td>
+#{pedido.id.slice(0,6)}
 </td>
 
-  <td className="p-3">
-    <span className="estado preparando">
-      Preparando
-    </span>
-  </td>
 
-  <td className="p-3">
-    <Link href="/vendedor/panel/2">
-  <button className="btn-ver">
-    Ver
-  </button>
-</Link>
-  </td>
+
+<td>
+
+{pedido.cliente.nombre}
+{" "}
+{pedido.cliente.apellido}
+
+</td>
+
+
+
+
+<td>
+
+{pedido.productos.map((p)=>(
+<div key={p.id}>
+{p.nombre} x {p.cantidad}
+</div>
+))}
+
+</td>
+
+
+
+
+<td>
+
+{pedido.tipoEntrega==="Servientrega" && (
+<div>
+🚚 Servientrega
+<br/>
+{pedido.ciudad}
+<br/>
+{pedido.direccion}
+</div>
+)}
+
+
+
+{pedido.tipoEntrega==="Cooperativa" && (
+<div>
+🚌Cooperativa {pedido.cooperativa}
+<br/>
+Destino: 
+{pedido.ciudadDestino}
+</div>
+)}
+
+
+
+{pedido.tipoEntrega==="Retiro" && (
+<div>
+🏪 Retiro tienda
+</div>
+)}
+
+
+</td>
+
+
+
+
+<td>
+
+{pedido.metodoPago}
+
+</td>
+
+
+
+
+<td>
+
+${pedido.total}
+
+</td>
+
+
+
+
+<td>
+
+<span className={`estado ${pedido.estado}`}>
+{pedido.estado}
+</span>
+
+</td>
+
+
+
+
+<td>
+
+
+{pedido.estado==="pendiente" && (
+
+<button
+className="btn-ver"
+onClick={()=>cambiarEstado(
+pedido.id,
+"preparando"
+)}
+>
+Aceptar
+</button>
+
+)}
+
+
+
+{pedido.estado==="preparando" && (
+
+<button
+className="btn-ver"
+onClick={()=>cambiarEstado(
+pedido.id,
+"enviado"
+)}
+>
+Enviar
+</button>
+
+)}
+
+
+
+{pedido.estado==="enviado" && (
+
+<button
+className="btn-ver"
+onClick={()=>cambiarEstado(
+pedido.id,
+"entregado"
+)}
+>
+Entregado
+</button>
+
+)}
+
+
+
+</td>
+
+
 
 </tr>
 
-          </tbody>
 
-        </table>
+))}
 
-      </div>
 
-      <div className="mt-8">
+</tbody>
 
-        <Link href="/vendedor/productos">
+
+</table>
+
+
+</div>
+
+
+
+
+<Link href="/vendedor">
+
 <button className="btn-volver">
-                ← Volver a Productos
-          </button>
-        </Link>
+← Volver a Productos
+</button>
 
-      </div>
+</Link>
 
-    </div>
-  );
+
+
+</div>
+
+);
+
 }
