@@ -20,7 +20,7 @@ export default function PanelVendedor() {
           <p className="text-slate-500 mt-1">Aquí puedes gestionar tus productos</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <Link href="/vendedor/productos">
             <div className="bg-white rounded-2xl p-8 shadow-md border border-slate-200 hover:shadow-lg hover:border-cyan-300 transition cursor-pointer flex flex-col items-center text-center">
               <div className="bg-gradient-to-br from-blue-50 to-cyan-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
@@ -50,10 +50,18 @@ export default function PanelVendedor() {
               <p className="text-slate-400 text-sm">Ver y editar tu información</p>
             </div>
           </Link>
+          <Link href="/vendedor/pagos">
+            <div className="bg-white rounded-2xl p-8 shadow-md border border-slate-200 hover:shadow-lg hover:border-cyan-300 transition cursor-pointer flex flex-col items-center text-center">
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
+                <span className="text-3xl">💳</span>
+              </div>
+              <h2 className="text-lg font-bold text-blue-900 mb-1">Mis Pagos</h2>
+              <p className="text-slate-400 text-sm">Aprobar o rechazar pagos</p>
+            </div>
+          </Link>
            <Link href="/vendedor/panel">
   <button className="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700">
     Panel del administracion
-    
   </button>
 </Link>
         </div>
