@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import "./checkout.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 interface ProductoCheckout {
@@ -36,8 +36,32 @@ const [ciudadDestino, setCiudadDestino] = useState("");
     typeof window !== "undefined"
       ? JSON.parse(localStorage.getItem("carritoPago") || "[]")
       : [];
-
   const total = productos.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
+
+  const [datosVendedor, setDatosVendedor] = useState<{ nombreNegocio: string; banco: string; numeroCuenta: string; cedula: string } | null>(null);
+
+  useEffect(() => {
+    const cargarVendedor = async () => {
+      if (productos.length === 0) return;
+      const vendedorId = productos[0].vendedorId;
+      if (!vendedorId) return;
+      try {
+        const res = await fetch(`http://localhost:3001/vendedores/${vendedorId}`);
+        const data = await res.json();
+        if (res.ok) {
+          setDatosVendedor({
+            nombreNegocio: data.nombreNegocio || data.nombre || "Tienda",
+            banco: data.banco || "No especificado",
+            numeroCuenta: data.numeroCuenta || "No especificado",
+            cedula: data.cedula || "No especificado",
+          });
+        }
+      } catch (error) {
+        console.error("Error al cargar datos del vendedor:", error);
+      }
+    };
+    cargarVendedor();
+  }, []);
 
   const confirmarCompra = async () => {
 
@@ -251,10 +275,16 @@ const [ciudadDestino, setCiudadDestino] = useState("");
                 {metodoPago === "Transferencia" && (
                   <div className="transferencia-card">
                     <h3>Datos para transferencia</h3>
-                    <p>🏦 Banco: Banco Pichincha</p>
-                    <p>👤 Titular: Tienda Lumya</p>
-                    <p>💳 Cuenta: 1234567890</p>
-                    <p>📱 Cédula/RUC: 9999999999001</p>
+                    {datosVendedor ? (
+                      <>
+                        <p>🏪 Tienda: {datosVendedor.nombreNegocio}</p>
+                        <p>🏦 Banco: {datosVendedor.banco}</p>
+                        <p>💳 Cuenta: {datosVendedor.numeroCuenta}</p>
+                        <p>📱 Cédula: {datosVendedor.cedula}</p>
+                      </>
+                    ) : (
+                      <p>Cargando datos de la tienda...</p>
+                    )}
                     <p className="nota">Realice la transferencia y conserve el comprobante.</p>
                   </div>
                 )}
