@@ -6,15 +6,12 @@ import { useRouter } from "next/navigation";
 
 
 
-
-
-
 interface ProductoCarrito {
   id: string;
   nombre: string;
   precio: number;
   cantidad: number;
-  vendedorId?: string;
+  tiendaNombre: string;
 }
 
 
@@ -23,7 +20,7 @@ const [productos, setProductos] = useState<ProductoCarrito[]>([]);  const [proce
   const [mensaje, setMensaje] = useState("");
   const router = useRouter();
   const [ultimaTienda, setUltimaTienda] = useState("");
-
+const [tiendaActual, setTiendaActual] = useState("");
 
 
   useEffect(() => {
@@ -39,6 +36,11 @@ const [productos, setProductos] = useState<ProductoCarrito[]>([]);  const [proce
     if (tienda) {
       setUltimaTienda(tienda);
     }
+   const tiendaActualGuardada = localStorage.getItem("tiendaActual");
+
+if (tiendaActualGuardada) {
+  setTiendaActual(tiendaActualGuardada);
+}
   };
 
   cargarCarrito();
@@ -61,50 +63,56 @@ const [productos, setProductos] = useState<ProductoCarrito[]>([]);  const [proce
 
   const total = productos.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
 
-  const procederAlPago = async () => {
-    const clienteId = localStorage.getItem("clienteId");
-    const usuarioGuardado = localStorage.getItem("usuario");
-    let usuarioId = clienteId;
-
-    if (!usuarioId && usuarioGuardado) {
-      usuarioId = JSON.parse(usuarioGuardado).id;
+const tiendasAgrupadas: Record<string, ProductoCarrito[]> = productos.reduce(
+  (acc, producto) => {
+    const nombreTienda = producto.tiendaNombre || "Tienda";
+    if (!acc[nombreTienda]) {
+      acc[nombreTienda] = [];
     }
+    acc[nombreTienda].push(producto);
+    return acc;
+  },
+  {} as Record<string, ProductoCarrito[]>
+);
 
-    if (!usuarioId) {
-      setMensaje("Debes iniciar sesión para completar tu compra.");
-      setTimeout(() => router.push("/cliente/login"), 2000);
-      return;
-    }
+  
+ 
+  
+const procederAlPago = (nombreTienda: string) => {
+    
+  const usuarioGuardado = localStorage.getItem("usuario");
 
-    if (productos.length === 0) return;
+  if (!usuarioGuardado) {
 
-    setProcesando(true);
-    try {
-      for (const producto of productos) {
-        await fetch("http://localhost:3001/pagos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            usuarioId,
-            vendedorId: producto.vendedorId || "",
-            producto: producto.nombre,
-            monto: producto.precio * producto.cantidad,
-            metodo: "efectivo",
-          }),
-        });
-      }
+    setMensaje("Debes iniciar sesión para continuar.");
 
-      localStorage.removeItem("carrito");
-      setProductos([]);
-      setMensaje("¡Pedido realizado con éxito! El vendedor confirmará tu pago pronto.");
-      setTimeout(() => router.push("/cliente"), 2500);
-    } catch (error) {
-      console.error("Error al procesar el pago:", error);
-      setMensaje("Ocurrió un error al procesar tu pedido. Intenta de nuevo.");
-    } finally {
-      setProcesando(false);
-    }
-  };
+    setTimeout(() => {
+      router.push("/cliente/login");
+    }, 2000);
+    
+
+    return;
+
+  }
+  
+
+
+  if (productos.length === 0) {
+    setMensaje("Tu carrito está vacío.");
+    return;
+  }
+
+const productosPago = productos.filter(
+  (p) => p.tiendaNombre === nombreTienda
+);
+
+localStorage.setItem(
+  "carritoPago",
+  JSON.stringify(productosPago)
+);
+  router.push("/cliente/checkout");
+
+};
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -125,6 +133,11 @@ const [productos, setProductos] = useState<ProductoCarrito[]>([]);  const [proce
               className="rounded-xl"
             />
             <span className="text-xl font-bold text-white">Mi Carrito</span>
+            {productos.length > 0 && productos[0].tiendaNombre && (
+  <span className="text-white text-sm">
+    🏪 {productos[0].tiendaNombre}
+  </span>
+)}
           </div>
           <span className="bg-white/20 text-white px-3 py-1 rounded-xl text-sm font-semibold">
             {productos.length} items
@@ -161,51 +174,79 @@ const [productos, setProductos] = useState<ProductoCarrito[]>([]);  const [proce
           </div>
         ) : (
           <>
-            <div className="flex flex-col gap-4 mb-6">
-              {productos.map((producto) => (
-                <div
-                  key={producto.id}
-                  className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4"
-                >
-                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl w-20 h-20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-4xl">📦</span>
-                  </div>
+<div className="flex flex-col gap-6 mb-6">
+ 
+               {Object.entries(tiendasAgrupadas).map(
+  ([nombreTienda, productosTienda]) => {
 
-                  <div className="flex-1">
-                    <p className="font-bold text-gray-800">{producto.nombre}</p>
-                    <p className="text-blue-700 font-semibold">${producto.precio}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <button
-                        onClick={() => cambiarCantidad(producto.id, -1)}
-                        className="bg-blue-100 hover:bg-blue-200 text-blue-700 w-7 h-7 rounded-lg font-bold transition"
-                      >
-                        -
-                      </button>
-                      <span className="font-semibold text-gray-700 w-4 text-center">
-                        {producto.cantidad}
-                      </span>
-                      <button
-                        onClick={() => cambiarCantidad(producto.id, 1)}
-                        className="bg-blue-100 hover:bg-blue-200 text-blue-700 w-7 h-7 rounded-lg font-bold transition"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
+    const totalTienda = productosTienda.reduce(
+      (acc: number, producto: ProductoCarrito) =>
+        acc + producto.precio * producto.cantidad,
+      0
+    );
 
-                  <div className="flex flex-col items-end gap-2">
-                    <p className="font-bold text-blue-900">
-                      ${producto.precio * producto.cantidad}
-                    </p>
-                    <button
-                      onClick={() => eliminar(producto.id)}
-                      className="text-red-400 hover:text-red-600 text-sm transition"
-                    >
-                      🗑️ Eliminar
-                    </button>
-                  </div>
-                </div>
-              ))}
+    return (
+    <div
+      key={nombreTienda}
+      className="bg-white rounded-2xl p-5 shadow-sm border mb-5"
+    >
+
+      <h2 className="text-xl font-bold text-blue-900 mb-4">
+        🏪 {nombreTienda}
+      </h2>
+
+
+      {productosTienda.map((producto: ProductoCarrito) => (
+
+        <div
+          key={producto.id}
+          className="flex justify-between items-center border-b py-3"
+        >
+
+          <div>
+
+            <p className="font-bold text-gray-800">
+              {producto.nombre}
+            </p>
+
+            <p className="text-blue-600">
+              ${producto.precio}
+            </p>
+            
+
+          </div>
+
+
+          <div>
+            Cantidad: {producto.cantidad}
+          </div>
+
+
+        </div>
+
+      ))}
+      <div className="border-t mt-4 pt-4 flex justify-between items-center">
+
+  <div className="font-bold text-blue-900 text-lg">
+    Total: ${totalTienda}
+  </div>
+
+  <button
+    onClick={() => procederAlPago(nombreTienda)}
+    className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-5 py-2 rounded-xl font-semibold hover:opacity-90 transition"
+  >
+    Proceder al pago
+  </button>
+
+</div>
+
+
+          </div>
+
+    );
+
+  }
+)}
             </div>
 
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
@@ -229,19 +270,7 @@ const [productos, setProductos] = useState<ProductoCarrito[]>([]);  const [proce
         )}
       </div>
 
-      {productos.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 z-50 shadow-lg">
-          <div className="max-w-4xl mx-auto">
-            <button
-              onClick={procederAlPago}
-              disabled={procesando}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold py-4 rounded-2xl text-lg shadow-lg hover:opacity-90 transition disabled:opacity-50"
-            >
-              {procesando ? "Procesando..." : `Proceder al Pago — $${total}`}
-            </button>
-          </div>
-        </div>
-      )}
+      
 
     </div>
   );

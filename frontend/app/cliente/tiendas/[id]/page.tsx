@@ -32,9 +32,11 @@ export default function TiendaDetalle() {
   const vendedorId = params.id as string;
   useEffect(() => {
   if (vendedorId) {
-    // Guardar la última tienda visitada en localStorage
+
     localStorage.setItem("ultimaTienda", vendedorId);
+
   }
+
 }, [vendedorId]);
 
 
@@ -95,25 +97,72 @@ export default function TiendaDetalle() {
     ? productos.filter((p) => p.categoria === categoriaActiva)
     : productos;
 
-  const handleAgregar = (producto: Producto) => {
-    const carritoActual = JSON.parse(localStorage.getItem("carrito") || "[]");
-    const existe = carritoActual.find(
-  (p: Producto & { cantidad: number }) => p.id === producto.id
-);
-    if (existe) {
-      const actualizado = carritoActual.map(
-  (p: Producto & { cantidad: number }) =>
-    p.id === producto.id
-      ? { ...p, cantidad: p.cantidad + 1 }
-      : p
-);
-      localStorage.setItem("carrito", JSON.stringify(actualizado));
-    } else {
-      localStorage.setItem("carrito", JSON.stringify([...carritoActual, { ...producto, cantidad: 1 }]));
-    }
-    setAgregado(producto.id);
-    setTimeout(() => setAgregado(null), 1500);
-  };
+ const handleAgregar = (producto: Producto) => {
+
+  const carritoActual = JSON.parse(
+    localStorage.getItem("carrito") || "[]"
+  );
+
+
+  const carritoNuevo = JSON.parse(
+    localStorage.getItem("carrito") || "[]"
+  );
+
+
+  const existe = carritoNuevo.find(
+    (p: Producto & { cantidad: number }) =>
+      p.id === producto.id
+  );
+
+
+  let actualizado;
+
+
+  if (existe) {
+
+    actualizado = carritoNuevo.map(
+      (p: Producto & { cantidad: number }) =>
+        p.id === producto.id
+          ? {
+              ...p,
+              cantidad: p.cantidad + 1
+            }
+          : p
+    );
+
+
+  } else {
+
+
+    actualizado = [
+      ...carritoNuevo,
+
+      {
+        ...producto,
+        cantidad: 1,
+        tiendaId: vendedorId,
+        tiendaNombre: tienda?.nombreNegocio || "",
+      }
+
+    ];
+
+  }
+
+
+  localStorage.setItem(
+    "carrito",
+    JSON.stringify(actualizado)
+  );
+
+
+  setAgregado(producto.id);
+
+
+  setTimeout(() => {
+    setAgregado(null);
+  },1500);
+
+};
 
   const cerrarSesion = () => {
     localStorage.removeItem("usuario");
@@ -188,7 +237,11 @@ export default function TiendaDetalle() {
                 >
                   🚪 Cerrar sesión
                 </button>
+                <Link href="/cliente/pedidos">
+  📦 Mis pedidos
+</Link>
               </>
+              
             )}
           </div>
         </div>

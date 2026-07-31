@@ -84,9 +84,11 @@ setTiendas(activos);
                 <p>{tienda.descripcion}</p>
                 <button className="boton">Entrar a la tienda</button>
               </div>
+              
             </div>
           ))}
         </div>
+        
       )}
     </div>
   );
