@@ -180,6 +180,15 @@ export default function MisPagos() {
                     </button>
                   </div>
                 )}
+                {pago.estado !== "pendiente" && (
+                  <button
+                    onClick={() => cambiarEstado(pago.id, "pendiente")}
+                    disabled={actualizandoId === pago.id}
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2 rounded-xl transition text-sm disabled:opacity-50"
+                  >
+                    {actualizandoId === pago.id ? "..." : "Revertir a Pendiente"}
+                  </button>
+                )}
               </div>
             ))}
           </div>

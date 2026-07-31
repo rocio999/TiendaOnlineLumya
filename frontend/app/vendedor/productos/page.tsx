@@ -52,9 +52,16 @@ export default function MisProductos() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-50 to-slate-50">
       <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-4 sticky top-0 z-50 shadow-lg">
-        <div className="max-w-5xl mx-auto flex items-center gap-3">
-          <Image src="/logo-lumya.png" alt="Lumya" width={36} height={36} className="rounded-xl" />
-          <span className="text-lg font-bold text-white">Mis Productos</span>
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Image src="/logo-lumya.png" alt="Lumya" width={36} height={36} className="rounded-xl" />
+            <span className="text-lg font-bold text-white">Mis Productos</span>
+          </div>
+          <Link href="/vendedor">
+            <button className="text-white hover:bg-white/20 px-3 py-2 rounded-xl text-sm transition">
+              ← Volver
+            </button>
+          </Link>
         </div>
       </div>
 
