@@ -5,7 +5,7 @@ import Link from "next/link";
 import "./pedido.css";
 
 interface Pedido {
-  id: number;
+  id: string;
   cliente: {
     nombre?: string;
     correo?: string;
@@ -31,6 +31,7 @@ export default function PedidosCliente() {
     }
     return [];
   });
+console.log(pedidos);
 
   return (
     <div className="pedidos-container">

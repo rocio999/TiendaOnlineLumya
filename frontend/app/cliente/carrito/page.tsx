@@ -217,9 +217,20 @@ localStorage.setItem(
           </div>
 
 
-          <div>
-            Cantidad: {producto.cantidad}
-          </div>
+         <div className="flex items-center gap-4">
+
+  <div className="text-blue-900 font-semibold">
+    Cantidad: {producto.cantidad}
+  </div>
+
+  <button
+    onClick={() => eliminar(producto.id)}
+    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg font-semibold transition"
+  >
+    🗑 Eliminar
+  </button>
+
+</div>
 
 
         </div>
