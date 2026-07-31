@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import "./pedido.css";
-
 
 interface Pedido {
   id: number;
@@ -24,128 +23,58 @@ interface Pedido {
   fecha: string;
 }
 
-
 export default function PedidosCliente() {
-
-  const [pedidos, setPedidos] = useState<Pedido[]>([]);
-
-
-  useEffect(() => {
-
-    const datos =
-      JSON.parse(localStorage.getItem("pedidos") || "[]");
-
-    setPedidos(datos);
-
-  }, []);
-
-
+  // Estado tipado correctamente
+  const [pedidos, setPedidos] = useState<Pedido[]>(() => {
+    if (typeof window !== "undefined") {
+      return JSON.parse(localStorage.getItem("pedidos") || "[]");
+    }
+    return [];
+  });
 
   return (
-
     <div className="pedidos-container">
-
       <h1>📦 Mis pedidos</h1>
 
-
       {pedidos.length === 0 ? (
-
         <div className="pedido-vacio">
-
-          <p>
-            Todavía no tienes pedidos realizados.
-          </p>
-
-          <Link href="/cliente">
-            Explorar tiendas
-          </Link>
-
+          <p>Todavía no tienes pedidos realizados.</p>
+          <Link href="/cliente/tiendas">Explorar tiendas</Link>
         </div>
-
-
       ) : (
-
-        pedidos.map((pedido) => (
-
-          <div
-            key={pedido.id}
-            className="pedido-card"
-          >
-
-            <h2>
-              Pedido #{pedido.id}
-            </h2>
-
+        pedidos.map((pedido: Pedido) => (
+          <div key={pedido.id} className="pedido-card">
+            <h2>Pedido #{pedido.id}</h2>
 
             <p>
-              📅 Fecha:
-              {" "}
-              {new Date(pedido.fecha).toLocaleDateString()}
+              📅 Fecha: {new Date(pedido.fecha).toLocaleDateString()}
             </p>
-
 
             <p>
-              💳 Pago:
-              {" "}
-              {pedido.metodoPago}
+              💳 Pago: {pedido.metodoPago}
             </p>
-
 
             <p>
-              📌 Estado:
-              {" "}
-              <strong>
-                {pedido.estado}
-              </strong>
+              📌 Estado: <strong>{pedido.estado}</strong>
             </p>
 
-
-            <h3>
-              Productos:
-            </h3>
-
+            <h3>Productos:</h3>
 
             {pedido.productos.map((producto) => (
-
-              <div
-                key={producto.id}
-                className="producto-pedido"
-              >
-
+              <div key={producto.id} className="producto-pedido">
                 <span>
-                  {producto.nombre}
-                  {" x "}
-                  {producto.cantidad}
+                  {producto.nombre} x {producto.cantidad}
                 </span>
-
-
-                <span>
-                  $
-                  {producto.precio * producto.cantidad}
-                </span>
-
-
+                <span>${producto.precio * producto.cantidad}</span>
               </div>
-
             ))}
-
 
             <hr />
 
-
-            <h3>
-              Total: ${pedido.total}
-            </h3>
-
-
+            <h3>Total: ${pedido.total}</h3>
           </div>
-
         ))
-
       )}
-
-
     </div>
-
   );
 }
