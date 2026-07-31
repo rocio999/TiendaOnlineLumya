@@ -32,6 +32,20 @@ async function registrarAuditoria(usuarioId, accion, tipo) {
   }
 }
 
+async function crearNotificacion(usuarioId, mensaje, tipo) {
+  try {
+    await db.collection("notificaciones").add({
+      usuarioId,
+      mensaje,
+      tipo,
+      leida: false,
+      fecha: FieldValue.serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("Error al crear notificacion:", error);
+  }
+}
+
 app.get("/", (req, res) => {
   res.send("Backend funcionando 🚀 (Firestore)");
 });
@@ -612,11 +626,9 @@ app.get("/pagos", async (req, res) => {
 app.post("/pagos", async (req, res) => {
   try {
     const { usuarioId, vendedorId, producto, monto, metodo } = req.body;
-
     if (!usuarioId || !producto || !monto) {
       return res.status(400).json({ message: "Faltan datos obligatorios" });
     }
-
     const nuevoDoc = await db.collection("pagos").add({
       usuarioId,
       vendedorId: vendedorId || "",
@@ -627,42 +639,68 @@ app.post("/pagos", async (req, res) => {
       estado: "pendiente",
       fecha: FieldValue.serverTimestamp(),
     });
-
-    await registrarAuditoria(usuarioId, `Realizó una compra: ${producto} - $${monto}`, "pago");
-
+    await registrarAuditoria(usuarioId, `Realizo una compra: ${producto} - $${monto}`, "pago");
+    if (vendedorId) {
+      await crearNotificacion(vendedorId, `Nuevo pedido: ${producto} - $${monto}`, "pedido");
+    }
     res.json({ message: "Pedido registrado correctamente", id: nuevoDoc.id });
   } catch (error) {
     console.error("Error en POST /pagos:", error);
     res.status(500).json({ message: "Error al crear pago" });
   }
 });
-
-app.put("/pagos/:id/estado", verificarAdmin, async (req, res) => {
+app.put("/pagos/:id/estado", async (req, res) => {
   try {
     const { estado } = req.body;
     const estadosValidos = ["pendiente", "aprobado", "rechazado"];
     if (!estadosValidos.includes(estado)) {
-      return res.status(400).json({ message: "Estado inválido" });
+      return res.status(400).json({ message: "Estado invalido" });
     }
     const docSnap = await db.collection("pagos").doc(req.params.id).get();
     const pago = docSnap.data();
     await db.collection("pagos").doc(req.params.id).update({ estado });
-
     const acciones = {
-      aprobado: "Aprobó",
-      rechazado: "Rechazó",
-      pendiente: "Revirtió a pendiente",
+      aprobado: "Aprobo",
+      rechazado: "Rechazo",
+      pendiente: "Revirtio a pendiente",
     };
     await registrarAuditoria(
       pago?.usuarioId || "admin",
       `${acciones[estado]} el pago de ${pago?.producto} - $${pago?.monto}`,
       "pago"
     );
-
+    if (estado === "aprobado" || estado === "rechazado") {
+      const textoCliente = estado === "aprobado"
+        ? `Tu pago de ${pago?.producto} fue aprobado`
+        : `Tu pago de ${pago?.producto} fue rechazado`;
+      await crearNotificacion(pago?.usuarioId, textoCliente, "pago");
+    }
     res.json({ message: "Estado actualizado correctamente" });
   } catch (error) {
     console.error("Error en PUT /pagos/:id/estado:", error);
     res.status(500).json({ message: "Error al actualizar estado" });
+  }
+});
+app.get("/notificaciones/:usuarioId", async (req, res) => {
+  try {
+    const snap = await db.collection("notificaciones")
+      .where("usuarioId", "==", req.params.usuarioId)
+      .orderBy("fecha", "desc")
+      .get();
+    const lista = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    res.json(lista);
+  } catch (error) {
+    console.error("Error en GET /notificaciones:", error);
+    res.status(500).json({ message: "Error al listar notificaciones" });
+  }
+});
+app.put("/notificaciones/:id/leida", async (req, res) => {
+  try {
+    await db.collection("notificaciones").doc(req.params.id).update({ leida: true });
+    res.json({ message: "Notificacion marcada como leida" });
+  } catch (error) {
+    console.error("Error en PUT /notificaciones/:id/leida:", error);
+    res.status(500).json({ message: "Error al actualizar notificacion" });
   }
 });
 
