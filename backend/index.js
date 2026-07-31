@@ -625,16 +625,29 @@ app.get("/pagos", async (req, res) => {
 
 app.post("/pagos", async (req, res) => {
   try {
-    const { usuarioId, vendedorId, producto, monto, metodo } = req.body;
+const { 
+usuarioId,
+vendedorId,
+producto,
+monto,
+metodo,
+anticipo
+} = req.body;
     if (!usuarioId || !producto || !monto) {
       return res.status(400).json({ message: "Faltan datos obligatorios" });
     }
     const nuevoDoc = await db.collection("pagos").add({
+      
       usuarioId,
-      vendedorId: vendedorId || "",
+      vendedorId: vendedorId || ""
+      ,pedidoId,
       producto,
       monto: Number(monto),
-      metodo: metodo || "efectivo",
+      metodo: metodo || "Efectivo",
+
+anticipo: anticipo || 0,
+
+saldoPendiente: Number(monto) - Number(anticipo || 0),
       comprobante: "sin_comprobante.jpg",
       estado: "pendiente",
       fecha: FieldValue.serverTimestamp(),
