@@ -12,6 +12,7 @@ interface Pedido {
     id?: string;
     nombre?: string;
     correo?: string;
+    
   };
   productos: {
     id: string;
@@ -33,7 +34,16 @@ interface Pedido {
 
   estado: string;
   fecha: string;
+  
+
+anticipo:number;
+
+saldo:number;
+
+estadoPago:string;
+
 }
+
 
 
 export default function PedidosCliente() {
@@ -134,7 +144,27 @@ Pedido #{pedido.id.slice(0,8)}
 {" "}
 {pedido.metodoPago}
 </p>
+<p>
+💰 Anticipo:
+{" "}
+${pedido.anticipo}
+</p>
 
+
+<p>
+💵 Saldo pendiente:
+{" "}
+${pedido.saldo}
+</p>
+
+
+<p>
+🔎 Estado del pago:
+{" "}
+<strong>
+{pedido.estadoPago}
+</strong>
+</p>
 
 
 

@@ -6,11 +6,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface ProductoCheckout {
-  id: string;
-  nombre: string;
-  precio: number;
-  cantidad: number;
-  tiendaNombre: string;
+
+id:string;
+
+nombre:string;
+
+precio:number;
+
+cantidad:number;
+
+tiendaNombre:string;
+
+vendedorId:string;
+
 }
 
 export default function Checkout() {
@@ -31,27 +39,35 @@ const [ciudadDestino, setCiudadDestino] = useState("");
 
   const total = productos.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
 
-  const confirmarCompra = () => {
-    if (!metodoPago) {
-      alert("Seleccione un método de pago");
-      return;
-    }
-    if (!tipoEntrega) {
+  const confirmarCompra = async () => {
+
+  if (!metodoPago) {
+    alert("Seleccione un método de pago");
+    return;
+  }
+
+  if (!tipoEntrega) {
     alert("Seleccione un método de entrega");
     return;
   }
 
-    const usuario = localStorage.getItem("usuario");
-    if (!usuario) {
-      alert("Debe iniciar sesión para comprar");
-      router.push("/login");
-      return;
-    }
 
-   const pedido = {
+  const usuario = localStorage.getItem("usuario");
+
+  if (!usuario) {
+    alert("Debe iniciar sesión para comprar");
+    router.push("/login");
+    return;
+  }
+
+
+  const cliente = JSON.parse(usuario);
+
+
+  const pedido = {
   id: crypto.randomUUID(),
 
-  cliente: JSON.parse(usuario),
+  cliente,
 
   productos,
 
@@ -59,7 +75,22 @@ const [ciudadDestino, setCiudadDestino] = useState("");
 
   metodoPago,
 
-  // ENTREGA
+
+  anticipo:
+    metodoPago === "Efectivo"
+      ? 10
+      : total,
+
+
+  saldo:
+    metodoPago === "Efectivo"
+      ? total - 10
+      : 0,
+
+
+  estadoPago:"pendiente",
+
+
   tipoEntrega,
 
   provincia,
@@ -70,21 +101,108 @@ const [ciudadDestino, setCiudadDestino] = useState("");
   cooperativa,
   ciudadDestino,
 
-  // PAGO
-  anticipo: metodoPago === "Efectivo" ? 10 : 0,
 
-  estado: "pendiente",
+  estado:"pendiente",
 
-  fecha: new Date().toISOString(),
+  fecha:new Date().toISOString()
 };
-    const pedidosGuardados = JSON.parse(localStorage.getItem("pedidos") || "[]");
-    pedidosGuardados.push(pedido);
-    localStorage.setItem("pedidos", JSON.stringify(pedidosGuardados));
-    localStorage.removeItem("carritoPago");
 
-    alert("✅ Compra realizada correctamente. Puedes revisar tu pedido en Mis Pedidos.");
-    router.push("/cliente/pedidos");
-  };
+
+  try {
+
+
+    // guardar pedido
+    const pedidosGuardados =
+      JSON.parse(
+        localStorage.getItem("pedidos") || "[]"
+      );
+
+
+    pedidosGuardados.push(pedido);
+
+
+    localStorage.setItem(
+      "pedidos",
+      JSON.stringify(pedidosGuardados)
+    );
+    
+    // crear pagos en Firebase
+    for(const producto of productos){
+
+
+      await fetch(
+        "http://localhost:3001/pagos",
+        {
+
+          method:"POST",
+
+          headers:{
+            "Content-Type":"application/json"
+          },
+
+
+          body:JSON.stringify({
+
+            usuarioId:cliente.id,
+
+            vendedorId:producto.vendedorId,
+
+
+            producto:producto.nombre,
+
+
+            monto:
+              producto.precio *
+              producto.cantidad,
+
+
+            metodo:
+              metodoPago,
+
+
+            pedidoId:
+              pedido.id
+
+          })
+
+        }
+
+      );
+
+    }
+
+
+
+    localStorage.removeItem(
+      "carritoPago"
+    );
+
+
+    alert(
+      "✅ Compra realizada correctamente"
+    );
+
+
+    router.push(
+      "/cliente/pedidos"
+    );
+
+
+  } catch(error){
+
+    console.error(
+      "Error creando compra",
+      error
+    );
+
+    alert(
+      "Error al procesar la compra"
+    );
+
+  }
+
+};
+
 
   return (
     <div className="checkout-container">

@@ -5,24 +5,24 @@ import { useEffect, useState } from "react";
 import "./panel.css";
 
 
-interface Producto {
-  id: string;
-  nombre: string;
-  cantidad: number;
-  precio: number;
-}
-
-
 interface Pedido {
   id: string;
+
+  pagoId?: string;
+
   cliente: {
     nombre?: string;
     apellido?: string;
     correo?: string;
   };
+
   productos: Producto[];
+
   total: number;
+
   metodoPago: string;
+
+  estadoPago?: "pendiente" | "aprobado" | "rechazado";
 
   tipoEntrega?: string;
   provincia?: string;
@@ -34,6 +34,7 @@ interface Pedido {
   ciudadDestino?: string;
 
   estado: string;
+
   fecha: string;
 }
 
@@ -100,7 +101,64 @@ const ingresos = pedidos.reduce(
 );
 
 
+const cambiarEstadoPago = async (
+id:string,
+nuevoEstado:"pendiente"|"aprobado"|"rechazado"
+)=>{
 
+try{
+
+const pedido = pedidos.find(
+(p)=>p.id===id
+);
+
+if(!pedido?.pagoId) return;
+
+await fetch(
+`http://localhost:3001/pagos/${pedido.pagoId}/estado`,
+{
+
+method:"PUT",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+estado:nuevoEstado
+
+})
+
+}
+
+);
+
+const nuevos = pedidos.map((p)=>
+
+p.id===id
+?{
+...p,
+estadoPago:nuevoEstado
+}
+:p
+
+);
+
+setPedidos(nuevos);
+
+localStorage.setItem(
+"pedidos",
+JSON.stringify(nuevos)
+);
+
+}catch(error){
+
+console.log(error);
+
+}
+
+};
 return (
 
 <div className="panel-container">
@@ -177,6 +235,7 @@ Pedidos recibidos
 <th>Productos</th>
 <th>Entrega</th>
 <th>Pago</th>
+<th>Estado Pago</th>
 <th>Total</th>
 <th>Estado</th>
 <th>Acción</th>
@@ -265,7 +324,22 @@ Destino:
 
 <td>
 
-{pedido.metodoPago}
+{pedido.metodoPago === "transferencia"
+  ? "🏦 Transferencia"
+  : "💵 Efectivo"}
+
+</td>
+<td>
+
+<span
+className={`estado-pago ${
+pedido.estadoPago || "pendiente"
+}`}
+>
+
+{pedido.estadoPago || "pendiente"}
+
+</span>
 
 </td>
 
@@ -291,21 +365,80 @@ ${pedido.total}
 
 
 
+<td>
 
+{pedido.estadoPago==="pendiente" && (
+
+<div className="acciones-pago">
+
+<button
+className="btn-aprobar"
+onClick={()=>cambiarEstadoPago(
+pedido.id,
+"aprobado"
+)}
+>
+✓ Pago
+</button>
+
+
+<button
+className="btn-rechazar"
+onClick={()=>cambiarEstadoPago(
+pedido.id,
+"rechazado"
+)}
+>
+✗ Pago
+</button>
+
+</div>
+
+)}
+
+</td>
 <td>
 
 
 {pedido.estado==="pendiente" && (
 
+pedido.estadoPago==="aprobado"
+
+?
+
+(
+
 <button
+
 className="btn-ver"
+
 onClick={()=>cambiarEstado(
+
 pedido.id,
+
 "preparando"
+
 )}
+
 >
-Aceptar
+
+Aceptar pedido
+
 </button>
+
+)
+
+:
+
+(
+
+<span className="text-red-600 text-sm">
+
+Esperando aprobación del pago
+
+</span>
+
+)
 
 )}
 
