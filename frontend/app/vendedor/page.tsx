@@ -1,8 +1,48 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export default function PanelVendedor() {
+  const [notificaciones, setNotificaciones] = useState<any[]>([]);
+  const [mostrarNotis, setMostrarNotis] = useState(false);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    const cargarNotis = async () => {
+      const vendedorId = localStorage.getItem("vendedorId");
+      if (!vendedorId) {
+        setCargando(false);
+        return;
+      }
+      try {
+        const res = await fetch(`http://localhost:3001/notificaciones/${vendedorId}`);
+        const data = await res.json();
+        if (res.ok) setNotificaciones(data);
+      } catch (error) {
+        console.error("Error al cargar notificaciones:", error);
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargarNotis();
+  }, []);
+
+  const marcarLeida = async (id: string) => {
+    try {
+      await fetch(`http://localhost:3001/notificaciones/${id}/leida`, {
+        method: "PUT",
+      });
+      setNotificaciones((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, leida: true } : n))
+      );
+    } catch (error) {
+      console.error("Error al marcar notificacion:", error);
+    }
+  };
+
+  const noLeidas = notificaciones.filter((n) => !n.leida).length;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-50 to-slate-50">
       <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-4 sticky top-0 z-50 shadow-lg">
@@ -10,6 +50,48 @@ export default function PanelVendedor() {
           <div className="flex items-center gap-3">
             <Image src="/logo-lumya.png" alt="Lumya" width={40} height={40} className="rounded-xl" />
             <span className="text-xl font-bold text-white">Panel de Vendedor</span>
+          </div>
+
+          <div className="relative">
+            <button
+              onClick={() => setMostrarNotis(!mostrarNotis)}
+              className="relative text-white hover:bg-white/20 p-2 rounded-xl transition"
+            >
+              <span className="text-2xl">🔔</span>
+              {noLeidas > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {noLeidas}
+                </span>
+              )}
+            </button>
+
+            {mostrarNotis && (
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 max-h-96 overflow-y-auto">
+                <div className="p-4 border-b border-slate-100">
+                  <p className="font-bold text-blue-900">Notificaciones</p>
+                </div>
+                {cargando ? (
+                  <p className="p-4 text-slate-400 text-sm">Cargando...</p>
+                ) : notificaciones.length === 0 ? (
+                  <p className="p-4 text-slate-400 text-sm">No tienes notificaciones.</p>
+                ) : (
+                  notificaciones.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => marcarLeida(n.id)}
+                      className={`p-4 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition ${
+                        !n.leida ? "bg-cyan-50" : ""
+                      }`}
+                    >
+                      <p className="text-sm text-slate-700">{n.mensaje}</p>
+                      {!n.leida && (
+                        <span className="text-xs text-cyan-600 font-semibold">● Nueva</span>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -50,6 +132,7 @@ export default function PanelVendedor() {
               <p className="text-slate-400 text-sm">Ver y editar tu información</p>
             </div>
           </Link>
+
           <Link href="/vendedor/pagos">
             <div className="bg-white rounded-2xl p-8 shadow-md border border-slate-200 hover:shadow-lg hover:border-cyan-300 transition cursor-pointer flex flex-col items-center text-center">
               <div className="bg-gradient-to-br from-blue-50 to-cyan-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
@@ -59,6 +142,7 @@ export default function PanelVendedor() {
               <p className="text-slate-400 text-sm">Aprobar o rechazar pagos</p>
             </div>
           </Link>
+
            <Link href="/vendedor/panel">
   <button className="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700">
     Panel del administracion

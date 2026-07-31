@@ -631,6 +631,7 @@ vendedorId,
 producto,
 monto,
 metodo,
+  pedidoId,
 anticipo
 } = req.body;
     if (!usuarioId || !producto || !monto) {

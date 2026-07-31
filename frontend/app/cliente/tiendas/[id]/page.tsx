@@ -141,6 +141,7 @@ export default function TiendaDetalle() {
         ...producto,
         cantidad: 1,
         tiendaId: vendedorId,
+        vendedorId: vendedorId,
         tiendaNombre: tienda?.nombreNegocio || "",
       }
 
