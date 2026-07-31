@@ -149,12 +149,12 @@ if (redirect) {
 
 
               <div>
-                <Link href="/recuperar-correo">
-                  ¿Olvidaste tu correo?
-                </Link>
-
+            
                 <Link href="/recuperar-contrasena">
                   ¿Olvidaste tu contraseña?
+                </Link>
+                <Link href="/soporte">
+                  Contactar soporte
                 </Link>
               </div>
 
