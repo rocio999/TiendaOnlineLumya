@@ -45,14 +45,32 @@ const [pedidos, setPedidos] = useState<Pedido[]>([]);
 
 
 useEffect(() => {
-
-  const pedidosGuardados = JSON.parse(
-    localStorage.getItem("pedidos") || "[]"
-  );
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  setPedidos(pedidosGuardados);
-
+  const cargarPedidos = async () => {
+    const vendedorId = localStorage.getItem("vendedorId");
+    if (!vendedorId) return;
+    try {
+      const res = await fetch("http://localhost:3001/pagos");
+      const data = await res.json();
+      const misPagos = data.filter((p: any) => p.vendedorId === vendedorId);
+      const pedidosTransformados: Pedido[] = misPagos.map((p: any) => ({
+        id: p.id,
+        pagoId: p.id,
+        cliente: { nombre: p.clienteNombreResuelto || "Cliente" },
+        productos: [{ nombre: p.producto, precio: p.monto, cantidad: 1 }] as any,
+        total: p.monto,
+        metodoPago: p.metodo || "efectivo",
+        estadoPago: p.estado,
+        estado: p.estado,
+        fecha: p.fecha?._seconds
+          ? new Date(p.fecha._seconds * 1000).toISOString()
+          : new Date().toISOString(),
+      }));
+      setPedidos(pedidosTransformados);
+    } catch (error) {
+      console.error("Error al cargar pedidos:", error);
+    }
+  };
+  cargarPedidos();
 }, []);
 
 
@@ -364,13 +382,9 @@ ${pedido.total}
 </td>
 
 
-
 <td>
-
-{pedido.estadoPago==="pendiente" && (
-
+{pedido.estadoPago==="pendiente" ? (
 <div className="acciones-pago">
-
 <button
 className="btn-aprobar"
 onClick={()=>cambiarEstadoPago(
@@ -380,8 +394,6 @@ pedido.id,
 >
 ✓ Pago
 </button>
-
-
 <button
 className="btn-rechazar"
 onClick={()=>cambiarEstadoPago(
@@ -391,11 +403,15 @@ pedido.id,
 >
 ✗ Pago
 </button>
-
 </div>
-
+) : (
+<button
+className="btn-revertir"
+onClick={()=>cambiarEstadoPago(pedido.id, "pendiente")}
+>
+↺ Revertir
+</button>
 )}
-
 </td>
 <td>
 

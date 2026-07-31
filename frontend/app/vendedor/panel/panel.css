@@ -339,3 +339,76 @@ padding:15px;
 
 
 }
+.estado-pago {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.estado-pago.pendiente {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.estado-pago.aprobado {
+  background-color: #d1fae5;
+  color: #047857;
+}
+
+.estado-pago.rechazado {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.acciones-pago {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-aprobar {
+  background-color: #10b981;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-aprobar:hover {
+  background-color: #059669;
+}
+
+.btn-rechazar {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-rechazar:hover {
+  background-color: #dc2626;
+}
+
+.btn-revertir {
+  background-color: #64748b;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-revertir:hover {
+  background-color: #475569;
+}
