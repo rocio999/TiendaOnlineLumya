@@ -47,45 +47,42 @@ estadoPago:string;
 
 
 export default function PedidosCliente() {
-
-
 const [pedidos, setPedidos] = useState<Pedido[]>([]);
 
 
-
 useEffect(() => {
-
-
-  const usuarioGuardado = localStorage.getItem("usuario");
-
-
-  if (!usuarioGuardado) {
-    setPedidos([]);
-    return;
-  }
-
-
-  const usuario = JSON.parse(usuarioGuardado);
-
-
-
-  const todosLosPedidos: Pedido[] = JSON.parse(
-    localStorage.getItem("pedidos") || "[]"
-  );
-
-
-
-  const pedidosUsuario = todosLosPedidos.filter(
-    (pedido) =>
-      pedido.cliente.id === usuario.id
-  );
-
-
-
-  setPedidos(pedidosUsuario);
-
-
-
+  const cargarPedidos = async () => {
+    const usuarioGuardado = localStorage.getItem("usuario");
+    if (!usuarioGuardado) {
+      setPedidos([]);
+      return;
+    }
+    const usuario = JSON.parse(usuarioGuardado);
+    try {
+      const res = await fetch("http://localhost:3001/pagos");
+      const data = await res.json();
+      const misPagos = data.filter((p) => p.usuarioId === usuario.id);
+      const pedidosTransformados = misPagos.map((p) => ({
+        id: p.id,
+        cliente: { id: usuario.id, nombre: usuario.nombre },
+        productos: [{ id: p.id, nombre: p.producto, precio: p.monto, cantidad: 1, tiendaNombre: p.vendedorNombreResuelto || "" }],
+        total: p.monto,
+        metodoPago: p.metodo || "efectivo",
+        estado: p.estado,
+        estadoPago: p.estado,
+        anticipo: p.anticipo || 0,
+        saldo: p.saldoPendiente || p.monto,
+        fecha: p.fecha && p.fecha._seconds
+          ? new Date(p.fecha._seconds * 1000).toISOString()
+          : new Date().toISOString(),
+      }));
+      setPedidos(pedidosTransformados);
+    } catch (error) {
+      console.error("Error al cargar pedidos:", error);
+      setPedidos([]);
+    }
+  };
+  cargarPedidos();
 }, []);
 
 
