@@ -1,0 +1,85 @@
+/* Contenedor principal */
+.pedidos-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* Título principal */
+.pedidos-container h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+/* Estado vacío */
+.pedido-vacio {
+  text-align: center;
+  padding: 2rem;
+  background: #fff;
+  border: 2px dashed #ccc;
+  border-radius: 10px;
+}
+
+.pedido-vacio p {
+  font-size: 1.1rem;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+.pedido-vacio a {
+  display: inline-block;
+  padding: 0.6rem 1.2rem;
+  background: #0070f3;
+  color: #fff;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.3s ease;
+}
+
+.pedido-vacio a:hover {
+  background: #005bb5;
+}
+
+/* Tarjeta de pedido */
+.pedido-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.pedido-card h2 {
+  margin-bottom: 0.8rem;
+  color: #222;
+}
+
+.pedido-card p {
+  margin: 0.4rem 0;
+  color: #444;
+}
+
+/* Productos dentro del pedido */
+.producto-pedido {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.producto-pedido span {
+  font-size: 0.95rem;
+  color: #333;
+}
+
+/* Total */
+.pedido-card h3 {
+  margin-top: 1rem;
+  color: #111;
+  font-weight: bold;
+}

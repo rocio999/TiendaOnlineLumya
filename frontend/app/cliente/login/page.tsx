@@ -42,13 +42,19 @@ export default function Login() {
 
 
       setMensaje("Login exitoso 🚀");
-      
-      router.push("/cliente");
-    } catch (error) {
-      setMensaje("Error de conexión con el servidor");
-    }
-  };
 
+const redirect = localStorage.getItem("redirectAfterLogin");
+
+if (redirect) {
+  localStorage.removeItem("redirectAfterLogin");
+  router.push(redirect);
+} else {
+  router.push("/cliente/tiendas");
+}
+ } catch (error) {
+    setMensaje("Error de conexión con el servidor");
+  }
+};
 
   return (
     <div className="login-container">
@@ -220,4 +226,4 @@ export default function Login() {
 
     </div>
   );
-}
+    }
