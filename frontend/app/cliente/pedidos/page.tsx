@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import "./pedido.css";
+
 
 interface Pedido {
   id: string;
@@ -19,19 +21,36 @@ interface Pedido {
   }[];
   total: number;
   metodoPago: string;
+
+  tipoEntrega: string;
+  provincia?: string;
+  ciudad?: string;
+  direccion?: string;
+  referencia?: string;
+  cooperativa?: string;
+  ciudadDestino?: string;
+
   estado: string;
   fecha: string;
 }
 
 export default function PedidosCliente() {
-  // Estado tipado correctamente
-  const [pedidos, setPedidos] = useState<Pedido[]>(() => {
-    if (typeof window !== "undefined") {
-      return JSON.parse(localStorage.getItem("pedidos") || "[]");
-    }
-    return [];
-  });
-console.log(pedidos);
+  const [mounted, setMounted] = useState(false);
+
+useEffect(() => {
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  setMounted(true);
+}, []);
+
+if (!mounted) {
+  return null;
+}
+
+const pedidos: Pedido[] = JSON.parse(
+  localStorage.getItem("pedidos") || "[]"
+);
+
+console.log(JSON.stringify(pedidos, null, 2));
 
   return (
     <div className="pedidos-container">
@@ -54,10 +73,37 @@ console.log(pedidos);
             <p>
               💳 Pago: {pedido.metodoPago}
             </p>
+            <p>
+         🚚 Entrega: <strong>{pedido.tipoEntrega}</strong>
+          </p>
 
             <p>
               📌 Estado: <strong>{pedido.estado}</strong>
             </p>
+            {pedido.tipoEntrega === "Servientrega" && (
+  <div className="detalle-entrega">
+
+    <p>📍 Provincia: {pedido.provincia}</p>
+
+    <p>🏙 Ciudad: {pedido.ciudad}</p>
+
+    <p>🏠 Dirección: {pedido.direccion}</p>
+
+    {pedido.referencia && (
+      <p>📌 Referencia: {pedido.referencia}</p>
+    )}
+
+  </div>
+)}
+{pedido.tipoEntrega === "Cooperativa" && (
+  <div className="detalle-entrega">
+
+    <p>🚌 Cooperativa: {pedido.cooperativa}</p>
+
+    <p>📍 Ciudad destino: {pedido.ciudadDestino}</p>
+
+  </div>
+)}
 
             <h3>Productos:</h3>
 

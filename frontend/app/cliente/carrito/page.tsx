@@ -276,8 +276,21 @@ localStorage.setItem(
                 <span className="font-bold text-blue-900 text-lg">Total</span>
                 <span className="font-bold text-blue-900 text-lg">${total}</span>
               </div>
+              <button
+  onClick={() => {
+  if (confirm("¿Deseas vaciar todo el carrito?")) {
+    guardar([]);
+    localStorage.removeItem("carrito");
+  }
+}}
+  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-semibold"
+>
+  🗑 Vaciar carrito
+</button>
+
             </div>
           </>
+          
         )}
       </div>
 
