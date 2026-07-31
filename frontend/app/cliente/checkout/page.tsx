@@ -15,6 +15,13 @@ interface ProductoCheckout {
 
 export default function Checkout() {
   const [metodoPago, setMetodoPago] = useState("");
+  const [tipoEntrega, setTipoEntrega] = useState("");
+  const [provincia, setProvincia] = useState("");
+const [ciudad, setCiudad] = useState("");
+const [direccion, setDireccion] = useState("");
+const [referencia, setReferencia] = useState("");
+const [cooperativa, setCooperativa] = useState("");
+const [ciudadDestino, setCiudadDestino] = useState("");
   const router = useRouter();
 
   const productos: ProductoCheckout[] =
@@ -29,6 +36,10 @@ export default function Checkout() {
       alert("Seleccione un método de pago");
       return;
     }
+    if (!tipoEntrega) {
+    alert("Seleccione un método de entrega");
+    return;
+  }
 
     const usuario = localStorage.getItem("usuario");
     if (!usuario) {
@@ -37,17 +48,35 @@ export default function Checkout() {
       return;
     }
 
-    const pedido = {
-      id: crypto.randomUUID(),
-      cliente: JSON.parse(usuario),
-      productos,
-      total,
-      metodoPago,
-      anticipo: metodoPago === "Efectivo" ? 10 : 0,
-      estado: "pendiente",
-      fecha: new Date().toISOString(),
-    };
+   const pedido = {
+  id: crypto.randomUUID(),
 
+  cliente: JSON.parse(usuario),
+
+  productos,
+
+  total,
+
+  metodoPago,
+
+  // ENTREGA
+  tipoEntrega,
+
+  provincia,
+  ciudad,
+  direccion,
+  referencia,
+
+  cooperativa,
+  ciudadDestino,
+
+  // PAGO
+  anticipo: metodoPago === "Efectivo" ? 10 : 0,
+
+  estado: "pendiente",
+
+  fecha: new Date().toISOString(),
+};
     const pedidosGuardados = JSON.parse(localStorage.getItem("pedidos") || "[]");
     pedidosGuardados.push(pedido);
     localStorage.setItem("pedidos", JSON.stringify(pedidosGuardados));
@@ -131,14 +160,126 @@ export default function Checkout() {
                     <p className="nota">El valor restante se cancela al recibir el pedido.</p>
                   </div>
                 )}
+                {/* MÉTODO DE ENTREGA */}
+<div className="checkout-card">
+  <h2>🚚 Método de entrega</h2>
 
-                <button
-                  className="btn-confirmar"
-                  disabled={!metodoPago || productos.length === 0}
-                  onClick={confirmarCompra}
-                >
-                  Confirmar compra
-                </button>
+  <label>
+    <input
+      type="radio"
+      name="entrega"
+      value="Servientrega"
+      checked={tipoEntrega === "Servientrega"}
+      onChange={(e) => setTipoEntrega(e.target.value)}
+    />
+    {" "}Servientrega
+    {tipoEntrega === "Servientrega" && (
+  <div className="entrega-card">
+
+    <h3>🚚 Datos para el envío</h3>
+
+    <label>Provincia</label>
+    <input
+      type="text"
+      placeholder="Ej. Pichincha"
+      value={provincia}
+      onChange={(e) => setProvincia(e.target.value)}
+    />
+
+    <label>Ciudad</label>
+    <input
+      type="text"
+      placeholder="Ej. Quito"
+      value={ciudad}
+      onChange={(e) => setCiudad(e.target.value)}
+    />
+    <label>Dirección de servientrega mas cercano</label>
+    <input
+      type="text"
+      placeholder="Ingrese la dirección completa"
+      value={direccion}
+      onChange={(e) => setDireccion(e.target.value)}
+    />
+    <label>Dirección / Calles / N° de casa</label>
+    <input
+      type="text"
+      placeholder="Ingrese la dirección completa"
+      value={direccion}
+      onChange={(e) => setDireccion(e.target.value)}
+    />
+    
+
+    <label>Referencia</label>
+    <input
+      type="text"
+      placeholder="Ej. Frente al parque"
+      value={referencia}
+      onChange={(e) => setReferencia(e.target.value)}
+    />
+
+  </div>
+)}
+  </label>
+
+  <label>
+    <input
+      type="radio"
+      name="entrega"
+      value="Cooperativa"
+      checked={tipoEntrega === "Cooperativa"}
+      onChange={(e) => setTipoEntrega(e.target.value)}
+    />
+    {" "}Cooperativa de transporte
+  {tipoEntrega === "Cooperativa" && (
+  <div className="entrega-card">
+
+    <h3>🚌 Datos del envío</h3>
+
+    <label>Nombre de la cooperativa</label>
+    <input
+      type="text"
+      placeholder="Ej. Cooperativa Loja"
+      value={cooperativa}
+      onChange={(e) => setCooperativa(e.target.value)}
+    />
+
+    <label>Ciudad de destino</label>
+    <input
+      type="text"
+      placeholder="Ej. Loja"
+      value={ciudadDestino}
+      onChange={(e) => setCiudadDestino(e.target.value)}
+    />
+
+  </div>
+)}
+  
+  </label>
+
+
+  {tipoEntrega === "Servientrega" && (
+    <div className="entrega-card">
+      <p>📍 El pedido será enviado mediante Servientrega.</p>
+      <p>Ingrese la dirección completa cuando se conecte el sistema con la base de datos.</p>
+    </div>
+  )}
+
+  {tipoEntrega === "Cooperativa" && (
+    <div className="entrega-card">
+      <p>🚌 El pedido será enviado por una cooperativa de transporte.</p>
+      <p>Podrás indicar la cooperativa y la ciudad de destino.</p>
+    </div>
+  )}
+</div>
+
+<button
+  className="btn-confirmar"
+  disabled={!metodoPago || productos.length === 0}
+  onClick={confirmarCompra}
+>
+  Confirmar compra
+</button>
+                
               </div>
 
               <hr />

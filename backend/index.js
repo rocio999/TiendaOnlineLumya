@@ -736,6 +736,65 @@ app.get("/historial", async (req, res) => {
     res.status(500).json({ message: "Error al listar historial" });
   }
 });
+app.post("/recuperar-contrasena", async(req,res)=>{
+
+const {correo,nuevaPassword}=req.body;
+
+
+try{
+
+
+const usuariosRef = db.collection("usuarios");
+
+
+const usuario = await usuariosRef
+.where("correo","==",correo)
+.get();
+
+
+
+if(usuario.empty){
+
+return res.status(404).json({
+message:"El correo no está registrado"
+});
+
+}
+
+
+
+const doc = usuario.docs[0];
+
+
+const nuevaClaveHash = bcrypt.hashSync(nuevaPassword,10);
+
+await doc.ref.update({
+  password:nuevaClaveHash
+});
+
+
+res.json({
+
+message:"Contraseña actualizada correctamente"
+
+});
+
+
+}catch(error){
+
+console.log(error);
+
+res.status(500).json({
+
+message:"Error al actualizar contraseña"
+
+});
+
+
+}
+
+
+});
 
 app.listen(3001, () => {
   console.log("Servidor en http://localhost:3001 (conectado a Firestore)");
