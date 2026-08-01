@@ -37,10 +37,10 @@ export default function Home() {
           y vendedores pueden publicar y gestionar su catálogo en línea.
         </p>
         <button
-        onClick={() => router.push("/cliente/tiendas")}
+        onClick={(e) => { e.stopPropagation(); router.push("/cliente/catalogo"); }}
         className="mt-8 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition"
         >
-         Explorar tiendas
+         Explorar catálogo
         </button>
 
 

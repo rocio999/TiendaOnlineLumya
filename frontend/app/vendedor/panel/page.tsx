@@ -59,6 +59,13 @@ useEffect(() => {
         productos: [{ nombre: p.producto, precio: p.monto, cantidad: 1 }] as any,
         total: p.monto,
         metodoPago: p.metodo || "efectivo",
+        tipoEntrega: p.tipoEntrega || "",
+        provincia: p.provincia || "",
+        ciudad: p.ciudad || "",
+        direccion: p.direccion || "",
+        referencia: p.referencia || "",
+        cooperativa: p.cooperativa || "",
+        ciudadDestino: p.ciudadDestino || "",
         estadoPago: p.estado,
         estado: p.estado,
         fecha: p.fecha?._seconds
@@ -342,7 +349,7 @@ Destino:
 
 <td>
 
-{pedido.metodoPago === "transferencia"
+{pedido.metodoPago === "Transferencia"
   ? "🏦 Transferencia"
   : "💵 Efectivo"}
 

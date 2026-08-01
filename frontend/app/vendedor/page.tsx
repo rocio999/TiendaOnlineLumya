@@ -7,6 +7,7 @@ export default function PanelVendedor() {
   const [notificaciones, setNotificaciones] = useState<any[]>([]);
   const [mostrarNotis, setMostrarNotis] = useState(false);
   const [cargando, setCargando] = useState(true);
+  const [ultimaActualizacion, setUltimaActualizacion] = useState("");
 
   useEffect(() => {
     const cargarNotis = async () => {
@@ -16,9 +17,10 @@ export default function PanelVendedor() {
         return;
       }
       try {
-        const res = await fetch(`http://localhost:3001/notificaciones/${vendedorId}`);
+        const res = await fetch(`http://localhost:3001/notificaciones/${vendedorId}`, { cache: "no-store" });
         const data = await res.json();
         if (res.ok) setNotificaciones(data);
+        setUltimaActualizacion(new Date().toLocaleTimeString());
       } catch (error) {
         console.error("Error al cargar notificaciones:", error);
       } finally {
@@ -26,6 +28,8 @@ export default function PanelVendedor() {
       }
     };
     cargarNotis();
+    const intervalo = setInterval(cargarNotis, 10000);
+    return () => clearInterval(intervalo);
   }, []);
 
   const marcarLeida = async (id: string) => {
@@ -64,6 +68,7 @@ export default function PanelVendedor() {
                 </span>
               )}
             </button>
+            <p style={{ fontSize: "10px", color: "white", marginTop: "4px" }}>Ult: {ultimaActualizacion}</p>
 
             {mostrarNotis && (
               <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 max-h-96 overflow-y-auto">

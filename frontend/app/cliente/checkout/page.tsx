@@ -185,7 +185,15 @@ const [ciudadDestino, setCiudadDestino] = useState("");
 
 
             pedidoId:
-              pedido.id
+              pedido.id,
+            anticipo: pedido.anticipo,
+            tipoEntrega: tipoEntrega,
+            provincia: provincia,
+            ciudad: ciudad,
+            direccion: direccion,
+            referencia: referencia,
+            cooperativa: cooperativa,
+            ciudadDestino: ciudadDestino,
 
           })
 
