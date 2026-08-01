@@ -217,10 +217,30 @@ localStorage.setItem(
           </div>
 
 
-         <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4">
 
-  <div className="text-blue-900 font-semibold">
-    Cantidad: {producto.cantidad}
+  {/* Controles de cantidad */}
+  <div className="flex items-center border rounded-lg overflow-hidden">
+
+    <button
+  onClick={() => cambiarCantidad(producto.id, -1)}
+  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-black text-lg font-bold"
+>
+  −
+</button>
+
+    <span className="px-4 py-1 font-semibold text-gray-900">
+      {producto.cantidad}
+    </span>
+
+   
+<button
+  onClick={() => cambiarCantidad(producto.id, 1)}
+  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-black text-lg font-bold"
+>
+  +
+</button>
+
   </div>
 
   <button
