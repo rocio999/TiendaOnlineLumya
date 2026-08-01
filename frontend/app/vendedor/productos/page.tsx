@@ -11,6 +11,7 @@ interface Producto {
   categoria: string;
   vendedorId: string;
   estado: string;
+  imagenUrl: string
 }
 
 export default function MisProductos() {

@@ -13,6 +13,7 @@ interface Producto {
   precio: number;
   categoria: string;
   stock: number;
+  imagenUrl?: string;
 }
 
 interface Tienda {
@@ -301,9 +302,22 @@ export default function TiendaDetalle() {
           <div className="grid grid-cols-2 gap-4 mb-24">
             {productosFiltrados.map((producto) => (
               <div key={producto.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition border border-gray-100">
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 h-32 flex items-center justify-center">
-                  <span className="text-6xl">📦</span>
-                </div>
+                <div className="h-32 w-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                {producto.imagenUrl ? (
+                   <Image
+                     src={producto.imagenUrl}
+                alt={producto.nombre}
+              width={300}
+                 height={128}
+                  className="object-cover w-full h-full"
+                   />
+                  ) : (
+              <div className="w-full h-full bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center">
+               <span className="text-6xl">📦</span>
+               </div>
+                   )}
+              </div>
+
                 <div className="p-3">
                   <p className="font-semibold text-gray-800 text-sm">{producto.nombre}</p>
                   <p className="text-xs text-gray-400 mb-1">{producto.categoria}</p>
