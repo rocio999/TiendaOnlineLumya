@@ -66,6 +66,8 @@ export default function Tiendas() {
       }
     };
     cargarNotis();
+    const intervalo = setInterval(cargarNotis, 10000);
+    return () => clearInterval(intervalo);
   }, []);
 
   const marcarLeida = async (id: string) => {

@@ -120,7 +120,7 @@ localStorage.setItem(
       <div className="bg-gradient-to-r from-blue-700 to-cyan-500 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-  <Link href={ultimaTienda ? `/cliente/tiendas/${ultimaTienda}` : "/cliente/tiendas"}>
+  <Link href="/cliente/catalogo">
     <button className="text-white hover:bg-white/20 p-2 rounded-xl transition">
       ← Volver
     </button>
@@ -166,7 +166,7 @@ localStorage.setItem(
             <p className="text-blue-400 text-sm mb-8">
               Agrega productos para continuar
             </p>
-            <Link href={ultimaTienda ? `/cliente/tiendas/${ultimaTienda}` : "/cliente/tiendas"}>
+            <Link href="/cliente/catalogo">
               <button className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-lg">
                 Ver Productos
               </button>

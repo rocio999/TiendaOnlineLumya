@@ -632,7 +632,14 @@ producto,
 monto,
 metodo,
   pedidoId,
-anticipo
+anticipo,
+  tipoEntrega,
+  provincia,
+  ciudad,
+  direccion,
+  referencia,
+  cooperativa,
+  ciudadDestino
 } = req.body;
     if (!usuarioId || !producto || !monto) {
       return res.status(400).json({ message: "Faltan datos obligatorios" });
@@ -649,6 +656,13 @@ anticipo
 anticipo: anticipo || 0,
 
 saldoPendiente: Number(monto) - Number(anticipo || 0),
+      tipoEntrega: tipoEntrega || "",
+      provincia: provincia || "",
+      ciudad: ciudad || "",
+      direccion: direccion || "",
+      referencia: referencia || "",
+      cooperativa: cooperativa || "",
+      ciudadDestino: ciudadDestino || "",
       comprobante: "sin_comprobante.jpg",
       estado: "pendiente",
       fecha: FieldValue.serverTimestamp(),
