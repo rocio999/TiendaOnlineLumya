@@ -3,7 +3,14 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { db, FieldValue } = require("./firebase");
+const multer = require("multer");
 
+const upload = multer({
+    storage: multer.memoryStorage()
+});
+
+
+const imagekit = require("./imagekit");
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -477,7 +484,7 @@ app.get("/productos", async (req, res) => {
 
 app.post("/productos", async (req, res) => {
   try {
-    const { nombre, precio, descripcion, categoria, stock, vendedorId } = req.body;
+    const { nombre, precio, descripcion, categoria, stock, vendedorId, imagenUrl } = req.body;
 
     if (!nombre || !precio || !categoria || stock === undefined || !vendedorId) {
       return res.status(400).json({ message: "Faltan datos obligatorios" });
@@ -490,6 +497,7 @@ app.post("/productos", async (req, res) => {
       categoria,
       stock: Number(stock),
       vendedorId,
+      imagenUrl,
       estado: "activo",
       createdAt: FieldValue.serverTimestamp(),
     });
@@ -777,6 +785,7 @@ message:"El correo no está registrado"
 
 
 
+
 const doc = usuario.docs[0];
 
 
@@ -808,6 +817,35 @@ message:"Error al actualizar contraseña"
 }
 
 
+});
+
+// ======================
+// SUBIR IMAGEN (ImageKit)
+// ======================
+app.post("/imagenes", upload.single("imagen"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No se proporcionó ninguna imagen" });
+    }
+
+    // Subir la imagen usando ImageKit (ya tienes importado imagekit arriba)
+    imagekit.upload({
+      file: req.file.buffer, 
+      fileName: `producto_${Date.now()}_${req.file.originalname}`,
+      folder: "/productos"
+    }, (error, result) => {
+      if (error) {
+        console.error("Error al subir a ImageKit:", error);
+        return res.status(500).json({ message: "Error al subir la imagen" });
+      }
+      // Devolvemos la URL pública que generó ImageKit
+      res.json({ url: result.url });
+    });
+
+  } catch (error) {
+    console.error("Error en POST /imagenes:", error);
+    res.status(500).json({ message: "Error al procesar la imagen" });
+  }
 });
 
 app.listen(3001, () => {
