@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,6 +27,9 @@ interface Perfil {
   cedula: string;
   banco: string;
   numeroCuenta: string;
+  whatsapp?: string;
+  qrUrl?: string;
+  qrDeUnaUrl?: string;
 }
 
 export default function PerfilVendedor() {
@@ -35,6 +39,10 @@ export default function PerfilVendedor() {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [vendedorId, setVendedorId] = useState<string | null>(null);
+
+  // Nuevos estados para archivos de imágenes opcionales al editar
+  const [nuevoQr, setNuevoQr] = useState<File | null>(null);
+  const [nuevoQrDeUna, setNuevoQrDeUna] = useState<File | null>(null);
 
   useEffect(() => {
     const cargarPerfil = async () => {
@@ -75,14 +83,40 @@ export default function PerfilVendedor() {
     setPerfil({ ...perfil, [e.target.name]: e.target.value });
   };
 
+  // Función auxiliar para convertir archivo nuevo a Base64
+  const convertirABase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const guardarCambios = async () => {
     if (!vendedorId || !perfil) return;
     setGuardando(true);
     try {
+      let qrBase64 = perfil.qrUrl || "";
+      if (nuevoQr) {
+        qrBase64 = await convertirABase64(nuevoQr);
+      }
+
+      let deUnaBase64 = perfil.qrDeUnaUrl || "";
+      if (nuevoQrDeUna) {
+        deUnaBase64 = await convertirABase64(nuevoQrDeUna);
+      }
+
+      const datosAEnviar = {
+        ...perfil,
+        qrUrl: qrBase64,
+        qrDeUnaUrl: deUnaBase64,
+      };
+
       const res = await fetch(`http://localhost:3001/vendedores/${vendedorId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(perfil),
+        body: JSON.stringify(datosAEnviar),
       });
 
       const data = await res.json();
@@ -93,7 +127,10 @@ export default function PerfilVendedor() {
         return;
       }
 
+      setPerfil(datosAEnviar);
       setEditando(false);
+      setNuevoQr(null);
+      setNuevoQrDeUna(null);
       setMensaje("Perfil actualizado correctamente");
       setTimeout(() => setMensaje(""), 3000);
     } catch (error) {
@@ -235,6 +272,16 @@ export default function PerfilVendedor() {
               />
             </div>
 
+            <div>
+              <label className="text-slate-500 text-xs block mb-1">WhatsApp de contacto</label>
+              <input
+                type="tel" name="whatsapp" value={perfil.whatsapp || ""}
+                onChange={handleChange} disabled={!editando}
+                placeholder="Ej: 593999999999"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 disabled:bg-slate-100 disabled:text-slate-500 focus:outline-none focus:border-cyan-400"
+              />
+            </div>
+
             <p className="text-blue-800 font-semibold text-xs uppercase tracking-wide mt-2">Información de pago</p>
 
             <div>
@@ -244,6 +291,7 @@ export default function PerfilVendedor() {
                   name="banco" value={perfil.banco} onChange={handleChange}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400"
                 >
+                  <option value="">Selecciona banco o cooperativa</option>
                   <optgroup label="Bancos">
                     {BANCOS.map((b) => <option key={b} value={b}>{b}</option>)}
                   </optgroup>
@@ -268,8 +316,46 @@ export default function PerfilVendedor() {
               />
             </div>
 
+            {/* Visualización / Edición de Código QR general */}
+            <div>
+              <label className="text-slate-500 text-xs block mb-1">Código QR de pago (Transferencias)</label>
+              {perfil.qrUrl ? (
+                <div className="mb-2">
+                  <Image src={perfil.qrUrl} alt="QR Pago" width={120} height={120} className="rounded-xl border border-slate-200 object-contain" />
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 mb-1">No hay código QR registrado</p>
+              )}
+              {editando && (
+                <input 
+                  type="file" accept="image/*" 
+                  onChange={(e) => setNuevoQr(e.target.files?.[0] || null)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-700 text-sm file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-blue-800 file:text-white file:font-semibold hover:file:bg-blue-900 transition cursor-pointer mt-1" 
+                />
+              )}
+            </div>
+
+            {/* Visualización / Edición de Código QR de "De una" */}
+            <div>
+              <label className="text-slate-500 text-xs block mb-1">Código QR "De una"</label>
+              {perfil.qrDeUnaUrl ? (
+                <div className="mb-2">
+                  <Image src={perfil.qrDeUnaUrl} alt="QR De una" width={120} height={120} className="rounded-xl border border-slate-200 object-contain" />
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 mb-1">No hay QR de De una registrado</p>
+              )}
+              {editando && (
+                <input 
+                  type="file" accept="image/*" 
+                  onChange={(e) => setNuevoQrDeUna(e.target.files?.[0] || null)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-700 text-sm file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-purple-700 file:text-white file:font-semibold hover:file:bg-purple-800 transition cursor-pointer mt-1" 
+                />
+              )}
+            </div>
+
             {editando && (
-              <div className="flex gap-4 mt-2">
+              <div className="flex gap-4 mt-4">
                 <button
                   onClick={guardarCambios}
                   disabled={guardando}
@@ -278,7 +364,11 @@ export default function PerfilVendedor() {
                   {guardando ? "Guardando..." : "Guardar Cambios"}
                 </button>
                 <button
-                  onClick={() => setEditando(false)}
+                  onClick={() => {
+                    setEditando(false);
+                    setNuevoQr(null);
+                    setNuevoQrDeUna(null);
+                  }}
                   className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition"
                 >
                   Cancelar

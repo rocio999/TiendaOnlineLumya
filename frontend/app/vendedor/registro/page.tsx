@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,9 +24,11 @@ export default function RegistroVendedor() {
   const [formulario, setFormulario] = useState({
     nombrePropietario: "", nombreNegocio: "", correo: "", telefono: "",
     password: "", confirmarPassword: "", descripcion: "", cedula: "",
-    banco: "", numeroCuenta: "",
+    banco: "", numeroCuenta: "", whatsapp: "",
   });
   const [logo, setLogo] = useState<File | null>(null);
+  const [qrPago, setQrPago] = useState<File | null>(null); // <--- Nuevo estado para el QR
+  const [qrDeUna, setQrDeUna] = useState<File | null>(null);
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
 
@@ -33,6 +36,16 @@ export default function RegistroVendedor() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     setFormulario({ ...formulario, [e.target.name]: e.target.value });
+  };
+  
+// Función auxiliar para convertir archivo a Base64
+  const convertirABase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,6 +58,16 @@ export default function RegistroVendedor() {
 
     setCargando(true);
     try {
+      // Convertimos el QR a Base64 si el usuario seleccionó uno
+      let qrBase64 = "";
+      if (qrPago) {
+        qrBase64 = await convertirABase64(qrPago);
+      }
+      let deUnaBase64 = "";
+      if (qrDeUna) {
+        deUnaBase64 = await convertirABase64(qrDeUna);
+      }
+
       const res = await fetch("http://localhost:3001/registro-vendedor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -58,6 +81,9 @@ export default function RegistroVendedor() {
           descripcion: formulario.descripcion,
           banco: formulario.banco,
           numeroCuenta: formulario.numeroCuenta,
+          whatsapp: formulario.whatsapp,
+          qrUrl: qrBase64,
+          qrDeUnaUrl: deUnaBase64, // <--- Enviamos el QR de De una al backend
         }),
       });
 
@@ -159,6 +185,24 @@ export default function RegistroVendedor() {
           <input type="text" name="numeroCuenta" placeholder="Número de cuenta"
             value={formulario.numeroCuenta} onChange={handleChange}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400" required />
+
+          {/* NUEVO: Input para WhatsApp */}
+          <input type="tel" name="whatsapp" placeholder="Número de WhatsApp (ej: 593999999999)"
+            value={formulario.whatsapp} onChange={handleChange}
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400" required />
+
+          {/* NUEVO: Input para subir el Código QR */}
+          <div>
+            <label className="text-blue-800 font-semibold text-xs block mb-1">Código QR de pago (Imagen)</label>
+            <input type="file" accept="image/*" onChange={(e) => setQrPago(e.target.files?.[0] || null)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-emerald-700 file:text-white file:font-semibold hover:file:bg-emerald-800 transition cursor-pointer" />
+          </div>
+          {/* NUEVO: Input para subir el Código QR de De una */}
+          <div>
+            <label className="text-blue-800 font-semibold text-xs block mb-1">Código QR "De una" (Imagen)</label>
+            <input type="file" accept="image/*" onChange={(e) => setQrDeUna(e.target.files?.[0] || null)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-purple-700 file:text-white file:font-semibold hover:file:bg-purple-800 transition cursor-pointer" />
+          </div>
 
           <button type="submit" disabled={cargando}
             className="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition mt-2 disabled:opacity-50">

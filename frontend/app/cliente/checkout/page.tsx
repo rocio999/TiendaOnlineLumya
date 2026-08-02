@@ -19,7 +19,8 @@ export default function Checkout() {
   const [metodoPago, setMetodoPago] = useState("");
   const [tipoEntrega, setTipoEntrega] = useState("");
   const [costoEnvio, setCostoEnvio] = useState(0);
-  const [tipoServientrega, setTipoServientrega] = useState("domicilio"); // domicilio o agencia
+  const [envioAceptado, setEnvioAceptado] = useState(false);
+  const [tipoServientrega, setTipoServientrega] = useState("domicilio");
   const [provincia, setProvincia] = useState("");
   const [ciudad, setCiudad] = useState("");
   const [direccion, setDireccion] = useState("");
@@ -37,7 +38,6 @@ export default function Checkout() {
 
   const subtotal = productos.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
 
-  // Cargar el tipo de entrega y costo de envío guardados desde el carrito
   useEffect(() => {
     if (typeof window !== "undefined") {
       const entregaGuardada = localStorage.getItem("tipoEntregaSeleccionado");
@@ -84,7 +84,7 @@ export default function Checkout() {
       }
     };
     cargarVendedor();
-  }, []);
+  }, [productos]);
 
   const confirmarCompra = async () => {
     if (!metodoPago) {
@@ -94,6 +94,11 @@ export default function Checkout() {
 
     if (!tipoEntrega) {
       alert("Seleccione un método de entrega");
+      return;
+    }
+
+    if (!envioAceptado && costoEnvio > 0) {
+      alert("Debe aceptar el cargo del costo de envío antes de proceder.");
       return;
     }
 
@@ -110,19 +115,20 @@ export default function Checkout() {
     }
 
     const cliente = JSON.parse(usuario);
+    const pedidoId = crypto.randomUUID();
+    const entregaFinal = tipoEntrega === "Servientrega" ? `Servientrega (${tipoServientrega})` : tipoEntrega;
+    const vendedorId = productos.length > 0 ? productos[0].vendedorId : "";
+    const nombreProductos = productos.map(p => `${p.nombre} x${p.cantidad}`).join(", ");
 
     const pedido = {
-      id: crypto.randomUUID(),
+      id: pedidoId,
       cliente,
       productos,
       subtotal,
       costoEnvio,
       total: totalGeneral,
       metodoPago,
-      anticipo: totalGeneral,
-      saldo: 0,
-      estadoPago: "pendiente",
-      tipoEntrega: tipoEntrega === "Servientrega" ? `Servientrega (${tipoServientrega})` : tipoEntrega,
+      tipoEntrega: entregaFinal,
       provincia,
       ciudad,
       direccion,
@@ -134,33 +140,38 @@ export default function Checkout() {
     };
 
     try {
+      // 1. Guardar localmente
       const pedidosGuardados = JSON.parse(localStorage.getItem("pedidos") || "[]");
       pedidosGuardados.push(pedido);
       localStorage.setItem("pedidos", JSON.stringify(pedidosGuardados));
       
-      for (const producto of productos) {
-        await fetch("http://localhost:3001/pagos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            usuarioId: cliente.id,
-            vendedorId: producto.vendedorId,
-            producto: producto.nombre,
-            monto: producto.precio * producto.cantidad,
-            envio: costoEnvio,
-            montoTotal: totalGeneral,
-            metodo: metodoPago,
-            pedidoId: pedido.id,
-            anticipo: pedido.anticipo,
-            tipoEntrega: pedido.tipoEntrega,
-            provincia,
-            ciudad,
-            direccion,
-            referencia,
-            cooperativa,
-            ciudadDestino,
-          })
-        });
+      // 2. Enviar al backend incluyendo correctamente subtotal y costo de envío (envio)
+      const res = await fetch("http://localhost:3001/pagos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          usuarioId: cliente.id,
+          vendedorId: vendedorId,
+          pedidoId: pedidoId,
+          producto: nombreProductos,
+          subtotal: subtotal,
+          envio: costoEnvio,
+          monto: totalGeneral,
+          metodo: metodoPago,
+          tipoEntrega: entregaFinal,
+          provincia,
+          ciudad,
+          direccion,
+          referencia,
+          cooperativa,
+          ciudadDestino
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Error al procesar el pago en el servidor");
       }
 
       localStorage.removeItem("carritoPago");
@@ -169,9 +180,9 @@ export default function Checkout() {
       alert("✅ Compra realizada correctamente");
       router.push("/cliente/pedidos");
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creando compra", error);
-      alert("Error al procesar la compra");
+      alert("Error al procesar la compra: " + error.message);
     }
   };
 
@@ -225,9 +236,31 @@ export default function Checkout() {
                 <span>Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
-              <div className="checkout-item">
-                <span>Envío ({tipoEntrega || "Seleccionado"})</span>
-                <span>${costoEnvio.toFixed(2)}</span>
+
+              {/* COSTO DE ENVÍO CON BOTÓN DE ACEPTACIÓN AL LADO */}
+              <div className="checkout-item" style={{ alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span>Envío ({tipoEntrega || "Seleccionado"})</span>
+                  <strong style={{ color: "#333" }}>${costoEnvio.toFixed(2)}</strong>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setEnvioAceptado(!envioAceptado)}
+                  style={{
+                    padding: "6px 12px",
+                    background: envioAceptado ? "#28a745" : "#0070f3",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                    transition: "background 0.2s"
+                  }}
+                >
+                  {envioAceptado ? "Cargo Aceptado ✅" : "Aceptar cargo"}
+                </button>
               </div>
 
               {/* MÉTODO DE PAGO */}
@@ -326,7 +359,6 @@ export default function Checkout() {
                         </a>
                       </div>
                     </div>
-
                   </div>
                 )}
               </div>
@@ -456,9 +488,19 @@ export default function Checkout() {
 
               <button
                 className="btn-confirmar"
-                disabled={!metodoPago || !tipoEntrega || !terminosAceptados || productos.length === 0}
+                disabled={!metodoPago || !tipoEntrega || !envioAceptado || !terminosAceptados || productos.length === 0}
                 onClick={confirmarCompra}
-                style={{ marginTop: "15px", width: "100%", padding: "12px", background: (!metodoPago || !tipoEntrega || !terminosAceptados) ? "#ccc" : "#0070f3", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: "bold" }}
+                style={{ 
+                  marginTop: "15px", 
+                  width: "100%", 
+                  padding: "12px", 
+                  background: (!metodoPago || !tipoEntrega || !envioAceptado || !terminosAceptados) ? "#ccc" : "#0070f3", 
+                  color: "white", 
+                  border: "none", 
+                  borderRadius: "5px", 
+                  cursor: (!metodoPago || !tipoEntrega || !envioAceptado || !terminosAceptados) ? "not-allowed" : "pointer", 
+                  fontWeight: "bold" 
+                }}
               >
                 Confirmar compra
               </button>
