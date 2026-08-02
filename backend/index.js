@@ -249,6 +249,7 @@ app.post("/registro-vendedor", async (req, res) => {
     const {
       nombre, cedula, correo, telefono, password,
       nombreNegocio, descripcion, banco, numeroCuenta,
+      whatsapp, qrUrl, qrDeUnaUrl // <--- 1. Recibir qrDeUnaUrl aquí
     } = req.body;
 
     if (!nombre || !correo || !password || !nombreNegocio) {
@@ -277,6 +278,9 @@ app.post("/registro-vendedor", async (req, res) => {
       descripcion: descripcion || "",
       banco: banco || "",
       numeroCuenta: numeroCuenta || "",
+      whatsapp: whatsapp || "",
+      qrUrl: qrUrl || "",
+      qrDeUnaUrl: qrDeUnaUrl || "", // <--- 2. Guardarlo en Firestore
       createdAt: FieldValue.serverTimestamp(),
     });
 
@@ -633,37 +637,44 @@ app.get("/pagos", async (req, res) => {
 
 app.post("/pagos", async (req, res) => {
   try {
-const { 
-usuarioId,
-vendedorId,
-producto,
-monto,
-metodo,
-  pedidoId,
-anticipo,
-  tipoEntrega,
-  provincia,
-  ciudad,
-  direccion,
-  referencia,
-  cooperativa,
-  ciudadDestino
-} = req.body;
+    const { 
+      usuarioId,
+      vendedorId,
+      producto,
+      monto,
+      metodo,
+      pedidoId,
+      tipoEntrega,
+      provincia,
+      ciudad,
+      direccion,
+      referencia,
+      cooperativa,
+      ciudadDestino,
+      costoEnvio,
+      envio,
+      subtotal,
+      montoTotal
+    } = req.body;
+
     if (!usuarioId || !producto || !monto) {
       return res.status(400).json({ message: "Faltan datos obligatorios" });
     }
+
+    // Calculamos o determinamos el costo de envío de manera inteligente en el backend
+    const costoEnvioFinal = Number(costoEnvio ?? envio ?? 0);
+    const montoNum = Number(monto);
+
     const nuevoDoc = await db.collection("pagos").add({
-      
       usuarioId,
-      vendedorId: vendedorId || ""
-      ,pedidoId,
+      vendedorId: vendedorId || "",
+      pedidoId: pedidoId || `pedido_${Date.now()}`,
       producto,
-      monto: Number(monto),
+      monto: montoNum,
+      subtotal: Number(subtotal) || montoNum,
+      costoEnvio: costoEnvioFinal, // <--- Aquí ya se registra formalmente en Firebase
+      montoTotal: Number(montoTotal) || (montoNum + costoEnvioFinal),
       metodo: metodo || "Efectivo",
-
-anticipo: anticipo || 0,
-
-saldoPendiente: Number(monto) - Number(anticipo || 0),
       tipoEntrega: tipoEntrega || "",
       provincia: provincia || "",
       ciudad: ciudad || "",
@@ -675,10 +686,13 @@ saldoPendiente: Number(monto) - Number(anticipo || 0),
       estado: "pendiente",
       fecha: FieldValue.serverTimestamp(),
     });
+
     await registrarAuditoria(usuarioId, `Realizo una compra: ${producto} - $${monto}`, "pago");
+    
     if (vendedorId) {
       await crearNotificacion(vendedorId, `Nuevo pedido: ${producto} - $${monto}`, "pedido");
     }
+
     res.json({ message: "Pedido registrado correctamente", id: nuevoDoc.id });
   } catch (error) {
     console.error("Error en POST /pagos:", error);
