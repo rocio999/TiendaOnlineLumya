@@ -21,6 +21,10 @@ export default function CatalogoGeneral() {
   const [busqueda, setBusqueda] = useState("");
   const [agregado, setAgregado] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState(false);
+  const [tiendas, setTiendas] = useState<{ id: string; nombreNegocio: string }[]>([]);
+  const [mostrarMenu, setMostrarMenu] = useState(false);
+  const [vistaMenu, setVistaMenu] = useState<"categorias" | "tiendas" | null>(null);
+  const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
 
   function suscribirseUsuario(callback: () => void) {
     window.addEventListener("storage", callback);
@@ -53,6 +57,21 @@ export default function CatalogoGeneral() {
     cargarProductos();
   }, []);
 
+  useEffect(() => {
+    const cargarTiendas = async () => {
+      try {
+        const res = await fetch("http://localhost:3001/vendedores");
+        const data = await res.json();
+        const activos = data
+          .filter((v: any) => v.estado === "activo")
+          .map((v: any) => ({ id: v.id, nombreNegocio: v.nombreNegocio || v.nombre || "Tienda" }));
+        setTiendas(activos);
+      } catch (error) {
+        console.error("Error al cargar tiendas:", error);
+      }
+    };
+    cargarTiendas();
+  }, []);
   const cerrarSesion = () => {
     localStorage.removeItem("usuario");
     localStorage.removeItem("token");
@@ -81,9 +100,11 @@ export default function CatalogoGeneral() {
     setTimeout(() => setAgregado(null), 1500);
   };
 
-  const productosFiltrados = productos.filter((p) =>
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const productosFiltrados = productos.filter((p) => {
+    const coincideBusqueda = p.nombre.toLowerCase().includes(busqueda.toLowerCase());
+    const coincideCategoria = !categoriaActiva || p.categoria === categoriaActiva;
+    return coincideBusqueda && coincideCategoria;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -154,19 +175,101 @@ export default function CatalogoGeneral() {
           </div>
         </div>
 
-        <div className="max-w-5xl mx-auto mt-3">
+        <div className="max-w-5xl mx-auto mt-3 flex gap-2 relative">
           <input
             type="text"
             placeholder="Buscar productos..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full bg-white rounded-xl px-4 py-2 text-gray-700 placeholder-gray-400 focus:outline-none shadow-md"
+            className="flex-1 bg-white rounded-xl px-4 py-2 text-gray-700 placeholder-gray-400 focus:outline-none shadow-md"
           />
+          <button
+            onClick={() => setMostrarMenu(!mostrarMenu)}
+            className="bg-white rounded-xl px-4 py-2 shadow-md text-gray-700 font-bold text-xl hover:bg-gray-50"
+          >
+            ⋮
+          </button>
+          {mostrarMenu && (
+            <div className="absolute right-0 top-12 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+              <button
+                onClick={() => { setVistaMenu("categorias"); setMostrarMenu(false); }}
+                className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 font-medium border-b border-gray-100"
+              >
+                🏷️ Ver categorías
+              </button>
+              <button
+                onClick={() => { setVistaMenu("tiendas"); setMostrarMenu(false); }}
+                className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 font-medium"
+              >
+                🏪 Ver tiendas
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
+      {vistaMenu === "tiendas" && (
+        <div className="max-w-5xl mx-auto px-4 pt-6">
+          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-blue-900 text-lg">Tiendas disponibles</h3>
+              <button onClick={() => setVistaMenu(null)} className="text-gray-400 hover:text-gray-600 text-sm">
+                Cerrar ✕
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {tiendas.map((tienda) => (
+                <button
+                  key={tienda.id}
+                  onClick={() => router.push(`/cliente/tiendas/${tienda.id}`)}
+                  className="bg-blue-50 hover:bg-blue-100 text-blue-800 font-semibold rounded-xl px-4 py-3 text-sm transition text-left"
+                >
+                  🏪 {tienda.nombreNegocio}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {vistaMenu === "categorias" && (
+        <div className="max-w-5xl mx-auto px-4 pt-6">
+          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-blue-900 text-lg">Categorías</h3>
+              <button onClick={() => setVistaMenu(null)} className="text-gray-400 hover:text-gray-600 text-sm">
+                Cerrar ✕
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {Array.from(new Set(productos.map((p) => p.categoria))).map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => { setCategoriaActiva(cat); setVistaMenu(null); }}
+                  className="bg-cyan-50 hover:bg-cyan-100 text-cyan-800 font-semibold rounded-xl px-4 py-3 text-sm transition text-left"
+                >
+                  🏷️ {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <h2 className="text-2xl font-bold text-blue-900 mb-6">Todos los productos</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-blue-900">
+            {categoriaActiva ? `Categoría: ${categoriaActiva}` : "Todos los productos"}
+          </h2>
+          {categoriaActiva && (
+            <button
+              onClick={() => setCategoriaActiva(null)}
+              className="text-blue-600 hover:text-blue-800 font-semibold text-sm bg-blue-50 px-4 py-2 rounded-xl transition"
+            >
+              ← Volver al catálogo
+            </button>
+          )}
+        </div>
 
         {cargando ? (
           <div className="text-center py-20 text-gray-400">Cargando productos...</div>

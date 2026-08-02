@@ -348,7 +348,7 @@ export default function TiendaDetalle() {
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto grid grid-cols-4 gap-2">
-          <button onClick={() => router.push("/cliente/tiendas")} className="flex flex-col items-center text-blue-700">
+          <button onClick={() => router.push("/cliente/catalogo")} className="flex flex-col items-center text-blue-700">
             <span className="text-xl">🏠</span>
             <span className="text-xs font-semibold">Inicio</span>
           </button>
