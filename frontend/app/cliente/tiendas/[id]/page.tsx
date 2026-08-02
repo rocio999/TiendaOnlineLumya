@@ -14,6 +14,7 @@ interface Producto {
   categoria: string;
   stock: number;
   imagenUrl?: string;
+  descripcion?: string;
 }
 
 interface Tienda {
@@ -25,6 +26,7 @@ export default function TiendaDetalle() {
   const [agregado, setAgregado] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState(false);
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
+  const [productoAbierto, setProductoAbierto] = useState<Producto | null>(null);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [tienda, setTienda] = useState<Tienda | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -302,7 +304,7 @@ export default function TiendaDetalle() {
           <div className="grid grid-cols-2 gap-4 mb-24">
             {productosFiltrados.map((producto) => (
               <div key={producto.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition border border-gray-100">
-                <div className="h-32 w-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                <div onClick={() => setProductoAbierto(producto)} className="h-40 w-full overflow-hidden bg-gray-100 flex items-center justify-center cursor-pointer">
                 {producto.imagenUrl ? (
                    <Image
                      src={producto.imagenUrl}
@@ -380,6 +382,49 @@ export default function TiendaDetalle() {
           </button>
         </div>
       </div>
+      {productoAbierto && (
+        <div
+          onClick={() => setProductoAbierto(null)}
+          className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl overflow-hidden max-w-md w-full max-h-[90vh] overflow-y-auto"
+          >
+            <div className="w-full bg-gray-100 flex items-center justify-center" style={{ minHeight: "250px" }}>
+              {productoAbierto.imagenUrl ? (
+                <Image
+                  src={productoAbierto.imagenUrl}
+                  alt={productoAbierto.nombre}
+                  width={500}
+                  height={500}
+                  className="object-contain w-full max-h-[400px]"
+                />
+              ) : (
+                <span className="text-8xl py-16">📦</span>
+              )}
+            </div>
+            <div className="p-5">
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-xl font-bold text-blue-900">{productoAbierto.nombre}</h3>
+                <button
+                  onClick={() => setProductoAbierto(null)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="text-xs font-semibold text-cyan-700 bg-cyan-50 inline-block px-2 py-1 rounded-full mb-3">
+                {productoAbierto.categoria}
+              </p>
+              <p className="text-gray-600 text-sm mb-4">
+                {productoAbierto.descripcion || "Sin descripción disponible."}
+              </p>
+              <p className="text-2xl font-bold text-blue-700">${productoAbierto.precio}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
