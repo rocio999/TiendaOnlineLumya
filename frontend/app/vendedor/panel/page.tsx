@@ -351,7 +351,7 @@ Destino:
 
 {pedido.metodoPago === "Transferencia"
   ? "🏦 Transferencia"
-  : "💵 Efectivo"}
+  : "📲 DeUna"}
 
 </td>
 <td>
