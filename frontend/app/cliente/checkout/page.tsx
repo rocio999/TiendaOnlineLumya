@@ -6,39 +6,61 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 interface ProductoCheckout {
-
-id:string;
-
-nombre:string;
-
-precio:number;
-
-cantidad:number;
-
-tiendaNombre:string;
-
-vendedorId:string;
-
+  id: string;
+  nombre: string;
+  precio: number;
+  cantidad: number;
+  tiendaNombre: string;
+  vendedorId: string;
+  peso?: number;
 }
 
 export default function Checkout() {
   const [metodoPago, setMetodoPago] = useState("");
   const [tipoEntrega, setTipoEntrega] = useState("");
+  const [costoEnvio, setCostoEnvio] = useState(0);
+  const [tipoServientrega, setTipoServientrega] = useState("domicilio"); // domicilio o agencia
   const [provincia, setProvincia] = useState("");
-const [ciudad, setCiudad] = useState("");
-const [direccion, setDireccion] = useState("");
-const [referencia, setReferencia] = useState("");
-const [cooperativa, setCooperativa] = useState("");
-const [ciudadDestino, setCiudadDestino] = useState("");
+  const [ciudad, setCiudad] = useState("");
+  const [direccion, setDireccion] = useState("");
+  const [referencia, setReferencia] = useState("");
+  const [cooperativa, setCooperativa] = useState("");
+  const [ciudadDestino, setCiudadDestino] = useState("");
+  const [terminosAceptados, setTerminosAceptados] = useState(false);
+  
   const router = useRouter();
 
   const productos: ProductoCheckout[] =
     typeof window !== "undefined"
       ? JSON.parse(localStorage.getItem("carritoPago") || "[]")
       : [];
-  const total = productos.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
 
-  const [datosVendedor, setDatosVendedor] = useState<{ nombreNegocio: string; banco: string; numeroCuenta: string; cedula: string } | null>(null);
+  const subtotal = productos.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
+
+  // Cargar el tipo de entrega y costo de envío guardados desde el carrito
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const entregaGuardada = localStorage.getItem("tipoEntregaSeleccionado");
+      const envioGuardado = localStorage.getItem("costoEnvioSeleccionado");
+
+      if (entregaGuardada) {
+        setTipoEntrega(entregaGuardada);
+      }
+      if (envioGuardado) {
+        setCostoEnvio(parseFloat(envioGuardado) || 0);
+      }
+    }
+  }, []);
+
+  const totalGeneral = subtotal + costoEnvio;
+
+  const [datosVendedor, setDatosVendedor] = useState<{ 
+    nombreNegocio: string; 
+    banco: string; 
+    numeroCuenta: string; 
+    cedula: string;
+    whatsapp?: string; 
+  } | null>(null);
 
   useEffect(() => {
     const cargarVendedor = async () => {
@@ -54,6 +76,7 @@ const [ciudadDestino, setCiudadDestino] = useState("");
             banco: data.banco || "No especificado",
             numeroCuenta: data.numeroCuenta || "No especificado",
             cedula: data.cedula || "No especificado",
+            whatsapp: data.whatsapp || "593900000000",
           });
         }
       } catch (error) {
@@ -64,181 +87,114 @@ const [ciudadDestino, setCiudadDestino] = useState("");
   }, []);
 
   const confirmarCompra = async () => {
-
-  if (!metodoPago) {
-    alert("Seleccione un método de pago");
-    return;
-  }
-
-  if (!tipoEntrega) {
-    alert("Seleccione un método de entrega");
-    return;
-  }
-
-
-  const usuario = localStorage.getItem("usuario");
-
-  if (!usuario) {
-    alert("Debe iniciar sesión para comprar");
-    router.push("/login");
-    return;
-  }
-
-
-  const cliente = JSON.parse(usuario);
-
-
-  const pedido = {
-  id: crypto.randomUUID(),
-
-  cliente,
-
-  productos,
-
-  total,
-
-  metodoPago,
-
-
-  anticipo:
-    metodoPago === "Efectivo"
-      ? 10
-      : total,
-
-
-  saldo:
-    metodoPago === "Efectivo"
-      ? total - 10
-      : 0,
-
-
-  estadoPago:"pendiente",
-
-
-  tipoEntrega,
-
-  provincia,
-  ciudad,
-  direccion,
-  referencia,
-
-  cooperativa,
-  ciudadDestino,
-
-
-  estado:"pendiente",
-
-  fecha:new Date().toISOString()
-};
-
-
-  try {
-
-
-    // guardar pedido
-    const pedidosGuardados =
-      JSON.parse(
-        localStorage.getItem("pedidos") || "[]"
-      );
-
-
-    pedidosGuardados.push(pedido);
-
-
-    localStorage.setItem(
-      "pedidos",
-      JSON.stringify(pedidosGuardados)
-    );
-    
-    // crear pagos en Firebase
-    for(const producto of productos){
-
-
-      await fetch(
-        "http://localhost:3001/pagos",
-        {
-
-          method:"POST",
-
-          headers:{
-            "Content-Type":"application/json"
-          },
-
-
-          body:JSON.stringify({
-
-            usuarioId:cliente.id,
-
-            vendedorId:producto.vendedorId,
-
-
-            producto:producto.nombre,
-
-
-            monto:
-              producto.precio *
-              producto.cantidad,
-
-
-            metodo:
-              metodoPago,
-
-
-            pedidoId:
-              pedido.id,
-            anticipo: pedido.anticipo,
-            tipoEntrega: tipoEntrega,
-            provincia: provincia,
-            ciudad: ciudad,
-            direccion: direccion,
-            referencia: referencia,
-            cooperativa: cooperativa,
-            ciudadDestino: ciudadDestino,
-
-          })
-
-        }
-
-      );
-
+    if (!metodoPago) {
+      alert("Seleccione un método de pago");
+      return;
     }
 
+    if (!tipoEntrega) {
+      alert("Seleccione un método de entrega");
+      return;
+    }
 
+    if (!terminosAceptados) {
+      alert("Debe confirmar que está de acuerdo con todos los campos antes de proceder la compra.");
+      return;
+    }
 
-    localStorage.removeItem(
-      "carritoPago"
-    );
+    const usuario = localStorage.getItem("usuario");
+    if (!usuario) {
+      alert("Debe iniciar sesión para comprar");
+      router.push("/login");
+      return;
+    }
 
+    const cliente = JSON.parse(usuario);
 
-    alert(
-      "✅ Compra realizada correctamente"
-    );
+    const pedido = {
+      id: crypto.randomUUID(),
+      cliente,
+      productos,
+      subtotal,
+      costoEnvio,
+      total: totalGeneral,
+      metodoPago,
+      anticipo: totalGeneral,
+      saldo: 0,
+      estadoPago: "pendiente",
+      tipoEntrega: tipoEntrega === "Servientrega" ? `Servientrega (${tipoServientrega})` : tipoEntrega,
+      provincia,
+      ciudad,
+      direccion,
+      referencia,
+      cooperativa,
+      ciudadDestino,
+      estado: "pendiente",
+      fecha: new Date().toISOString()
+    };
 
+    try {
+      const pedidosGuardados = JSON.parse(localStorage.getItem("pedidos") || "[]");
+      pedidosGuardados.push(pedido);
+      localStorage.setItem("pedidos", JSON.stringify(pedidosGuardados));
+      
+      for (const producto of productos) {
+        await fetch("http://localhost:3001/pagos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            usuarioId: cliente.id,
+            vendedorId: producto.vendedorId,
+            producto: producto.nombre,
+            monto: producto.precio * producto.cantidad,
+            envio: costoEnvio,
+            montoTotal: totalGeneral,
+            metodo: metodoPago,
+            pedidoId: pedido.id,
+            anticipo: pedido.anticipo,
+            tipoEntrega: pedido.tipoEntrega,
+            provincia,
+            ciudad,
+            direccion,
+            referencia,
+            cooperativa,
+            ciudadDestino,
+          })
+        });
+      }
 
-    router.push(
-      "/cliente/pedidos"
-    );
+      localStorage.removeItem("carritoPago");
+      localStorage.removeItem("tipoEntregaSeleccionado");
+      localStorage.removeItem("costoEnvioSeleccionado");
+      alert("✅ Compra realizada correctamente");
+      router.push("/cliente/pedidos");
 
-
-  } catch(error){
-
-    console.error(
-      "Error creando compra",
-      error
-    );
-
-    alert(
-      "Error al procesar la compra"
-    );
-
-  }
-
-};
-
+    } catch (error) {
+      console.error("Error creando compra", error);
+      alert("Error al procesar la compra");
+    }
+  };
 
   return (
     <div className="checkout-container">
-      <h1>Finalizar compra</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <h1>Finalizar compra</h1>
+        <Link 
+          href="/cliente/carrito" 
+          style={{ 
+            padding: "8px 14px", 
+            background: "#f0f0f0", 
+            border: "1px solid #ccc", 
+            borderRadius: "5px", 
+            textDecoration: "none", 
+            color: "#333", 
+            fontSize: "14px", 
+            fontWeight: "bold" 
+          }}
+        >
+          ← Volver al carrito
+        </Link>
+      </div>
 
       <div className="checkout-grid">
         {/* Datos del cliente */}
@@ -265,8 +221,17 @@ const [ciudadDestino, setCiudadDestino] = useState("");
                 </div>
               ))}
 
-              {/* Método de pago */}
-              <div className="checkout-card">
+              <div className="checkout-item" style={{ borderTop: "1px solid #eee", marginTop: "10px", paddingTop: "10px" }}>
+                <span>Subtotal</span>
+                <span>${subtotal.toFixed(2)}</span>
+              </div>
+              <div className="checkout-item">
+                <span>Envío ({tipoEntrega || "Seleccionado"})</span>
+                <span>${costoEnvio.toFixed(2)}</span>
+              </div>
+
+              {/* MÉTODO DE PAGO */}
+              <div className="checkout-card mt-4">
                 <h2>💳 Método de pago</h2>
 
                 <label>
@@ -277,23 +242,40 @@ const [ciudadDestino, setCiudadDestino] = useState("");
                     checked={metodoPago === "Transferencia"}
                     onChange={(e) => setMetodoPago(e.target.value)}
                   />
-                  {" "}Transferencia bancaria
+                  {" "}Transferencia bancaria (Pago Total)
                 </label>
 
                 {metodoPago === "Transferencia" && (
-                  <div className="transferencia-card">
-                    <h3>Datos para transferencia</h3>
-                    {datosVendedor ? (
-                      <>
-                        <p>🏪 Tienda: {datosVendedor.nombreNegocio}</p>
-                        <p>🏦 Banco: {datosVendedor.banco}</p>
-                        <p>💳 Cuenta: {datosVendedor.numeroCuenta}</p>
-                        <p>📱 Cédula: {datosVendedor.cedula}</p>
-                      </>
-                    ) : (
-                      <p>Cargando datos de la tienda...</p>
-                    )}
-                    <p className="nota">Realice la transferencia y conserve el comprobante.</p>
+                  <div className="transferencia-card" style={{ display: "flex", gap: "15px", alignItems: "center", flexWrap: "wrap", marginTop: "8px", background: "#f8f9fa", padding: "10px", borderRadius: "6px" }}>
+                    <div style={{ flex: 1 }}>
+                      <h3>Datos para transferencia</h3>
+                      {datosVendedor ? (
+                        <>
+                          <p>🏪 Tienda: {datosVendedor.nombreNegocio}</p>
+                          <p>🏦 Banco: {datosVendedor.banco}</p>
+                          <p>💳 Cuenta: {datosVendedor.numeroCuenta}</p>
+                          <p>📱 Cédula/RUC: {datosVendedor.cedula}</p>
+                          <p style={{ fontWeight: "bold", color: "#0070f3" }}>Total a pagar: ${totalGeneral.toFixed(2)}</p>
+                        </>
+                      ) : (
+                        <p>Cargando datos de la tienda...</p>
+                      )}
+                      <p className="nota">Realice la transferencia total y envíe el comprobante por WhatsApp.</p>
+                    </div>
+                    <div style={{ textAlign: "center", background: "#fff", padding: "10px", borderRadius: "8px", border: "1px solid #ddd" }}>
+                      <p style={{ fontSize: "12px", marginBottom: "5px", fontWeight: "bold" }}>QR / WhatsApp</p>
+                      <div style={{ width: "80px", height: "80px", background: "#eee", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 5px auto", fontSize: "10px", color: "#666" }}>
+                        [Código QR]
+                      </div>
+                      <a 
+                        href={`https://wa.me/${datosVendedor?.whatsapp || '593900000000'}?text=${encodeURIComponent(`Hola, aquí adjunto mi comprobante de transferencia total por un valor de $${totalGeneral.toFixed(2)}.`)}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ fontSize: "11px", color: "#25D366", fontWeight: "bold", textDecoration: "underline" }}
+                      >
+                        Enviar por WhatsApp
+                      </a>
+                    </div>
                   </div>
                 )}
 
@@ -301,150 +283,193 @@ const [ciudadDestino, setCiudadDestino] = useState("");
                   <input
                     type="radio"
                     name="pago"
-                    value="Efectivo"
-                    checked={metodoPago === "Efectivo"}
+                    value="DeUna"
+                    checked={metodoPago === "DeUna"}
                     onChange={(e) => setMetodoPago(e.target.value)}
                   />
-                  {" "}Pago en efectivo
+                  {" "}Pago con DeUna (Pago Total)
                 </label>
 
-                {metodoPago === "Efectivo" && (
-                  <div className="efectivo-card">
-                    <h3>Pago en efectivo</h3>
-                    <p>Para confirmar su pedido debe entregar un anticipo.</p>
-                    <p className="anticipo">Anticipo requerido: $10.00</p>
-                    <p className="nota">El valor restante se cancela al recibir el pedido.</p>
+                {metodoPago === "DeUna" && (
+                  <div className="deuna-card" style={{ borderLeft: "4px solid #673ab7", paddingLeft: "10px", marginTop: "8px", background: "#f3e5f5", padding: "10px", borderRadius: "6px" }}>
+                    <h3>Pago con DeUna</h3>
+                    <p style={{ fontSize: "13px", marginBottom: "8px" }}>
+                      Escanee el código QR de DeUna de la tienda para realizar el pago completo del pedido.
+                    </p>
+                    
+                    <div style={{ display: "flex", gap: "15px", alignItems: "center", flexWrap: "wrap", marginTop: "10px", background: "#fff", padding: "10px", borderRadius: "6px", border: "1px solid #ddd" }}>
+                      <div style={{ flex: 1 }}>
+                        <h4>Datos DeUna / Celular:</h4>
+                        {datosVendedor ? (
+                          <>
+                            <p>🏪 Tienda: {datosVendedor.nombreNegocio}</p>
+                            <p>📱 Celular DeUna: {datosVendedor.numeroCuenta}</p>
+                            <p style={{ fontWeight: "bold", color: "#673ab7" }}>Total a pagar: ${totalGeneral.toFixed(2)}</p>
+                          </>
+                        ) : (
+                          <p>Cargando datos de la tienda...</p>
+                        )}
+                        <p className="nota">Realice el pago total y envíe el comprobante por WhatsApp.</p>
+                      </div>
+                      <div style={{ textAlign: "center", background: "#f9f9f9", padding: "10px", borderRadius: "8px", border: "1px solid #ddd" }}>
+                        <p style={{ fontSize: "12px", marginBottom: "5px", fontWeight: "bold" }}>QR DeUna</p>
+                        <div style={{ width: "80px", height: "80px", background: "#eee", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 5px auto", fontSize: "10px", color: "#666" }}>
+                          [QR DeUna]
+                        </div>
+                        <a 
+                          href={`https://wa.me/${datosVendedor?.whatsapp || '593900000000'}?text=${encodeURIComponent(`Hola, aquí adjunto el comprobante de mi pago con DeUna por un valor total de $${totalGeneral.toFixed(2)}.`)}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{ fontSize: "11px", color: "#25D366", fontWeight: "bold", textDecoration: "underline" }}
+                        >
+                          Enviar por WhatsApp
+                        </a>
+                      </div>
+                    </div>
+
                   </div>
                 )}
-                {/* MÉTODO DE ENTREGA */}
-<div className="checkout-card">
-  <h2>🚚 Método de entrega</h2>
-
-  <label>
-    <input
-      type="radio"
-      name="entrega"
-      value="Servientrega"
-      checked={tipoEntrega === "Servientrega"}
-      onChange={(e) => setTipoEntrega(e.target.value)}
-    />
-    {" "}Servientrega
-    {tipoEntrega === "Servientrega" && (
-  <div className="entrega-card">
-
-    <h3>🚚 Datos para el envío</h3>
-
-    <label>Provincia</label>
-    <input
-      type="text"
-      placeholder="Ej. Pichincha"
-      value={provincia}
-      onChange={(e) => setProvincia(e.target.value)}
-    />
-
-    <label>Ciudad</label>
-    <input
-      type="text"
-      placeholder="Ej. Quito"
-      value={ciudad}
-      onChange={(e) => setCiudad(e.target.value)}
-    />
-    <label>Dirección de servientrega mas cercano</label>
-    <input
-      type="text"
-      placeholder="Ingrese la dirección completa"
-      value={direccion}
-      onChange={(e) => setDireccion(e.target.value)}
-    />
-    <label>Dirección / Calles / N° de casa</label>
-    <input
-      type="text"
-      placeholder="Ingrese la dirección completa"
-      value={direccion}
-      onChange={(e) => setDireccion(e.target.value)}
-    />
-    
-
-    <label>Referencia</label>
-    <input
-      type="text"
-      placeholder="Ej. Frente al parque"
-      value={referencia}
-      onChange={(e) => setReferencia(e.target.value)}
-    />
-
-  </div>
-)}
-  </label>
-
-  <label>
-    <input
-      type="radio"
-      name="entrega"
-      value="Cooperativa"
-      checked={tipoEntrega === "Cooperativa"}
-      onChange={(e) => setTipoEntrega(e.target.value)}
-    />
-    {" "}Cooperativa de transporte
-  {tipoEntrega === "Cooperativa" && (
-  <div className="entrega-card">
-
-    <h3>🚌 Datos del envío</h3>
-
-    <label>Nombre de la cooperativa</label>
-    <input
-      type="text"
-      placeholder="Ej. Cooperativa Loja"
-      value={cooperativa}
-      onChange={(e) => setCooperativa(e.target.value)}
-    />
-
-    <label>Ciudad de destino</label>
-    <input
-      type="text"
-      placeholder="Ej. Loja"
-      value={ciudadDestino}
-      onChange={(e) => setCiudadDestino(e.target.value)}
-    />
-
-  </div>
-)}
-  
-  </label>
-
-
-  {tipoEntrega === "Servientrega" && (
-    <div className="entrega-card">
-      <p>📍 El pedido será enviado mediante Servientrega.</p>
-      <p>Ingrese la dirección completa cuando se conecte el sistema con la base de datos.</p>
-    </div>
-  )}
-
-  {tipoEntrega === "Cooperativa" && (
-    <div className="entrega-card">
-      <p>🚌 El pedido será enviado por una cooperativa de transporte.</p>
-      <p>Podrás indicar la cooperativa y la ciudad de destino.</p>
-    </div>
-  )}
-</div>
-
-<button
-  className="btn-confirmar"
-  disabled={!metodoPago || productos.length === 0}
-  onClick={confirmarCompra}
->
-  Confirmar compra
-</button>
-                
               </div>
 
-              <hr />
+              {/* MÉTODO DE ENTREGA */}
+              <div className="checkout-card mt-4">
+                <h2>🚚 Método de entrega</h2>
 
-              <div className="checkout-total">
-                <strong>Total: ${total.toFixed(2)}</strong>
+                <label>
+                  <input
+                    type="radio"
+                    name="entrega"
+                    value="Servientrega"
+                    checked={tipoEntrega === "Servientrega"}
+                    onChange={(e) => setTipoEntrega(e.target.value)}
+                  />
+                  {" "}Servientrega
+                </label>
+
+                {tipoEntrega === "Servientrega" && (
+                  <div className="entrega-card">
+                    <h3>🚚 Datos para el envío por Servientrega</h3>
+
+                    <label>Provincia</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. Pichincha"
+                      value={provincia}
+                      onChange={(e) => setProvincia(e.target.value)}
+                    />
+
+                    <label>Ciudad</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. Quito"
+                      value={ciudad}
+                      onChange={(e) => setCiudad(e.target.value)}
+                    />
+
+                    <label>Tipo de entrega</label>
+                    <select 
+                      value={tipoServientrega} 
+                      onChange={(e) => setTipoServientrega(e.target.value)}
+                      style={{ width: "100%", padding: "8px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ccc" }}
+                    >
+                      <option value="domicilio">Dirección a domicilio</option>
+                      <option value="agencia">Agencia de Servientrega</option>
+                    </select>
+
+                    {tipoServientrega === "domicilio" ? (
+                      <>
+                        <label>Dirección exacta del domicilio (Calles / N° de casa)</label>
+                        <input
+                          type="text"
+                          placeholder="Ej. Av. Amazonas y Corella, N34-12"
+                          value={direccion}
+                          onChange={(e) => setDireccion(e.target.value)}
+                        />
+                        <label>Referencia</label>
+                        <input
+                          type="text"
+                          placeholder="Ej. Frente al parque, casa blanca de dos pisos"
+                          value={referencia}
+                          onChange={(e) => setReferencia(e.target.value)}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <label>Dirección exacta de la agencia de Servientrega</label>
+                        <input
+                          type="text"
+                          placeholder="Ej. Agencia Servientrega Centro Comercial X"
+                          value={direccion}
+                          onChange={(e) => setDireccion(e.target.value)}
+                        />
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <label className="block mt-4">
+                  <input
+                    type="radio"
+                    name="entrega"
+                    value="Cooperativa"
+                    checked={tipoEntrega === "Cooperativa"}
+                    onChange={(e) => setTipoEntrega(e.target.value)}
+                  />
+                  {" "}Cooperativa de transporte
+                </label>
+
+                {tipoEntrega === "Cooperativa" && (
+                  <div className="entrega-card">
+                    <h3>🚌 Datos del envío por Cooperativa</h3>
+
+                    <label>Nombre del transporte / Cooperativa</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. Cooperativa Loja / Terminal Terrestre"
+                      value={cooperativa}
+                      onChange={(e) => setCooperativa(e.target.value)}
+                    />
+
+                    <label>Ciudad de destino</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. Loja"
+                      value={ciudadDestino}
+                      onChange={(e) => setCiudadDestino(e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
+
+              {/* VALIDACIÓN Y TÉRMINOS */}
+              <div className="checkout-card mt-4" style={{ background: "#fffdf0", padding: "12px", border: "1px solid #ffeeba" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "13px" }}>
+                  <input
+                    type="checkbox"
+                    checked={terminosAceptados}
+                    onChange={(e) => setTerminosAceptados(e.target.checked)}
+                    style={{ width: "16px", height: "16px" }}
+                  />
+                  <span>Estoy de acuerdo con todos los campos y datos ingresados antes de proceder con la compra.</span>
+                </label>
+              </div>
+
+              <button
+                className="btn-confirmar"
+                disabled={!metodoPago || !tipoEntrega || !terminosAceptados || productos.length === 0}
+                onClick={confirmarCompra}
+                style={{ marginTop: "15px", width: "100%", padding: "12px", background: (!metodoPago || !tipoEntrega || !terminosAceptados) ? "#ccc" : "#0070f3", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: "bold" }}
+              >
+                Confirmar compra
+              </button>
             </>
           )}
+
+          <hr style={{ margin: "20px 0" }} />
+
+          <div className="checkout-total">
+            <strong>Total General: ${totalGeneral.toFixed(2)}</strong>
+          </div>
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ export default function NuevoProducto() {
   const router = useRouter();
   const [nombre, setNombre] = useState("");
   const [precio, setPrecio] = useState("");
+  const [peso, setPeso] = useState(""); // 👈 Nuevo estado para el peso en kg
   const [descripcion, setDescripcion] = useState("");
   const [categoria, setCategoria] = useState("");
   const [stock, setStock] = useState("");
@@ -15,72 +16,69 @@ export default function NuevoProducto() {
   const [cargando, setCargando] = useState(false);
   const [imagen, setImagen] = useState<File | null>(null);
 
-
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const vendedorId = localStorage.getItem("vendedorId");
-  if (!vendedorId) {
-    setMensaje("Debes iniciar sesión para subir productos.");
-    return;
-  }
-
-  if (!imagen) {
-    setMensaje("Debes seleccionar una imagen.");
-    return;
-  }
-
-  setCargando(true);
-  try {
-    // 1. Subir imagen
-    const formData = new FormData();
-    formData.append("imagen", imagen);
-
-    const resImg = await fetch("http://localhost:3001/imagenes", {
-      method: "POST",
-      body: formData,
-    });
-
-    const dataImg = await resImg.json();
-    const imagenUrl = dataImg.url;
-  
-
-console.log("Imagen subida, URL recibida:", imagenUrl); // 👈
-
-
-    // 2. Crear producto con la URL
-    const res = await fetch("http://localhost:3001/productos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nombre,
-        precio: Number(precio),
-        descripcion,
-        categoria,
-        stock: Number(stock),
-        vendedorId,
-        imagenUrl 
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      setMensaje(data.message || "Ocurrió un error al publicar el producto");
-      setCargando(false);
+    const vendedorId = localStorage.getItem("vendedorId");
+    if (!vendedorId) {
+      setMensaje("Debes iniciar sesión para subir productos.");
       return;
     }
 
-    setMensaje(`Producto "${nombre}" publicado correctamente`);
-    setTimeout(() => router.push("/vendedor/productos"), 2000);
-  } catch (error) {
-    console.error("Error al publicar producto:", error);
-    setMensaje("No se pudo conectar con el servidor. Verifica que el backend esté corriendo.");
-  } finally {
-    setCargando(false);
-  }
-};
+    if (!imagen) {
+      setMensaje("Debes seleccionar una imagen.");
+      return;
+    }
 
+    setCargando(true);
+    try {
+      // 1. Subir imagen
+      const formData = new FormData();
+      formData.append("imagen", imagen);
+
+      const resImg = await fetch("http://localhost:3001/imagenes", {
+        method: "POST",
+        body: formData,
+      });
+
+      const dataImg = await resImg.json();
+      const imagenUrl = dataImg.url;
+
+      console.log("Imagen subida, URL recibida:", imagenUrl);
+
+      // 2. Crear producto con la URL y el peso
+      const res = await fetch("http://localhost:3001/productos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre,
+          precio: Number(precio),
+          peso: Number(peso), // 👈 Se envía el peso convertido a número
+          descripcion,
+          categoria,
+          stock: Number(stock),
+          vendedorId,
+          imagenUrl
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMensaje(data.message || "Ocurrió un error al publicar el producto");
+        setCargando(false);
+        return;
+      }
+
+      setMensaje(`Producto "${nombre}" publicado correctamente`);
+      setTimeout(() => router.push("/vendedor/productos"), 2000);
+    } catch (error) {
+      console.error("Error al publicar producto:", error);
+      setMensaje("No se pudo conectar con el servidor. Verifica que el backend esté corriendo.");
+    } finally {
+      setCargando(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-50 to-slate-50">
@@ -118,11 +116,20 @@ console.log("Imagen subida, URL recibida:", imagenUrl); // 👈
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400" required />
             </div>
 
-            <div>
-              <label className="text-blue-800 font-semibold text-sm block mb-1">Precio ($)</label>
-              <input type="number" step="0.01" value={precio} onChange={(e) => setPrecio(e.target.value)}
-                placeholder="Ej: 29.99"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400" required />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-blue-800 font-semibold text-sm block mb-1">Precio ($)</label>
+                <input type="number" step="0.01" value={precio} onChange={(e) => setPrecio(e.target.value)}
+                  placeholder="Ej: 29.99"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400" required />
+              </div>
+
+              <div>
+                <label className="text-blue-800 font-semibold text-sm block mb-1">Peso (Kg)</label>
+                <input type="number" step="0.1" value={peso} onChange={(e) => setPeso(e.target.value)}
+                  placeholder="Ej: 1.5"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400" required />
+              </div>
             </div>
 
             <div>
@@ -157,14 +164,11 @@ console.log("Imagen subida, URL recibida:", imagenUrl); // 👈
             <div>
               <label className="text-blue-800 font-semibold text-sm block mb-1">Imagen del producto</label>
               <input 
-                    type="file" 
-                               accept="image/*"
-                         onChange={(e) => setImagen(e.target.files?.[0] || null)}
-                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-blue-800 file:text-white file:font-semibold hover:file:bg-blue-900 transition cursor-pointer" 
-                                />
-              <p className="text-slate-400 text-xs mt-1">
-                Nota: la imagen aún no se sube a almacenamiento, se agrega en la siguiente fase.
-              </p>
+                type="file" 
+                accept="image/*"
+                onChange={(e) => setImagen(e.target.files?.[0] || null)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-blue-800 file:text-white file:font-semibold hover:file:bg-blue-900 transition cursor-pointer" 
+              />
             </div>
 
             <div className="flex gap-4 mt-2">
