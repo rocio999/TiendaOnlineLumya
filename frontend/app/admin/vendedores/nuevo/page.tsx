@@ -13,6 +13,9 @@ interface Solicitud {
   cedula: string;
   banco: string;
   numeroCuenta: string;
+  whatsapp?: string;
+  qrUrl?: string;
+  qrDeUnaUrl?: string;
   estado: string;
 }
 
@@ -148,6 +151,29 @@ export default function RevisarSolicitudVendedor() {
         <input type="text" className={styles.full} value={solicitud.cedula} disabled />
         <input type="text" className={styles.full} value={solicitud.banco} disabled />
         <input type="text" className={styles.full} value={solicitud.numeroCuenta} disabled />
+        {solicitud.whatsapp && (
+          <input type="text" className={styles.full} value={`WhatsApp: ${solicitud.whatsapp}`} disabled />
+        )}
+
+        {(solicitud.qrUrl || solicitud.qrDeUnaUrl) && (
+          <div style={{ marginTop: "20px" }}>
+            <p style={{ fontWeight: "bold", color: "#1e3a8a", marginBottom: "10px" }}>Códigos QR de pago</p>
+            <div style={{ display: "flex", gap: "20px", justifyContent: "center", flexWrap: "wrap" }}>
+              {solicitud.qrUrl && (
+                <div style={{ textAlign: "center" }}>
+                  <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "5px" }}>QR de pago</p>
+                  <img src={solicitud.qrUrl} alt="QR de pago" style={{ width: "150px", height: "150px", objectFit: "contain", border: "1px solid #e2e8f0", borderRadius: "10px" }} />
+                </div>
+              )}
+              {solicitud.qrDeUnaUrl && (
+                <div style={{ textAlign: "center" }}>
+                  <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "5px" }}>QR "De una"</p>
+                  <img src={solicitud.qrDeUnaUrl} alt="QR De una" style={{ width: "150px", height: "150px", objectFit: "contain", border: "1px solid #e2e8f0", borderRadius: "10px" }} />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className={styles.separador}>Decisión</div>
 

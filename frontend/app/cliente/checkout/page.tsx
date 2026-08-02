@@ -60,6 +60,8 @@ export default function Checkout() {
     numeroCuenta: string; 
     cedula: string;
     whatsapp?: string; 
+    qrDeUnaUrl?: string;
+    qrUrl?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -77,6 +79,8 @@ export default function Checkout() {
             numeroCuenta: data.numeroCuenta || "No especificado",
             cedula: data.cedula || "No especificado",
             whatsapp: data.whatsapp || "593900000000",
+            qrDeUnaUrl: data.qrDeUnaUrl || "",
+            qrUrl: data.qrUrl || "",
           });
         }
       } catch (error) {
@@ -297,8 +301,12 @@ export default function Checkout() {
                     </div>
                     <div style={{ textAlign: "center", background: "#fff", padding: "10px", borderRadius: "8px", border: "1px solid #ddd" }}>
                       <p style={{ fontSize: "12px", marginBottom: "5px", fontWeight: "bold" }}>QR / WhatsApp</p>
-                      <div style={{ width: "80px", height: "80px", background: "#eee", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 5px auto", fontSize: "10px", color: "#666" }}>
-                        [Código QR]
+                      <div style={{ width: "80px", height: "80px", background: "#eee", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 5px auto", overflow: "hidden", borderRadius: "6px" }}>
+                        {datosVendedor?.qrUrl ? (
+                          <img src={datosVendedor.qrUrl} alt="QR de pago" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                        ) : (
+                          <span style={{ fontSize: "10px", color: "#666" }}>[Sin QR]</span>
+                        )}
                       </div>
                       <a 
                         href={`https://wa.me/${datosVendedor?.whatsapp || '593900000000'}?text=${encodeURIComponent(`Hola, aquí adjunto mi comprobante de transferencia total por un valor de $${totalGeneral.toFixed(2)}.`)}`} 
@@ -346,8 +354,12 @@ export default function Checkout() {
                       </div>
                       <div style={{ textAlign: "center", background: "#f9f9f9", padding: "10px", borderRadius: "8px", border: "1px solid #ddd" }}>
                         <p style={{ fontSize: "12px", marginBottom: "5px", fontWeight: "bold" }}>QR DeUna</p>
-                        <div style={{ width: "80px", height: "80px", background: "#eee", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 5px auto", fontSize: "10px", color: "#666" }}>
-                          [QR DeUna]
+                        <div style={{ width: "80px", height: "80px", background: "#eee", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 5px auto", overflow: "hidden", borderRadius: "6px" }}>
+                          {datosVendedor?.qrDeUnaUrl ? (
+                            <img src={datosVendedor.qrDeUnaUrl} alt="QR DeUna" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                          ) : (
+                            <span style={{ fontSize: "10px", color: "#666" }}>[Sin QR]</span>
+                          )}
                         </div>
                         <a 
                           href={`https://wa.me/${datosVendedor?.whatsapp || '593900000000'}?text=${encodeURIComponent(`Hola, aquí adjunto el comprobante de mi pago con DeUna por un valor total de $${totalGeneral.toFixed(2)}.`)}`} 
