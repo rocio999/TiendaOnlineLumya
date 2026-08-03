@@ -249,7 +249,7 @@ app.post("/registro-vendedor", async (req, res) => {
     const {
       nombre, cedula, correo, telefono, password,
       nombreNegocio, descripcion, banco, numeroCuenta,
-      whatsapp, qrUrl, qrDeUnaUrl // <--- 1. Recibir qrDeUnaUrl aquí
+      whatsapp, qrUrl, qrDeUnaUrl, aceptaTerminos
     } = req.body;
 
     if (!nombre || !correo || !password || !nombreNegocio) {
@@ -281,6 +281,8 @@ app.post("/registro-vendedor", async (req, res) => {
       whatsapp: whatsapp || "",
       qrUrl: qrUrl || "",
       qrDeUnaUrl: qrDeUnaUrl || "", // <--- 2. Guardarlo en Firestore
+      aceptaTerminos: aceptaTerminos || false,
+      fechaAceptacionTerminos: aceptaTerminos ? FieldValue.serverTimestamp() : null,
       createdAt: FieldValue.serverTimestamp(),
     });
 

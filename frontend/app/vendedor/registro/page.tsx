@@ -90,6 +90,7 @@ export default function RegistroVendedor() {
           whatsapp: formulario.whatsapp,
           qrUrl: qrBase64,
           qrDeUnaUrl: deUnaBase64,
+          aceptaTerminos: aceptaTerminos,
         }),
       });
 

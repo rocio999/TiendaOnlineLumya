@@ -16,6 +16,7 @@ interface Solicitud {
   whatsapp?: string;
   qrUrl?: string;
   qrDeUnaUrl?: string;
+  aceptaTerminos?: boolean;
   estado: string;
 }
 
@@ -175,6 +176,13 @@ export default function RevisarSolicitudVendedor() {
           </div>
         )}
 
+        <div style={{ marginTop: "15px", padding: "12px", borderRadius: "10px", background: solicitud.aceptaTerminos ? "#dcfce7" : "#fee2e2", textAlign: "center" }}>
+          <p style={{ margin: 0, fontWeight: "bold", color: solicitud.aceptaTerminos ? "#15803d" : "#b91c1c" }}>
+            {solicitud.aceptaTerminos
+              ? "✅ El vendedor aceptó los Términos y Condiciones"
+              : "⚠️ El vendedor NO aceptó los Términos y Condiciones"}
+          </p>
+        </div>
         <div className={styles.separador}>Decisión</div>
 
         <div style={{ display: "flex", gap: "15px", justifyContent: "center", marginTop: "10px" }}>
