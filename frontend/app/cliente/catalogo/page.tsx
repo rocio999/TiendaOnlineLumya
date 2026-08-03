@@ -251,6 +251,15 @@ export default function CatalogoGeneral() {
               >
                 🏪 Ver tiendas
               </button>
+              <button
+      onClick={() => { 
+        setMostrarMenu(false); 
+        router.push("/cliente/pedidos"); 
+      }}
+      className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 font-medium border-t border-gray-100"
+    >
+      📦 Mis pedidos
+    </button>
             </div>
           )}
         </div>

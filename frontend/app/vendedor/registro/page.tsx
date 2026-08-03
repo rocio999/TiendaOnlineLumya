@@ -27,8 +27,9 @@ export default function RegistroVendedor() {
     banco: "", numeroCuenta: "", whatsapp: "",
   });
   const [logo, setLogo] = useState<File | null>(null);
-  const [qrPago, setQrPago] = useState<File | null>(null); // <--- Nuevo estado para el QR
+  const [qrPago, setQrPago] = useState<File | null>(null);
   const [qrDeUna, setQrDeUna] = useState<File | null>(null);
+  const [aceptaTerminos, setAceptaTerminos] = useState(false); // <--- Nuevo estado para los términos
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
 
@@ -53,6 +54,11 @@ export default function RegistroVendedor() {
 
     if (formulario.password !== formulario.confirmarPassword) {
       setMensaje("Las contraseñas no coinciden");
+      return;
+    }
+
+    if (!aceptaTerminos) {
+      setMensaje("Debes leer y aceptar los Términos y Condiciones para continuar.");
       return;
     }
 
@@ -83,7 +89,7 @@ export default function RegistroVendedor() {
           numeroCuenta: formulario.numeroCuenta,
           whatsapp: formulario.whatsapp,
           qrUrl: qrBase64,
-          qrDeUnaUrl: deUnaBase64, // <--- Enviamos el QR de De una al backend
+          qrDeUnaUrl: deUnaBase64,
         }),
       });
 
@@ -105,6 +111,7 @@ export default function RegistroVendedor() {
     }
   };
 
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-50 to-slate-50 flex items-center justify-center py-12 px-4">
       <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg p-8">
@@ -117,11 +124,11 @@ export default function RegistroVendedor() {
 
         {mensaje && (
           <div className={`p-4 rounded-xl mb-5 text-center font-semibold text-sm ${
-            mensaje.includes("no coinciden") || mensaje.includes("error") || mensaje.includes("registrado") || mensaje.includes("conectar")
+            mensaje.includes("no coinciden") || mensaje.includes("error") || mensaje.includes("registrado") || mensaje.includes("conectar") || mensaje.includes("aceptar")
               ? "bg-red-100 text-red-700 border border-red-300"
               : "bg-emerald-100 text-emerald-700 border border-emerald-300"
           }`}>
-            {mensaje.includes("no coinciden") || mensaje.includes("error") || mensaje.includes("registrado") || mensaje.includes("conectar") ? "⚠️" : "✅"} {mensaje}
+            {mensaje.includes("no coinciden") || mensaje.includes("error") || mensaje.includes("registrado") || mensaje.includes("conectar") || mensaje.includes("aceptar") ? "⚠️" : "✅"} {mensaje}
           </div>
         )}
 
@@ -186,22 +193,69 @@ export default function RegistroVendedor() {
             value={formulario.numeroCuenta} onChange={handleChange}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400" required />
 
-          {/* NUEVO: Input para WhatsApp */}
           <input type="tel" name="whatsapp" placeholder="Número de WhatsApp (ej: 593999999999)"
             value={formulario.whatsapp} onChange={handleChange}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400" required />
 
-          {/* NUEVO: Input para subir el Código QR */}
           <div>
             <label className="text-blue-800 font-semibold text-xs block mb-1">Código QR de pago (Imagen)</label>
             <input type="file" accept="image/*" onChange={(e) => setQrPago(e.target.files?.[0] || null)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-emerald-700 file:text-white file:font-semibold hover:file:bg-emerald-800 transition cursor-pointer" />
           </div>
-          {/* NUEVO: Input para subir el Código QR de De una */}
+
           <div>
             <label className="text-blue-800 font-semibold text-xs block mb-1">Código QR "De una" (Imagen)</label>
             <input type="file" accept="image/*" onChange={(e) => setQrDeUna(e.target.files?.[0] || null)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-purple-700 file:text-white file:font-semibold hover:file:bg-purple-800 transition cursor-pointer" />
+          </div>
+
+          {/* SECCIÓN DE TÉRMINOS Y CONDICIONES (SOLO INFORMATIVA) */}
+          <div className="mt-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <h3 className="text-blue-900 font-bold text-xs uppercase tracking-wide mb-2">Términos, Condiciones y Privacidad para Vendedores</h3>
+            
+            <div className="h-36 overflow-y-auto text-xs text-slate-600 bg-white p-3 border border-slate-200 rounded-lg space-y-2">
+              <p><strong>TÉRMINOS Y CONDICIONES PARA VENDEDORES - TIENDA ONLINE LUMYA</strong></p>
+              
+              <p><strong>1. Objeto y Naturaleza de la Relación Comercial</strong><br />
+              Los presentes Términos y Condiciones regulan el vínculo contractual entre Tienda Online Lumya y la persona natural que se registra en la plataforma con el rol de Vendedor/Proveedor para ofrecer, comercializar y vender sus productos a los usuarios finales.<br />
+              <em>Fundamento legal:</em> Código de Comercio del Ecuador y la Ley de Comercio Electrónico, Firmas Electrónicas y Mensajes de Datos.</p>
+
+              <p><strong>2. Capacidad Legal y Requisitos de Registro del Vendedor</strong><br />
+              Para registrarse como vendedor en Tienda Online Lumya, el usuario declara ser mayor de edad, tener plena capacidad jurídica y encontrarse legalmente autorizado para operar en el territorio ecuatoriano proporcionando información veraz.</p>
+
+              <p><strong>3. Protección y Tratamiento de Datos Personales del Vendedor</strong><br />
+              Tienda Online Lumya recopilará información del vendedor con la única finalidad de gestionar su cuenta, validar su identidad y permitir la operatividad del marketplace conforme a la Ley Orgánica de Protección de Datos Personales (LOPDP).</p>
+
+              <p><strong>4. Derechos y Obligaciones sobre la Propiedad Intelectual e Imágenes</strong><br />
+              El vendedor otorga a Tienda Online Lumya una licencia gratuita y temporal para utilizar, reproducir y exhibir las marcas, logotipos, fotografías y descripciones de sus productos dentro de la plataforma digital con fines de promoción y venta.</p>
+
+              <p><strong>5. Modelo de Tarifas, Comisiones y Gratuidad</strong><br />
+              Actualmente, el registro, uso de la infraestructura digital y publicación de productos en Tienda Online Lumya tienen carácter gratuito para el vendedor. Sin embargo, la plataforma se reserva el derecho de establecer comisiones por transacción o tarifas por servicios en el futuro, lo cual será debidamente notificado a los vendedores con la debida anticipación para su aceptación y aplicación.<br />
+              <em>Fundamento legal:</em> Principio de autonomía de la voluntad y libertad contractual consagrado en el Código Civil Ecuatoriano.</p>
+
+              <p><strong>6. Responsabilidad sobre la Calidad, Envíos y Garantías</strong><br />
+              El vendedor es el único y exclusivo responsable frente a los compradores por la calidad, idoneidad, seguridad y entrega oportuna de los productos ofertados, cumpliendo con la Ley Orgánica de Defensa del Consumidor (LODC).</p>
+
+              <p><strong>7. Suspensión, Bloqueo o Cierre de Cuenta</strong><br />
+              Tienda Online Lumya se reserva el derecho de suspender o dar de baja de forma temporal o definitiva la cuenta de cualquier vendedor que incumpla con los presentes términos o afecte la reputación de la plataforma.</p>
+
+              <p><strong>8. Jurisdicción y Ley Aplicable</strong><br />
+              Cualquier controversia derivada de estos Términos y Condiciones se resolverá ante los jueces competentes de la República del Ecuador.</p>
+            </div>
+
+            <div className="flex items-center gap-2 mt-3">
+              <input 
+                type="checkbox" 
+                id="aceptaTerminos" 
+                checked={aceptaTerminos}
+                onChange={(e) => setAceptaTerminos(e.target.checked)}
+                className="w-4 h-4 text-blue-800 border-slate-300 rounded focus:ring-cyan-400 cursor-pointer"
+                required
+              />
+              <label htmlFor="aceptaTerminos" className="text-xs text-slate-700 cursor-pointer">
+                He leído y acepto los <strong>Términos y Condiciones para Vendedores</strong> y el tratamiento de datos personales. *
+              </label>
+            </div>
           </div>
 
           <button type="submit" disabled={cargando}

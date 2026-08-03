@@ -49,7 +49,7 @@ if (redirect) {
   localStorage.removeItem("redirectAfterLogin");
   router.push(redirect);
 } else {
-  router.push("/cliente/tiendas");
+  router.push("/cliente/catalogo");
 }
  } catch (error) {
     setMensaje("Error de conexión con el servidor");
