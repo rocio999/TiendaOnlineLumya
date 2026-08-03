@@ -298,14 +298,13 @@ Pedidos recibidos
 
 
 <td>
-
-{pedido.productos.map((p)=>(
-<div key={p.id}>
-{p.nombre} x {p.cantidad}
-</div>
-))}
-
+  {pedido.productos.map((p, index) => (
+    <div key={p.id || index}>
+      {p.nombre} x {p.cantidad}
+    </div>
+  ))}
 </td>
+
 
 
 

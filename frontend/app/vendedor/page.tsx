@@ -45,6 +45,11 @@ export default function PanelVendedor() {
     }
   };
 
+  const cerrarSesion = () => {
+    localStorage.removeItem("vendedorId"); // elimina el ID guardado
+    window.location.href = "/vendedor/login";       // redirige al login
+  };
+
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
 
   return (
@@ -56,51 +61,63 @@ export default function PanelVendedor() {
             <span className="text-xl font-bold text-white">Panel de Vendedor</span>
           </div>
 
-          <div className="relative">
-            <button
-              onClick={() => setMostrarNotis(!mostrarNotis)}
-              className="relative text-white hover:bg-white/20 p-2 rounded-xl transition"
-            >
-              <span className="text-2xl">🔔</span>
-              {noLeidas > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {noLeidas}
-                </span>
-              )}
-            </button>
-            <p style={{ fontSize: "10px", color: "white", marginTop: "4px" }}>Ult: {ultimaActualizacion}</p>
-
-            {mostrarNotis && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 max-h-96 overflow-y-auto">
-                <div className="p-4 border-b border-slate-100">
-                  <p className="font-bold text-blue-900">Notificaciones</p>
-                </div>
-                {cargando ? (
-                  <p className="p-4 text-slate-400 text-sm">Cargando...</p>
-                ) : notificaciones.length === 0 ? (
-                  <p className="p-4 text-slate-400 text-sm">No tienes notificaciones.</p>
-                ) : (
-                  notificaciones.map((n) => (
-                    <div
-                      key={n.id}
-                      onClick={() => marcarLeida(n.id)}
-                      className={`p-4 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition ${
-                        !n.leida ? "bg-cyan-50" : ""
-                      }`}
-                    >
-                      <p className="text-sm text-slate-700">{n.mensaje}</p>
-                      {!n.leida && (
-                        <span className="text-xs text-cyan-600 font-semibold">● Nueva</span>
-                      )}
-                    </div>
-                  ))
+          <div className="flex items-center gap-4">
+            {/* Notificaciones */}
+            <div className="relative">
+              <button
+                onClick={() => setMostrarNotis(!mostrarNotis)}
+                className="relative text-white hover:bg-white/20 p-2 rounded-xl transition"
+              >
+                <span className="text-2xl">🔔</span>
+                {noLeidas > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {noLeidas}
+                  </span>
                 )}
-              </div>
-            )}
+              </button>
+              <p style={{ fontSize: "10px", color: "white", marginTop: "4px" }}>Ult: {ultimaActualizacion}</p>
+
+              {mostrarNotis && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 max-h-96 overflow-y-auto">
+                  <div className="p-4 border-b border-slate-100">
+                    <p className="font-bold text-blue-900">Notificaciones</p>
+                  </div>
+                  {cargando ? (
+                    <p className="p-4 text-slate-400 text-sm">Cargando...</p>
+                  ) : notificaciones.length === 0 ? (
+                    <p className="p-4 text-slate-400 text-sm">No tienes notificaciones.</p>
+                  ) : (
+                    notificaciones.map((n) => (
+                      <div
+                        key={n.id}
+                        onClick={() => marcarLeida(n.id)}
+                        className={`p-4 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition ${
+                          !n.leida ? "bg-cyan-50" : ""
+                        }`}
+                      >
+                        <p className="text-sm text-slate-700">{n.mensaje}</p>
+                        {!n.leida && (
+                          <span className="text-xs text-cyan-600 font-semibold">● Nueva</span>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Botón cerrar sesión */}
+            <button
+              onClick={cerrarSesion}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-semibold"
+            >
+              Cerrar sesión
+            </button>
           </div>
         </div>
       </div>
 
+      {/* Resto del contenido */}
       <div className="max-w-4xl mx-auto px-4 py-10">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-blue-900">Bienvenido</h1>
@@ -146,8 +163,8 @@ export default function PanelVendedor() {
             </button>
           </Link>
         </div>
-
       </div>
     </div>
   );
 }
+

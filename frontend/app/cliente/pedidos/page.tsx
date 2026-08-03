@@ -4,6 +4,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import "./pedido.css";
+import { useRouter } from "next/navigation";
+
 
 interface ProductoPedido {
   id: string;
@@ -46,6 +48,7 @@ const formatearFecha = (fechaInput: any) => {
 };
 
 export default function PedidosCliente() {
+  const router = useRouter();
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
 
   useEffect(() => {
@@ -129,6 +132,9 @@ export default function PedidosCliente() {
               fecha: p.fecha || null,
             };
           }
+          
+
+
         });
 
         setPedidos(Object.values(pedidosAgrupadosMap));
@@ -142,7 +148,15 @@ export default function PedidosCliente() {
   }, []);
 
   return (
+    
     <div className="pedidos-container">
+      <button
+  onClick={() => router.back()}
+  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition mb-4"
+>
+  ← Volver
+</button>
+
       <h1>📦 Mis pedidos</h1>
 
       {pedidos.length === 0 ? (
@@ -176,6 +190,7 @@ export default function PedidosCliente() {
                 Total Pagado: ${totalSeguro.toFixed(2)}
               </h3>
             </div>
+          
           );
         })
       )}
