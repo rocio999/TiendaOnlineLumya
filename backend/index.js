@@ -558,7 +558,6 @@ app.post("/productos", async (req, res) => {
   }
 });
 
-// Cambiar Estado Producto
 // Actualizar producto completo
 app.put("/productos/:id", async (req, res) => {
   try {
@@ -592,6 +591,33 @@ app.put("/productos/:id", async (req, res) => {
     res.status(500).json({ message: "Error al actualizar el producto" });
   }
 });
+
+// Eliminar un producto (Sin restricción de admin estricta para permitir borrado directo desde el panel del vendedor)
+app.delete("/productos/:id", async (req, res) => {
+  try {
+    const productoId = req.params.id;
+    const docRef = db.collection("productos").doc(productoId);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    const productoData = docSnap.data();
+
+    // Eliminar de Firestore
+    await docRef.delete();
+
+    // Registrar en auditoría
+    await registrarAuditoria(productoData.vendedorId || "vendedor", `Eliminó el producto ${productoData?.nombre || productoId}`, "producto");
+
+    res.json({ message: "Producto eliminado correctamente" });
+  } catch (error) {
+    console.error("Error en DELETE /productos/:id:", error);
+    res.status(500).json({ message: "Error al eliminar el producto" });
+  }
+});
+
 
 // Listar Categorías
 app.get("/categorias", async (req, res) => {

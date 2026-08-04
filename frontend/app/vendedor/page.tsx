@@ -1,9 +1,12 @@
 "use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; // Importa el router de Next.js
 
 export default function PanelVendedor() {
+  const router = useRouter(); // Inicializa el router
   const [notificaciones, setNotificaciones] = useState<any[]>([]);
   const [mostrarNotis, setMostrarNotis] = useState(false);
   const [cargando, setCargando] = useState(true);
@@ -46,8 +49,8 @@ export default function PanelVendedor() {
   };
 
   const cerrarSesion = () => {
-    localStorage.removeItem("vendedorId"); // elimina el ID guardado
-    window.location.href = "/vendedor/login";       // redirige al login
+    localStorage.removeItem("vendedorId"); // Elimina el ID guardado
+    router.push("/vendedor/login");      // Redirige usando el router de Next.js
   };
 
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
@@ -109,7 +112,8 @@ export default function PanelVendedor() {
             {/* Botón cerrar sesión */}
             <button
               onClick={cerrarSesion}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-semibold"
+              type="button"
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-semibold z-10 relative cursor-pointer"
             >
               Cerrar sesión
             </button>
@@ -167,4 +171,3 @@ export default function PanelVendedor() {
     </div>
   );
 }
-
