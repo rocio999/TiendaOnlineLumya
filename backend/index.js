@@ -2,21 +2,23 @@ const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { db, FieldValue } = require("./firebase");
 const multer = require("multer");
 
-const upload = multer({
-    storage: multer.memoryStorage()
-});
-
-
+const { db, FieldValue } = require("./firebase");
 const imagekit = require("./imagekit");
+
 const app = express();
+const upload = multer({ storage: multer.memoryStorage() });
+
 app.use(cors());
 app.use(express.json());
 
-const JWT_SECRET = "secreto123";
-const ADMIN_KEY = "lumya-admin-2026";
+const JWT_SECRET = process.env.JWT_SECRET || "secreto123";
+const ADMIN_KEY = process.env.ADMIN_KEY || "lumya-admin-2026";
+
+// ======================
+// MIDDLEWARES & HELPERS
+// ======================
 
 function verificarAdmin(req, res, next) {
   const key = req.headers["x-admin-key"];
@@ -49,18 +51,23 @@ async function crearNotificacion(usuarioId, mensaje, tipo) {
       fecha: FieldValue.serverTimestamp(),
     });
   } catch (error) {
-    console.error("Error al crear notificacion:", error);
+    console.error("Error al crear notificación:", error);
   }
 }
+
+// ======================
+// RUTAS PRINCIPALES
+// ======================
 
 app.get("/", (req, res) => {
   res.send("Backend funcionando 🚀 (Firestore)");
 });
 
+// ----------------------
+// AUTENTICACIÓN Y USUARIOS
+// ----------------------
 
-// ======================
-// REGISTRO DE ADMIN (protegido con clave)
-
+// Registro de Admin
 app.post("/registro-admin", verificarAdmin, async (req, res) => {
   try {
     const { nombre, apellido, correo, password } = req.body;
@@ -69,16 +76,12 @@ app.post("/registro-admin", verificarAdmin, async (req, res) => {
       return res.status(400).json({ message: "Faltan datos obligatorios" });
     }
 
-    const existente = await db.collection("usuarios")
-      .where("correo", "==", correo)
-      .get();
-
+    const existente = await db.collection("usuarios").where("correo", "==", correo).get();
     if (!existente.empty) {
       return res.status(409).json({ message: "Ese correo ya está registrado" });
     }
 
     const hash = bcrypt.hashSync(password, 10);
-
     const nuevoDoc = await db.collection("usuarios").add({
       nombre,
       apellido: apellido || "",
@@ -96,9 +99,7 @@ app.post("/registro-admin", verificarAdmin, async (req, res) => {
   }
 });
 
-// ======================
-// LOGIN DE ADMIN
-// ======================
+// Login de Admin
 app.post("/login-admin", async (req, res) => {
   try {
     const { correo, password } = req.body;
@@ -119,8 +120,7 @@ app.post("/login-admin", async (req, res) => {
     const doc = resultado.docs[0];
     const admin = doc.data();
 
-    const passwordValida = bcrypt.compareSync(password, admin.password);
-    if (!passwordValida) {
+    if (!bcrypt.compareSync(password, admin.password)) {
       return res.status(401).json({ message: "Correo o contraseña incorrectos" });
     }
 
@@ -145,6 +145,7 @@ app.post("/login-admin", async (req, res) => {
   }
 });
 
+// Registro de Cliente
 app.post("/registro-cliente", async (req, res) => {
   try {
     const { nombre, apellido, correo, password } = req.body;
@@ -153,16 +154,12 @@ app.post("/registro-cliente", async (req, res) => {
       return res.status(400).json({ message: "Faltan datos obligatorios" });
     }
 
-    const existente = await db.collection("usuarios")
-      .where("correo", "==", correo)
-      .get();
-
+    const existente = await db.collection("usuarios").where("correo", "==", correo).get();
     if (!existente.empty) {
       return res.status(409).json({ message: "Ese correo ya está registrado" });
     }
 
     const hash = bcrypt.hashSync(password, 10);
-
     const nuevoDoc = await db.collection("usuarios").add({
       nombre,
       apellido: apellido || "",
@@ -180,6 +177,7 @@ app.post("/registro-cliente", async (req, res) => {
   }
 });
 
+// Login General
 app.post("/login", async (req, res) => {
   try {
     const { correo, password } = req.body;
@@ -188,10 +186,7 @@ app.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Faltan datos" });
     }
 
-    const resultado = await db.collection("usuarios")
-      .where("correo", "==", correo)
-      .get();
-
+    const resultado = await db.collection("usuarios").where("correo", "==", correo).get();
     if (resultado.empty) {
       return res.status(404).json({ message: "Correo o contraseña incorrectos" });
     }
@@ -199,8 +194,7 @@ app.post("/login", async (req, res) => {
     const doc = resultado.docs[0];
     const usuario = doc.data();
 
-    const passwordValida = bcrypt.compareSync(password, usuario.password);
-    if (!passwordValida) {
+    if (!bcrypt.compareSync(password, usuario.password)) {
       return res.status(401).json({ message: "Correo o contraseña incorrectos" });
     }
 
@@ -231,6 +225,33 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// Recuperar Contraseña
+app.post("/recuperar-contrasena", async (req, res) => {
+  try {
+    const { correo, nuevaPassword } = req.body;
+
+    if (!correo || !nuevaPassword) {
+      return res.status(400).json({ message: "Faltan datos requeridos" });
+    }
+
+    const usuario = await db.collection("usuarios").where("correo", "==", correo).get();
+    if (usuario.empty) {
+      return res.status(404).json({ message: "El correo no está registrado" });
+    }
+
+    const doc = usuario.docs[0];
+    const nuevaClaveHash = bcrypt.hashSync(nuevaPassword, 10);
+
+    await doc.ref.update({ password: nuevaClaveHash });
+
+    res.json({ message: "Contraseña actualizada correctamente" });
+  } catch (error) {
+    console.error("Error en /recuperar-contrasena:", error);
+    res.status(500).json({ message: "Error al actualizar contraseña" });
+  }
+});
+
+// Obtener Cliente por ID
 app.get("/clientes/:id", async (req, res) => {
   try {
     const docSnap = await db.collection("usuarios").doc(req.params.id).get();
@@ -244,6 +265,50 @@ app.get("/clientes/:id", async (req, res) => {
   }
 });
 
+// Listar todos los usuarios
+app.get("/usuarios", async (req, res) => {
+  try {
+    const snap = await db.collection("usuarios").get();
+    const lista = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    res.json(lista);
+  } catch (error) {
+    console.error("Error en GET /usuarios:", error);
+    res.status(500).json({ message: "Error al listar usuarios" });
+  }
+});
+
+// Cambiar estado de Usuario
+app.put("/usuarios/:id/estado", verificarAdmin, async (req, res) => {
+  try {
+    const { estado } = req.body;
+    const estadosValidos = ["activo", "suspendido"];
+    if (!estadosValidos.includes(estado)) {
+      return res.status(400).json({ message: "Estado inválido" });
+    }
+
+    const docSnap = await db.collection("usuarios").doc(req.params.id).get();
+    const usuario = docSnap.data();
+    await db.collection("usuarios").doc(req.params.id).update({ estado });
+
+    const accion = estado === "suspendido" ? "Suspendió" : "Activó";
+    await registrarAuditoria(
+      req.params.id,
+      `${accion} al usuario ${usuario?.nombreNegocio || usuario?.nombre}`,
+      "usuario"
+    );
+
+    res.json({ message: "Estado actualizado correctamente" });
+  } catch (error) {
+    console.error("Error en PUT /usuarios/:id/estado:", error);
+    res.status(500).json({ message: "Error al actualizar estado" });
+  }
+});
+
+// ----------------------
+// VENDEDORES
+// ----------------------
+
+// Registro de Vendedor
 app.post("/registro-vendedor", async (req, res) => {
   try {
     const {
@@ -256,16 +321,12 @@ app.post("/registro-vendedor", async (req, res) => {
       return res.status(400).json({ message: "Faltan datos obligatorios" });
     }
 
-    const existente = await db.collection("usuarios")
-      .where("correo", "==", correo)
-      .get();
-
+    const existente = await db.collection("usuarios").where("correo", "==", correo).get();
     if (!existente.empty) {
       return res.status(409).json({ message: "Ese correo ya está registrado" });
     }
 
     const hash = bcrypt.hashSync(password, 10);
-
     const nuevoDoc = await db.collection("usuarios").add({
       nombre,
       cedula: cedula || "",
@@ -280,7 +341,7 @@ app.post("/registro-vendedor", async (req, res) => {
       numeroCuenta: numeroCuenta || "",
       whatsapp: whatsapp || "",
       qrUrl: qrUrl || "",
-      qrDeUnaUrl: qrDeUnaUrl || "", // <--- 2. Guardarlo en Firestore
+      qrDeUnaUrl: qrDeUnaUrl || "",
       aceptaTerminos: aceptaTerminos || false,
       fechaAceptacionTerminos: aceptaTerminos ? FieldValue.serverTimestamp() : null,
       createdAt: FieldValue.serverTimestamp(),
@@ -293,6 +354,7 @@ app.post("/registro-vendedor", async (req, res) => {
   }
 });
 
+// Login Vendedor
 app.post("/login-vendedor", async (req, res) => {
   try {
     const { correo, password } = req.body;
@@ -313,8 +375,7 @@ app.post("/login-vendedor", async (req, res) => {
     const doc = resultado.docs[0];
     const vendedor = doc.data();
 
-    const passwordValida = bcrypt.compareSync(password, vendedor.password);
-    if (!passwordValida) {
+    if (!bcrypt.compareSync(password, vendedor.password)) {
       return res.status(401).json({ message: "Correo o contraseña incorrectos" });
     }
 
@@ -353,6 +414,7 @@ app.post("/login-vendedor", async (req, res) => {
   }
 });
 
+// Listar Vendedores
 app.get("/vendedores", async (req, res) => {
   try {
     const snap = await db.collection("usuarios").where("rol", "==", "vendedor").get();
@@ -364,6 +426,7 @@ app.get("/vendedores", async (req, res) => {
   }
 });
 
+// Obtener Vendedor por ID
 app.get("/vendedores/:id", async (req, res) => {
   try {
     const docSnap = await db.collection("usuarios").doc(req.params.id).get();
@@ -377,15 +440,19 @@ app.get("/vendedores/:id", async (req, res) => {
   }
 });
 
+// Cambiar Estado Vendedor
 app.put("/vendedores/:id/estado", verificarAdmin, async (req, res) => {
   try {
     const { estado } = req.body;
     const estadosValidos = ["activo", "rechazado", "suspendido", "pendiente"];
+
     if (!estadosValidos.includes(estado)) {
       return res.status(400).json({ message: "Estado inválido" });
     }
+
     const docSnap = await db.collection("usuarios").doc(req.params.id).get();
     const vendedor = docSnap.data();
+
     await db.collection("usuarios").doc(req.params.id).update({ estado });
 
     const acciones = {
@@ -394,6 +461,7 @@ app.put("/vendedores/:id/estado", verificarAdmin, async (req, res) => {
       suspendido: "Suspendió",
       pendiente: "Marcó como pendiente a",
     };
+
     await registrarAuditoria(
       req.params.id,
       `${acciones[estado]} al vendedor ${vendedor?.nombreNegocio || vendedor?.nombre}`,
@@ -407,16 +475,19 @@ app.put("/vendedores/:id/estado", verificarAdmin, async (req, res) => {
   }
 });
 
+// Actualizar Datos de Vendedor
 app.put("/vendedores/:id", verificarAdmin, async (req, res) => {
   try {
     const datos = { ...req.body };
     delete datos.password;
+
     await db.collection("usuarios").doc(req.params.id).update(datos);
     await registrarAuditoria(
       req.params.id,
       `Editó los datos del vendedor ${datos.nombreNegocio || ""}`,
       "vendedor"
     );
+
     res.json({ message: "Vendedor actualizado correctamente" });
   } catch (error) {
     console.error("Error en PUT /vendedores/:id:", error);
@@ -424,42 +495,11 @@ app.put("/vendedores/:id", verificarAdmin, async (req, res) => {
   }
 });
 
-app.get("/usuarios", async (req, res) => {
-  try {
-    const snap = await db.collection("usuarios").get();
-    const lista = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    res.json(lista);
-  } catch (error) {
-    console.error("Error en GET /usuarios:", error);
-    res.status(500).json({ message: "Error al listar usuarios" });
-  }
-});
+// ----------------------
+// PRODUCTOS Y CATEGORÍAS
+// ----------------------
 
-app.put("/usuarios/:id/estado", verificarAdmin, async (req, res) => {
-  try {
-    const { estado } = req.body;
-    const estadosValidos = ["activo", "suspendido"];
-    if (!estadosValidos.includes(estado)) {
-      return res.status(400).json({ message: "Estado inválido" });
-    }
-    const docSnap = await db.collection("usuarios").doc(req.params.id).get();
-    const usuario = docSnap.data();
-    await db.collection("usuarios").doc(req.params.id).update({ estado });
-
-    const accion = estado === "suspendido" ? "Suspendió" : "Activó";
-    await registrarAuditoria(
-      req.params.id,
-      `${accion} al usuario ${usuario?.nombreNegocio || usuario?.nombre}`,
-      "usuario"
-    );
-
-    res.json({ message: "Estado actualizado correctamente" });
-  } catch (error) {
-    console.error("Error en PUT /usuarios/:id/estado:", error);
-    res.status(500).json({ message: "Error al actualizar estado" });
-  }
-});
-
+// Listar Productos
 app.get("/productos", async (req, res) => {
   try {
     const productosSnap = await db.collection("productos").get();
@@ -488,6 +528,7 @@ app.get("/productos", async (req, res) => {
   }
 });
 
+// Crear Producto
 app.post("/productos", async (req, res) => {
   try {
     const { nombre, precio, descripcion, categoria, stock, vendedorId, imagenUrl } = req.body;
@@ -503,7 +544,7 @@ app.post("/productos", async (req, res) => {
       categoria,
       stock: Number(stock),
       vendedorId,
-      imagenUrl,
+      imagenUrl: imagenUrl || "",
       estado: "activo",
       createdAt: FieldValue.serverTimestamp(),
     });
@@ -517,27 +558,42 @@ app.post("/productos", async (req, res) => {
   }
 });
 
-app.put("/productos/:id/estado", verificarAdmin, async (req, res) => {
+// Cambiar Estado Producto
+// Actualizar producto completo
+app.put("/productos/:id", async (req, res) => {
   try {
-    const { estado } = req.body;
-    const estadosValidos = ["activo", "suspendido"];
-    if (!estadosValidos.includes(estado)) {
-      return res.status(400).json({ message: "Estado inválido" });
+    const { nombre, precio, descripcion, categoria, stock, imagenUrl } = req.body;
+    const productoId = req.params.id;
+
+    const docRef = db.collection("productos").doc(productoId);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return res.status(404).json({ message: "Producto no encontrado" });
     }
-    const docSnap = await db.collection("productos").doc(req.params.id).get();
-    const producto = docSnap.data();
-    await db.collection("productos").doc(req.params.id).update({ estado });
 
-    const accion = estado === "suspendido" ? "Suspendió" : "Activó";
-    await registrarAuditoria("admin", `${accion} el producto ${producto?.nombre}`, "producto");
+    const datosActualizados = {
+      ...(nombre && { nombre }),
+      ...(precio !== undefined && { precio: Number(precio) }),
+      ...(descripcion !== undefined && { descripcion }),
+      ...(categoria && { categoria }),
+      ...(stock !== undefined && { stock: Number(stock) }),
+      ...(imagenUrl !== undefined && { imagenUrl }),
+    };
 
-    res.json({ message: "Estado actualizado correctamente" });
+    await docRef.update(datosActualizados);
+
+    const productoData = docSnap.data();
+    await registrarAuditoria(productoData.vendedorId || "vendedor", `Actualizó el producto ${nombre || productoData.nombre}`, "producto");
+
+    res.json({ message: "Producto actualizado correctamente" });
   } catch (error) {
-    console.error("Error en PUT /productos/:id/estado:", error);
-    res.status(500).json({ message: "Error al actualizar estado" });
+    console.error("Error en PUT /productos/:id:", error);
+    res.status(500).json({ message: "Error al actualizar el producto" });
   }
 });
 
+// Listar Categorías
 app.get("/categorias", async (req, res) => {
   try {
     const snap = await db.collection("categorias").get();
@@ -549,6 +605,7 @@ app.get("/categorias", async (req, res) => {
   }
 });
 
+// Crear Categoría
 app.post("/categorias", verificarAdmin, async (req, res) => {
   try {
     const { nombre, descripcion, emoji } = req.body;
@@ -574,15 +631,19 @@ app.post("/categorias", verificarAdmin, async (req, res) => {
   }
 });
 
+// Cambiar Estado Categoría
 app.put("/categorias/:id/estado", verificarAdmin, async (req, res) => {
   try {
     const { estado } = req.body;
     const estadosValidos = ["Activa", "Inactiva"];
+
     if (!estadosValidos.includes(estado)) {
       return res.status(400).json({ message: "Estado inválido" });
     }
+
     const docSnap = await db.collection("categorias").doc(req.params.id).get();
     const categoria = docSnap.data();
+
     await db.collection("categorias").doc(req.params.id).update({ estado });
 
     const accion = estado === "Inactiva" ? "Desactivó" : "Activó";
@@ -595,12 +656,13 @@ app.put("/categorias/:id/estado", verificarAdmin, async (req, res) => {
   }
 });
 
+// Eliminar Categoría
 app.delete("/categorias/:id", verificarAdmin, async (req, res) => {
   try {
     const docSnap = await db.collection("categorias").doc(req.params.id).get();
     const categoria = docSnap.data();
-    await db.collection("categorias").doc(req.params.id).delete();
 
+    await db.collection("categorias").doc(req.params.id).delete();
     await registrarAuditoria("admin", `Eliminó la categoría ${categoria?.nombre}`, "categoria");
 
     res.json({ message: "Categoría eliminada correctamente" });
@@ -610,6 +672,11 @@ app.delete("/categorias/:id", verificarAdmin, async (req, res) => {
   }
 });
 
+// ----------------------
+// PAGOS Y PEDIDOS
+// ----------------------
+
+// Listar Pagos
 app.get("/pagos", async (req, res) => {
   try {
     const pagosSnap = await db.collection("pagos").get();
@@ -637,33 +704,19 @@ app.get("/pagos", async (req, res) => {
   }
 });
 
+// Crear Pago / Pedido
 app.post("/pagos", async (req, res) => {
   try {
     const { 
-      usuarioId,
-      vendedorId,
-      producto,
-      monto,
-      metodo,
-      pedidoId,
-      tipoEntrega,
-      provincia,
-      ciudad,
-      direccion,
-      referencia,
-      cooperativa,
-      ciudadDestino,
-      costoEnvio,
-      envio,
-      subtotal,
-      montoTotal
+      usuarioId, vendedorId, producto, monto, metodo, pedidoId,
+      tipoEntrega, provincia, ciudad, direccion, referencia,
+      cooperativa, ciudadDestino, costoEnvio, envio, subtotal, montoTotal
     } = req.body;
 
     if (!usuarioId || !producto || !monto) {
       return res.status(400).json({ message: "Faltan datos obligatorios" });
     }
 
-    // Calculamos o determinamos el costo de envío de manera inteligente en el backend
     const costoEnvioFinal = Number(costoEnvio ?? envio ?? 0);
     const montoNum = Number(monto);
 
@@ -674,7 +727,7 @@ app.post("/pagos", async (req, res) => {
       producto,
       monto: montoNum,
       subtotal: Number(subtotal) || montoNum,
-      costoEnvio: costoEnvioFinal, // <--- Aquí ya se registra formalmente en Firebase
+      costoEnvio: costoEnvioFinal,
       montoTotal: Number(montoTotal) || (montoNum + costoEnvioFinal),
       metodo: metodo || "Efectivo",
       tipoEntrega: tipoEntrega || "",
@@ -689,8 +742,8 @@ app.post("/pagos", async (req, res) => {
       fecha: FieldValue.serverTimestamp(),
     });
 
-    await registrarAuditoria(usuarioId, `Realizo una compra: ${producto} - $${monto}`, "pago");
-    
+    await registrarAuditoria(usuarioId, `Realizó una compra: ${producto} - $${monto}`, "pago");
+
     if (vendedorId) {
       await crearNotificacion(vendedorId, `Nuevo pedido: ${producto} - $${monto}`, "pedido");
     }
@@ -701,44 +754,59 @@ app.post("/pagos", async (req, res) => {
     res.status(500).json({ message: "Error al crear pago" });
   }
 });
+
+// Actualizar Estado de Pago
 app.put("/pagos/:id/estado", async (req, res) => {
   try {
     const { estado } = req.body;
     const estadosValidos = ["pendiente", "aprobado", "rechazado"];
+
     if (!estadosValidos.includes(estado)) {
-      return res.status(400).json({ message: "Estado invalido" });
+      return res.status(400).json({ message: "Estado inválido" });
     }
+
     const docSnap = await db.collection("pagos").doc(req.params.id).get();
     const pago = docSnap.data();
+
     await db.collection("pagos").doc(req.params.id).update({ estado });
+
     const acciones = {
-      aprobado: "Aprobo",
-      rechazado: "Rechazo",
-      pendiente: "Revirtio a pendiente",
+      aprobado: "Aprobó",
+      rechazado: "Rechazó",
+      pendiente: "Revirtió a pendiente",
     };
+
     await registrarAuditoria(
       pago?.usuarioId || "admin",
       `${acciones[estado]} el pago de ${pago?.producto} - $${pago?.monto}`,
       "pago"
     );
+
     if (estado === "aprobado" || estado === "rechazado") {
       const textoCliente = estado === "aprobado"
         ? `Tu pago de ${pago?.producto} fue aprobado`
         : `Tu pago de ${pago?.producto} fue rechazado`;
       await crearNotificacion(pago?.usuarioId, textoCliente, "pago");
     }
+
     res.json({ message: "Estado actualizado correctamente" });
   } catch (error) {
     console.error("Error en PUT /pagos/:id/estado:", error);
     res.status(500).json({ message: "Error al actualizar estado" });
   }
 });
+
+// ----------------------
+// NOTIFICACIONES E HISTORIAL
+// ----------------------
+
 app.get("/notificaciones/:usuarioId", async (req, res) => {
   try {
     const snap = await db.collection("notificaciones")
       .where("usuarioId", "==", req.params.usuarioId)
       .orderBy("fecha", "desc")
       .get();
+
     const lista = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     res.json(lista);
   } catch (error) {
@@ -746,13 +814,14 @@ app.get("/notificaciones/:usuarioId", async (req, res) => {
     res.status(500).json({ message: "Error al listar notificaciones" });
   }
 });
+
 app.put("/notificaciones/:id/leida", async (req, res) => {
   try {
     await db.collection("notificaciones").doc(req.params.id).update({ leida: true });
-    res.json({ message: "Notificacion marcada como leida" });
+    res.json({ message: "Notificación marcada como leída" });
   } catch (error) {
     console.error("Error en PUT /notificaciones/:id/leida:", error);
-    res.status(500).json({ message: "Error al actualizar notificacion" });
+    res.status(500).json({ message: "Error al actualizar notificación" });
   }
 });
 
@@ -788,96 +857,35 @@ app.get("/historial", async (req, res) => {
     res.status(500).json({ message: "Error al listar historial" });
   }
 });
-app.post("/recuperar-contrasena", async(req,res)=>{
 
-const {correo,nuevaPassword}=req.body;
+// ----------------------
+// SUBIDA DE ARCHIVOS (ImageKit)
+// ----------------------
 
-
-try{
-
-
-const usuariosRef = db.collection("usuarios");
-
-
-const usuario = await usuariosRef
-.where("correo","==",correo)
-.get();
-
-
-
-if(usuario.empty){
-
-return res.status(404).json({
-message:"El correo no está registrado"
-});
-
-}
-
-
-
-
-const doc = usuario.docs[0];
-
-
-const nuevaClaveHash = bcrypt.hashSync(nuevaPassword,10);
-
-await doc.ref.update({
-  password:nuevaClaveHash
-});
-
-
-res.json({
-
-message:"Contraseña actualizada correctamente"
-
-});
-
-
-}catch(error){
-
-console.log(error);
-
-res.status(500).json({
-
-message:"Error al actualizar contraseña"
-
-});
-
-
-}
-
-
-});
-
-// ======================
-// SUBIR IMAGEN (ImageKit)
-// ======================
 app.post("/imagenes", upload.single("imagen"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No se proporcionó ninguna imagen" });
     }
 
-    // Subir la imagen usando ImageKit (ya tienes importado imagekit arriba)
-    imagekit.upload({
-      file: req.file.buffer, 
+    const result = await imagekit.upload({
+      file: req.file.buffer,
       fileName: `producto_${Date.now()}_${req.file.originalname}`,
-      folder: "/productos"
-    }, (error, result) => {
-      if (error) {
-        console.error("Error al subir a ImageKit:", error);
-        return res.status(500).json({ message: "Error al subir la imagen" });
-      }
-      // Devolvemos la URL pública que generó ImageKit
-      res.json({ url: result.url });
+      folder: "/productos",
     });
 
+    res.json({ url: result.url });
   } catch (error) {
     console.error("Error en POST /imagenes:", error);
     res.status(500).json({ message: "Error al procesar la imagen" });
   }
 });
 
-app.listen(3001, () => {
-  console.log("Servidor en http://localhost:3001 (conectado a Firestore)");
+// ======================
+// INICIO DEL SERVIDOR
+// ======================
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Servidor en http://localhost:${PORT} (conectado a Firestore)`);
 });
