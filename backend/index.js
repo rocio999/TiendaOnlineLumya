@@ -746,11 +746,45 @@ app.post("/pagos", async (req, res) => {
     const costoEnvioFinal = Number(costoEnvio ?? envio ?? 0);
     const montoNum = Number(monto);
 
+    for (const item of productos) {
+
+  const docRef = db.collection("productos").doc(item.id);
+  const docSnap = await docRef.get();
+
+  if (!docSnap.exists) {
+    return res.status(404).json({
+      message: `El producto ${item.nombre} no existe`
+    });
+  }
+
+  const datos = docSnap.data();
+
+  if (datos.stock < item.cantidad) {
+    return res.status(400).json({
+      message: `Solo quedan ${datos.stock} unidades de ${item.nombre}`
+    });
+  }
+}
+for (const item of productos) {
+
+  const docRef = db.collection("productos").doc(item.id);
+
+  const docSnap = await docRef.get();
+
+  const datos = docSnap.data();
+
+  await docRef.update({
+    stock: datos.stock - item.cantidad
+  });
+
+}
+
     const nuevoDoc = await db.collection("pagos").add({
       usuarioId,
       vendedorId: vendedorId || "",
       pedidoId: pedidoId || `pedido_${Date.now()}`,
       producto,
+      productos,
       monto: montoNum,
       subtotal: Number(subtotal) || montoNum,
       costoEnvio: costoEnvioFinal,
