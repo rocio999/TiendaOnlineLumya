@@ -84,25 +84,46 @@ export default function CatalogoGeneral() {
   };
 
   const handleAgregar = (producto: Producto) => {
-    const carritoActual = JSON.parse(localStorage.getItem("carrito") || "[]");
-    const existe = carritoActual.find((p: any) => p.id === producto.id);
-    if (existe) {
-      const actualizado = carritoActual.map((p: any) =>
-        p.id === producto.id ? { ...p, cantidad: p.cantidad + 1 } : p
-      );
-      localStorage.setItem("carrito", JSON.stringify(actualizado));
-    } else {
-      localStorage.setItem(
-        "carrito",
-        JSON.stringify([
-          ...carritoActual,
-          { ...producto, cantidad: 1, tiendaId: producto.vendedorId, tiendaNombre: producto.vendedorNombre },
-        ])
-      );
+  const carritoActual = JSON.parse(localStorage.getItem("carrito") || "[]");
+
+  const existe = carritoActual.find((p: any) => p.id === producto.id);
+
+  if (existe) {
+
+    if (existe.cantidad >= producto.stock) {
+      alert(`Solo hay ${producto.stock} unidades disponibles.`);
+      return;
     }
-    setAgregado(producto.id);
-    setTimeout(() => setAgregado(null), 1500);
-  };
+
+    const actualizado = carritoActual.map((p: any) =>
+      p.id === producto.id
+        ? { ...p, cantidad: p.cantidad + 1 }
+        : p
+    );
+
+    localStorage.setItem("carrito", JSON.stringify(actualizado));
+
+  } else {
+
+    localStorage.setItem(
+      "carrito",
+      JSON.stringify([
+        ...carritoActual,
+        {
+          ...producto,
+          cantidad: 1,
+          stock: producto.stock,
+          tiendaId: producto.vendedorId,
+          tiendaNombre: producto.vendedorNombre,
+        },
+      ])
+    );
+
+  }
+
+  setAgregado(producto.id);
+  setTimeout(() => setAgregado(null), 1500);
+};
 
   const productosFiltrados = productos.filter((p) => {
     const coincideBusqueda = p.nombre.toLowerCase().includes(busqueda.toLowerCase());

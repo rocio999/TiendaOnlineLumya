@@ -28,6 +28,10 @@ export default function Checkout() {
   const [cooperativa, setCooperativa] = useState("");
   const [ciudadDestino, setCiudadDestino] = useState("");
   const [terminosAceptados, setTerminosAceptados] = useState(false);
+
+  // Estados para los datos del cliente vinculados a los inputs
+  const [nombreCliente, setNombreCliente] = useState("");
+  const [correoCliente, setCorreoCliente] = useState("");
   
   const router = useRouter();
 
@@ -36,8 +40,11 @@ export default function Checkout() {
       ? JSON.parse(localStorage.getItem("carritoPago") || "[]")
       : [];
 
-  const subtotal = productos.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
-
+  const subtotal =
+    typeof window !== "undefined"
+      ? Number(localStorage.getItem("subtotalPago") || 0)
+      : 0;
+    
   useEffect(() => {
     if (typeof window !== "undefined") {
       const entregaGuardada = localStorage.getItem("tipoEntregaSeleccionado");
@@ -48,6 +55,18 @@ export default function Checkout() {
       }
       if (envioGuardado) {
         setCostoEnvio(parseFloat(envioGuardado) || 0);
+      }
+
+      // Cargar datos del usuario logueado en los inputs
+      const usuarioStorage = localStorage.getItem("usuario");
+      if (usuarioStorage) {
+        try {
+          const parsedUser = JSON.parse(usuarioStorage);
+          setNombreCliente(parsedUser.nombre || parsedUser.name || "");
+          setCorreoCliente(parsedUser.email || parsedUser.correo || "");
+        } catch (e) {
+          console.error("Error al parsear usuario", e);
+        }
       }
     }
   }, []);
@@ -118,7 +137,13 @@ export default function Checkout() {
       return;
     }
 
-    const cliente = JSON.parse(usuario);
+    const clienteBase = JSON.parse(usuario);
+    const cliente = {
+      ...clienteBase,
+      nombre: nombreCliente,
+      correo: correoCliente
+    };
+
     const pedidoId = crypto.randomUUID();
     const entregaFinal = tipoEntrega === "Servientrega" ? `Servientrega (${tipoServientrega})` : tipoEntrega;
     const vendedorId = productos.length > 0 ? productos[0].vendedorId : "";
@@ -144,12 +169,10 @@ export default function Checkout() {
     };
 
     try {
-      // 1. Guardar localmente
       const pedidosGuardados = JSON.parse(localStorage.getItem("pedidos") || "[]");
       pedidosGuardados.push(pedido);
       localStorage.setItem("pedidos", JSON.stringify(pedidosGuardados));
       
-      // 2. Enviar al backend incluyendo correctamente subtotal y costo de envío (envio)
       const res = await fetch("http://localhost:3001/pagos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -158,6 +181,7 @@ export default function Checkout() {
           vendedorId: vendedorId,
           pedidoId: pedidoId,
           producto: nombreProductos,
+          productos,
           subtotal: subtotal,
           envio: costoEnvio,
           monto: totalGeneral,
@@ -168,7 +192,8 @@ export default function Checkout() {
           direccion,
           referencia,
           cooperativa,
-          ciudadDestino
+          ciudadDestino,
+          cliente
         })
       });
 
@@ -191,61 +216,337 @@ export default function Checkout() {
   };
 
   return (
-    <div className="checkout-container">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h1>Finalizar compra</h1>
+    <div style={{ maxWidth: "1100px", margin: "40px auto", padding: "0 20px", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      {/* Cabecera */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px", borderBottom: "2px solid #eaeaea", paddingBottom: "15px" }}>
+        <h1 style={{ fontSize: "28px", fontWeight: "800", color: "#111", margin: 0 }}>Finalizar Compra</h1>
         <Link 
           href="/cliente/carrito" 
           style={{ 
-            padding: "8px 14px", 
-            background: "#f0f0f0", 
-            border: "1px solid #ccc", 
-            borderRadius: "5px", 
+            padding: "10px 16px", 
+            background: "#fff", 
+            border: "1px solid #d1d5db", 
+            borderRadius: "8px", 
             textDecoration: "none", 
-            color: "#333", 
+            color: "#374151", 
             fontSize: "14px", 
-            fontWeight: "bold" 
+            fontWeight: "600",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+            transition: "all 0.2s"
           }}
         >
           ← Volver al carrito
         </Link>
       </div>
 
-      <div className="checkout-grid">
-        {/* Datos del cliente */}
-        <div className="checkout-card">
-          <h2>👤 Datos del cliente</h2>
-          <label>Nombre completo</label>
-          <input type="text" placeholder="Ingrese su nombre" />
-          <label>Correo</label>
-          <input type="email" placeholder="Ingrese su correo" />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", alignItems: "start" }}>
+        
+        {/* COLUMNA IZQUIERDA: Datos, Pago y Entrega */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          
+          {/* Datos del cliente */}
+          <div style={{ background: "#fff", padding: "24px", borderRadius: "12px", border: "1px solid #e5e7eb", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.02)" }}>
+            <h2 style={{ fontSize: "18px", fontWeight: "700", color: "#1f2937", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+              👤 Datos del cliente
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#4b5563", marginBottom: "6px" }}>Nombre completo</label>
+                <input 
+                  type="text" 
+                  placeholder="Ingrese su nombre" 
+                  value={nombreCliente}
+                  onChange={(e) => setNombreCliente(e.target.value)}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px", outline: "none" }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#4b5563", marginBottom: "6px" }}>Correo electrónico</label>
+                <input 
+                  type="email" 
+                  placeholder="Ingrese su correo" 
+                  value={correoCliente}
+                  onChange={(e) => setCorreoCliente(e.target.value)}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px", outline: "none" }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Método de pago */}
+          <div style={{ background: "#fff", padding: "24px", borderRadius: "12px", border: "1px solid #e5e7eb", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.02)" }}>
+            <h2 style={{ fontSize: "18px", fontWeight: "700", color: "#1f2937", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+              💳 Método de pago
+            </h2>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px", border: `1px solid ${metodoPago === "Transferencia" ? "#2563eb" : "#e5e7eb"}`, borderRadius: "8px", background: metodoPago === "Transferencia" ? "#eff6ff" : "#f9fafb", cursor: "pointer", fontWeight: "500", fontSize: "14px" }}>
+                <input
+                  type="radio"
+                  name="pago"
+                  value="Transferencia"
+                  checked={metodoPago === "Transferencia"}
+                  onChange={(e) => setMetodoPago(e.target.value)}
+                  style={{ accentColor: "#2563eb" }}
+                />
+                Transferencia bancaria (Pago Total)
+              </label>
+
+              {metodoPago === "Transferencia" && (
+                <div style={{ display: "flex", gap: "15px", alignItems: "center", flexWrap: "wrap", background: "#f8fafc", padding: "16px", borderRadius: "8px", border: "1px solid #cbd5e1" }}>
+                  <div style={{ flex: 1, fontSize: "13px", color: "#334155", display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a", marginBottom: "4px" }}>Datos para transferencia</h3>
+                    {datosVendedor ? (
+                      <>
+                        <p>🏪 <strong>Tienda:</strong> {datosVendedor.nombreNegocio}</p>
+                        <p>🏦 <strong>Banco:</strong> {datosVendedor.banco}</p>
+                        <p>💳 <strong>Cuenta:</strong> {datosVendedor.numeroCuenta}</p>
+                        <p>📱 <strong>Cédula/RUC:</strong> {datosVendedor.cedula}</p>
+                        <p style={{ fontWeight: "700", color: "#2563eb", marginTop: "4px" }}>Total a pagar: ${totalGeneral.toFixed(2)}</p>
+                      </>
+                    ) : (
+                      <p>Cargando datos de la tienda...</p>
+                    )}
+                    <p style={{ fontSize: "11px", color: "#64748b", marginTop: "4px" }}>Realice la transferencia total y envíe el comprobante.</p>
+                  </div>
+                  <div style={{ textAlign: "center", background: "#fff", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                    <p style={{ fontSize: "11px", marginBottom: "6px", fontWeight: "700" }}>QR de Pago</p>
+                    <div style={{ width: "76px", height: "76px", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px auto", overflow: "hidden", borderRadius: "6px" }}>
+                      {datosVendedor?.qrUrl ? (
+                        <img src={datosVendedor.qrUrl} alt="QR de pago" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                      ) : (
+                        <span style={{ fontSize: "10px", color: "#94a3b8" }}>[Sin QR]</span>
+                      )}
+                    </div>
+                    <a 
+                      href={`https://wa.me/${datosVendedor?.whatsapp || '593900000000'}?text=${encodeURIComponent(`Hola, aquí adjunto mi comprobante de transferencia total por un valor de $${totalGeneral.toFixed(2)}.`)}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ fontSize: "11px", color: "#16a34a", fontWeight: "700", textDecoration: "none", display: "block" }}
+                    >
+                      Enviar WhatsApp ↗
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              <label style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px", border: `1px solid ${metodoPago === "DeUna" ? "#7c3aed" : "#e5e7eb"}`, borderRadius: "8px", background: metodoPago === "DeUna" ? "#f5f3ff" : "#f9fafb", cursor: "pointer", fontWeight: "500", fontSize: "14px" }}>
+                <input
+                  type="radio"
+                  name="pago"
+                  value="DeUna"
+                  checked={metodoPago === "DeUna"}
+                  onChange={(e) => setMetodoPago(e.target.value)}
+                  style={{ accentColor: "#7c3aed" }}
+                />
+                Pago con DeUna (Pago Total)
+              </label>
+
+              {metodoPago === "DeUna" && (
+                <div style={{ display: "flex", gap: "15px", alignItems: "center", flexWrap: "wrap", background: "#faf5ff", padding: "16px", borderRadius: "8px", border: "1px solid #d8b4fe" }}>
+                  <div style={{ flex: 1, fontSize: "13px", color: "#4c1d95", display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#581c87", marginBottom: "4px" }}>Pago con DeUna</h3>
+                    {datosVendedor ? (
+                      <>
+                        <p>🏪 <strong>Tienda:</strong> {datosVendedor.nombreNegocio}</p>
+                        <p>📱 <strong>Celular DeUna:</strong> {datosVendedor.numeroCuenta}</p>
+                        <p style={{ fontWeight: "700", color: "#7c3aed", marginTop: "4px" }}>Total a pagar: ${totalGeneral.toFixed(2)}</p>
+                      </>
+                    ) : (
+                      <p>Cargando datos de la tienda...</p>
+                    )}
+                    <p style={{ fontSize: "11px", color: "#6b21a8", marginTop: "4px" }}>Escanee el QR y envíe su comprobante.</p>
+                  </div>
+                  <div style={{ textAlign: "center", background: "#fff", padding: "12px", borderRadius: "8px", border: "1px solid #e9d5ff" }}>
+                    <p style={{ fontSize: "11px", marginBottom: "6px", fontWeight: "700" }}>QR DeUna</p>
+                    <div style={{ width: "76px", height: "76px", background: "#f8f7fc", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px auto", overflow: "hidden", borderRadius: "6px" }}>
+                      {datosVendedor?.qrDeUnaUrl ? (
+                        <img src={datosVendedor.qrDeUnaUrl} alt="QR DeUna" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                      ) : (
+                        <span style={{ fontSize: "10px", color: "#94a3b8" }}>[Sin QR]</span>
+                      )}
+                    </div>
+                    <a 
+                      href={`https://wa.me/${datosVendedor?.whatsapp || '593900000000'}?text=${encodeURIComponent(`Hola, aquí adjunto el comprobante de mi pago con DeUna por un valor total de $${totalGeneral.toFixed(2)}.`)}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ fontSize: "11px", color: "#16a34a", fontWeight: "700", textDecoration: "none", display: "block" }}
+                    >
+                      Enviar WhatsApp ↗
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Método de entrega */}
+          <div style={{ background: "#fff", padding: "24px", borderRadius: "12px", border: "1px solid #e5e7eb", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.02)" }}>
+            <h2 style={{ fontSize: "18px", fontWeight: "700", color: "#1f2937", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+              🚚 Método de entrega
+            </h2>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px", border: `1px solid ${tipoEntrega === "Servientrega" ? "#2563eb" : "#e5e7eb"}`, borderRadius: "8px", background: tipoEntrega === "Servientrega" ? "#eff6ff" : "#f9fafb", cursor: "pointer", fontWeight: "500", fontSize: "14px" }}>
+                <input
+                  type="radio"
+                  name="entrega"
+                  value="Servientrega"
+                  checked={tipoEntrega === "Servientrega"}
+                  onChange={(e) => setTipoEntrega(e.target.value)}
+                  style={{ accentColor: "#2563eb" }}
+                />
+                Servientrega
+              </label>
+
+              {tipoEntrega === "Servientrega" && (
+                <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "8px", border: "1px solid #cbd5e1", display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a" }}>Datos para Servientrega</h3>
+                  
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#475569", marginBottom: "4px" }}>Provincia</label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Pichincha"
+                        value={provincia}
+                        onChange={(e) => setProvincia(e.target.value)}
+                        style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#475569", marginBottom: "4px" }}>Ciudad</label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Quito"
+                        value={ciudad}
+                        onChange={(e) => setCiudad(e.target.value)}
+                        style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#475569", marginBottom: "4px" }}>Tipo de entrega</label>
+                    <select 
+                      value={tipoServientrega} 
+                      onChange={(e) => setTipoServientrega(e.target.value)}
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", background: "#fff" }}
+                    >
+                      <option value="domicilio">Dirección a domicilio</option>
+                      <option value="agencia">Agencia de Servientrega</option>
+                    </select>
+                  </div>
+
+                  {tipoServientrega === "domicilio" ? (
+                    <>
+                      <div>
+                        <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#475569", marginBottom: "4px" }}>Dirección exacta</label>
+                        <input
+                          type="text"
+                          placeholder="Ej. Av. Amazonas y Corella"
+                          value={direccion}
+                          onChange={(e) => setDireccion(e.target.value)}
+                          style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#475569", marginBottom: "4px" }}>Referencia</label>
+                        <input
+                          type="text"
+                          placeholder="Ej. Casa blanca de dos pisos"
+                          value={referencia}
+                          onChange={(e) => setReferencia(e.target.value)}
+                          style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#475569", marginBottom: "4px" }}>Agencia de destino</label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Agencia Centro Comercial"
+                        value={direccion}
+                        onChange={(e) => setDireccion(e.target.value)}
+                        style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <label style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px", border: `1px solid ${tipoEntrega === "Cooperativa" ? "#2563eb" : "#e5e7eb"}`, borderRadius: "8px", background: tipoEntrega === "Cooperativa" ? "#eff6ff" : "#f9fafb", cursor: "pointer", fontWeight: "500", fontSize: "14px" }}>
+                <input
+                  type="radio"
+                  name="entrega"
+                  value="Cooperativa"
+                  checked={tipoEntrega === "Cooperativa"}
+                  onChange={(e) => setTipoEntrega(e.target.value)}
+                  style={{ accentColor: "#2563eb" }}
+                />
+                Cooperativa de transporte
+              </label>
+
+              {tipoEntrega === "Cooperativa" && (
+                <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "8px", border: "1px solid #cbd5e1", display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a" }}>Datos por Cooperativa</h3>
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#475569", marginBottom: "4px" }}>Cooperativa</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. Cooperativa Loja"
+                      value={cooperativa}
+                      onChange={(e) => setCooperativa(e.target.value)}
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#475569", marginBottom: "4px" }}>Ciudad destino</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. Loja"
+                      value={ciudadDestino}
+                      onChange={(e) => setCiudadDestino(e.target.value)}
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
 
-        {/* Resumen del pedido */}
-        <div className="checkout-card">
-          <h2>🛒 Resumen</h2>
+        {/* COLUMNA DERECHA: Resumen de productos y confirmación */}
+        <div style={{ background: "#fff", padding: "24px", borderRadius: "12px", border: "1px solid #e5e7eb", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.02)", position: "sticky", top: "20px" }}>
+          <h2 style={{ fontSize: "18px", fontWeight: "700", color: "#1f2937", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+            🛒 Resumen del pedido
+          </h2>
 
           {productos.length === 0 ? (
-            <p>No hay productos en el carrito</p>
+            <p style={{ color: "#6b7280", fontSize: "14px", textAlign: "center", padding: "20px 0" }}>No hay productos en el carrito</p>
           ) : (
-            <>
-              {productos.map((p) => (
-                <div key={p.id} className="checkout-item">
-                  <span>{p.nombre} x {p.cantidad}</span>
-                  <span>${(p.precio * p.cantidad).toFixed(2)}</span>
-                </div>
-              ))}
-
-              <div className="checkout-item" style={{ borderTop: "1px solid #eee", marginTop: "10px", paddingTop: "10px" }}>
-                <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "200px", overflowY: "auto", paddingRight: "4px" }}>
+                {productos.map((p) => (
+                  <div key={p.id} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#4b5563" }}>
+                    <span>{p.nombre} <strong style={{ color: "#111" }}>x {p.cantidad}</strong></span>
+                    <span style={{ fontWeight: "600", color: "#111" }}>${(p.precio * p.cantidad).toFixed(2)}</span>
+                  </div>
+                ))}
               </div>
 
-              {/* COSTO DE ENVÍO CON BOTÓN DE ACEPTACIÓN AL LADO */}
-              <div className="checkout-item" style={{ alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span>Envío ({tipoEntrega || "Seleccionado"})</span>
-                  <strong style={{ color: "#333" }}>${costoEnvio.toFixed(2)}</strong>
+              <div style={{ borderTop: "1px solid #e5e7eb", marginTop: "4px", paddingTop: "12px", display: "flex", justifyContent: "space-between", fontSize: "14px", color: "#374151" }}>
+                <span>Subtotal</span>
+                <span style={{ fontWeight: "600" }}>${subtotal.toFixed(2)}</span>
+              </div>
+
+              {/* COSTO DE ENVÍO CON BOTÓN */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: "10px 12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                <div style={{ display: "flex", flexDirection: "column", fontSize: "13px" }}>
+                  <span style={{ color: "#64748b" }}>Envío ({tipoEntrega || "Pendiente"})</span>
+                  <strong style={{ color: "#0f172a", fontSize: "14px" }}>${costoEnvio.toFixed(2)}</strong>
                 </div>
 
                 <button
@@ -253,249 +554,36 @@ export default function Checkout() {
                   onClick={() => setEnvioAceptado(!envioAceptado)}
                   style={{
                     padding: "6px 12px",
-                    background: envioAceptado ? "#28a745" : "#0070f3",
+                    background: envioAceptado ? "#16a34a" : "#2563eb",
                     color: "white",
                     border: "none",
-                    borderRadius: "4px",
+                    borderRadius: "6px",
                     cursor: "pointer",
                     fontSize: "12px",
-                    fontWeight: "bold",
+                    fontWeight: "700",
                     transition: "background 0.2s"
                   }}
                 >
-                  {envioAceptado ? "Cargo Aceptado ✅" : "Aceptar cargo"}
+                  {envioAceptado ? "Aceptado ✅" : "Aceptar cargo"}
                 </button>
               </div>
 
-              {/* MÉTODO DE PAGO */}
-              <div className="checkout-card mt-4">
-                <h2>💳 Método de pago</h2>
-
-                <label>
-                  <input
-                    type="radio"
-                    name="pago"
-                    value="Transferencia"
-                    checked={metodoPago === "Transferencia"}
-                    onChange={(e) => setMetodoPago(e.target.value)}
-                  />
-                  {" "}Transferencia bancaria (Pago Total)
-                </label>
-
-                {metodoPago === "Transferencia" && (
-                  <div className="transferencia-card" style={{ display: "flex", gap: "15px", alignItems: "center", flexWrap: "wrap", marginTop: "8px", background: "#f8f9fa", padding: "10px", borderRadius: "6px" }}>
-                    <div style={{ flex: 1 }}>
-                      <h3>Datos para transferencia</h3>
-                      {datosVendedor ? (
-                        <>
-                          <p>🏪 Tienda: {datosVendedor.nombreNegocio}</p>
-                          <p>🏦 Banco: {datosVendedor.banco}</p>
-                          <p>💳 Cuenta: {datosVendedor.numeroCuenta}</p>
-                          <p>📱 Cédula/RUC: {datosVendedor.cedula}</p>
-                          <p style={{ fontWeight: "bold", color: "#0070f3" }}>Total a pagar: ${totalGeneral.toFixed(2)}</p>
-                        </>
-                      ) : (
-                        <p>Cargando datos de la tienda...</p>
-                      )}
-                      <p className="nota">Realice la transferencia total y envíe el comprobante por WhatsApp.</p>
-                    </div>
-                    <div style={{ textAlign: "center", background: "#fff", padding: "10px", borderRadius: "8px", border: "1px solid #ddd" }}>
-                      <p style={{ fontSize: "12px", marginBottom: "5px", fontWeight: "bold" }}>QR / WhatsApp</p>
-                      <div style={{ width: "80px", height: "80px", background: "#eee", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 5px auto", overflow: "hidden", borderRadius: "6px" }}>
-                        {datosVendedor?.qrUrl ? (
-                          <img src={datosVendedor.qrUrl} alt="QR de pago" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                        ) : (
-                          <span style={{ fontSize: "10px", color: "#666" }}>[Sin QR]</span>
-                        )}
-                      </div>
-                      <a 
-                        href={`https://wa.me/${datosVendedor?.whatsapp || '593900000000'}?text=${encodeURIComponent(`Hola, aquí adjunto mi comprobante de transferencia total por un valor de $${totalGeneral.toFixed(2)}.`)}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        style={{ fontSize: "11px", color: "#25D366", fontWeight: "bold", textDecoration: "underline" }}
-                      >
-                        Enviar por WhatsApp
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                <label className="block mt-4">
-                  <input
-                    type="radio"
-                    name="pago"
-                    value="DeUna"
-                    checked={metodoPago === "DeUna"}
-                    onChange={(e) => setMetodoPago(e.target.value)}
-                  />
-                  {" "}Pago con DeUna (Pago Total)
-                </label>
-
-                {metodoPago === "DeUna" && (
-                  <div className="deuna-card" style={{ borderLeft: "4px solid #673ab7", paddingLeft: "10px", marginTop: "8px", background: "#f3e5f5", padding: "10px", borderRadius: "6px" }}>
-                    <h3>Pago con DeUna</h3>
-                    <p style={{ fontSize: "13px", marginBottom: "8px" }}>
-                      Escanee el código QR de DeUna de la tienda para realizar el pago completo del pedido.
-                    </p>
-                    
-                    <div style={{ display: "flex", gap: "15px", alignItems: "center", flexWrap: "wrap", marginTop: "10px", background: "#fff", padding: "10px", borderRadius: "6px", border: "1px solid #ddd" }}>
-                      <div style={{ flex: 1 }}>
-                        <h4>Datos DeUna / Celular:</h4>
-                        {datosVendedor ? (
-                          <>
-                            <p>🏪 Tienda: {datosVendedor.nombreNegocio}</p>
-                            <p>📱 Celular DeUna: {datosVendedor.numeroCuenta}</p>
-                            <p style={{ fontWeight: "bold", color: "#673ab7" }}>Total a pagar: ${totalGeneral.toFixed(2)}</p>
-                          </>
-                        ) : (
-                          <p>Cargando datos de la tienda...</p>
-                        )}
-                        <p className="nota">Realice el pago total y envíe el comprobante por WhatsApp.</p>
-                      </div>
-                      <div style={{ textAlign: "center", background: "#f9f9f9", padding: "10px", borderRadius: "8px", border: "1px solid #ddd" }}>
-                        <p style={{ fontSize: "12px", marginBottom: "5px", fontWeight: "bold" }}>QR DeUna</p>
-                        <div style={{ width: "80px", height: "80px", background: "#eee", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 5px auto", overflow: "hidden", borderRadius: "6px" }}>
-                          {datosVendedor?.qrDeUnaUrl ? (
-                            <img src={datosVendedor.qrDeUnaUrl} alt="QR DeUna" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                          ) : (
-                            <span style={{ fontSize: "10px", color: "#666" }}>[Sin QR]</span>
-                          )}
-                        </div>
-                        <a 
-                          href={`https://wa.me/${datosVendedor?.whatsapp || '593900000000'}?text=${encodeURIComponent(`Hola, aquí adjunto el comprobante de mi pago con DeUna por un valor total de $${totalGeneral.toFixed(2)}.`)}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          style={{ fontSize: "11px", color: "#25D366", fontWeight: "bold", textDecoration: "underline" }}
-                        >
-                          Enviar por WhatsApp
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* MÉTODO DE ENTREGA */}
-              <div className="checkout-card mt-4">
-                <h2>🚚 Método de entrega</h2>
-
-                <label>
-                  <input
-                    type="radio"
-                    name="entrega"
-                    value="Servientrega"
-                    checked={tipoEntrega === "Servientrega"}
-                    onChange={(e) => setTipoEntrega(e.target.value)}
-                  />
-                  {" "}Servientrega
-                </label>
-
-                {tipoEntrega === "Servientrega" && (
-                  <div className="entrega-card">
-                    <h3>🚚 Datos para el envío por Servientrega</h3>
-
-                    <label>Provincia</label>
-                    <input
-                      type="text"
-                      placeholder="Ej. Pichincha"
-                      value={provincia}
-                      onChange={(e) => setProvincia(e.target.value)}
-                    />
-
-                    <label>Ciudad</label>
-                    <input
-                      type="text"
-                      placeholder="Ej. Quito"
-                      value={ciudad}
-                      onChange={(e) => setCiudad(e.target.value)}
-                    />
-
-                    <label>Tipo de entrega</label>
-                    <select 
-                      value={tipoServientrega} 
-                      onChange={(e) => setTipoServientrega(e.target.value)}
-                      style={{ width: "100%", padding: "8px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ccc" }}
-                    >
-                      <option value="domicilio">Dirección a domicilio</option>
-                      <option value="agencia">Agencia de Servientrega</option>
-                    </select>
-
-                    {tipoServientrega === "domicilio" ? (
-                      <>
-                        <label>Dirección exacta del domicilio (Calles / N° de casa)</label>
-                        <input
-                          type="text"
-                          placeholder="Ej. Av. Amazonas y Corella, N34-12"
-                          value={direccion}
-                          onChange={(e) => setDireccion(e.target.value)}
-                        />
-                        <label>Referencia</label>
-                        <input
-                          type="text"
-                          placeholder="Ej. Frente al parque, casa blanca de dos pisos"
-                          value={referencia}
-                          onChange={(e) => setReferencia(e.target.value)}
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <label>Dirección exacta de la agencia de Servientrega</label>
-                        <input
-                          type="text"
-                          placeholder="Ej. Agencia Servientrega Centro Comercial X"
-                          value={direccion}
-                          onChange={(e) => setDireccion(e.target.value)}
-                        />
-                      </>
-                    )}
-                  </div>
-                )}
-
-                <label className="block mt-4">
-                  <input
-                    type="radio"
-                    name="entrega"
-                    value="Cooperativa"
-                    checked={tipoEntrega === "Cooperativa"}
-                    onChange={(e) => setTipoEntrega(e.target.value)}
-                  />
-                  {" "}Cooperativa de transporte
-                </label>
-
-                {tipoEntrega === "Cooperativa" && (
-                  <div className="entrega-card">
-                    <h3>🚌 Datos del envío por Cooperativa</h3>
-
-                    <label>Nombre del transporte / Cooperativa</label>
-                    <input
-                      type="text"
-                      placeholder="Ej. Cooperativa Loja / Terminal Terrestre"
-                      value={cooperativa}
-                      onChange={(e) => setCooperativa(e.target.value)}
-                    />
-
-                    <label>Ciudad de destino</label>
-                    <input
-                      type="text"
-                      placeholder="Ej. Loja"
-                      value={ciudadDestino}
-                      onChange={(e) => setCiudadDestino(e.target.value)}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* VALIDACIÓN Y TÉRMINOS */}
-              <div className="checkout-card mt-4" style={{ background: "#fffdf0", padding: "12px", border: "1px solid #ffeeba" }}>
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "13px" }}>
+              {/* TÉRMINOS Y CONDICIONES */}
+              <div style={{ background: "#fffbeb", padding: "12px", borderRadius: "8px", border: "1px solid #fde68a", marginTop: "6px" }}>
+                <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", cursor: "pointer", fontSize: "12px", color: "#92400e", lineHeight: "1.4" }}>
                   <input
                     type="checkbox"
                     checked={terminosAceptados}
                     onChange={(e) => setTerminosAceptados(e.target.checked)}
-                    style={{ width: "16px", height: "16px" }}
+                    style={{ width: "15px", height: "15px", marginTop: "1px", accentColor: "#d97706" }}
                   />
                   <span>Estoy de acuerdo con todos los campos y datos ingresados antes de proceder con la compra.</span>
                 </label>
+              </div>
+
+              <div style={{ borderTop: "2px dashed #e5e7eb", marginTop: "10px", paddingTop: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "15px", fontWeight: "700", color: "#111" }}>Total General</span>
+                <span style={{ fontSize: "20px", fontWeight: "800", color: "#2563eb" }}>${totalGeneral.toFixed(2)}</span>
               </div>
 
               <button
@@ -503,28 +591,26 @@ export default function Checkout() {
                 disabled={!metodoPago || !tipoEntrega || !envioAceptado || !terminosAceptados || productos.length === 0}
                 onClick={confirmarCompra}
                 style={{ 
-                  marginTop: "15px", 
+                  marginTop: "6px", 
                   width: "100%", 
-                  padding: "12px", 
-                  background: (!metodoPago || !tipoEntrega || !envioAceptado || !terminosAceptados) ? "#ccc" : "#0070f3", 
+                  padding: "14px", 
+                  background: (!metodoPago || !tipoEntrega || !envioAceptado || !terminosAceptados) ? "#9ca3af" : "#2563eb", 
                   color: "white", 
                   border: "none", 
-                  borderRadius: "5px", 
+                  borderRadius: "8px", 
                   cursor: (!metodoPago || !tipoEntrega || !envioAceptado || !terminosAceptados) ? "not-allowed" : "pointer", 
-                  fontWeight: "bold" 
+                  fontWeight: "700",
+                  fontSize: "15px",
+                  boxShadow: "0 4px 6px -1px rgba(37, 99, 235, 0.2)",
+                  transition: "background 0.2s"
                 }}
               >
                 Confirmar compra
               </button>
-            </>
+            </div>
           )}
-
-          <hr style={{ margin: "20px 0" }} />
-
-          <div className="checkout-total">
-            <strong>Total General: ${totalGeneral.toFixed(2)}</strong>
-          </div>
         </div>
+
       </div>
     </div>
   );

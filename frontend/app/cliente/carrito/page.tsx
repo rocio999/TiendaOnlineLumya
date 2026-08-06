@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
@@ -9,9 +10,12 @@ interface ProductoCarrito {
   nombre: string;
   precio: number;
   cantidad: number;
+  stock: number;
   tiendaNombre: string;
   peso?: number; // Peso unitario del producto en kg
 }
+
+type TipoEntrega = "Servientrega" | "Cooperativa";
 
 export default function Carrito() {
   const [productos, setProductos] = useState<ProductoCarrito[]>([]);
@@ -19,14 +23,26 @@ export default function Carrito() {
   const router = useRouter();
   const [ultimaTienda, setUltimaTienda] = useState("");
   const [tiendaActual, setTiendaActual] = useState("");
-  const [tipoEntrega, setTipoEntrega] = useState<"Servientrega" | "Cooperativa">("Servientrega");
+
+  // Estado para guardar el método de envío seleccionado por cada tienda (ej. { "Tienda Jorge": "Servientrega" })
+  const [tiposEntregaPorTienda, setTiposEntregaPorTienda] = useState<Record<string, TipoEntrega>>({});
 
   useEffect(() => {
     const cargarCarrito = () => {
       const guardado = localStorage.getItem("carrito");
+      let productosCargados: ProductoCarrito[] = [];
       if (guardado) {
-        setProductos(JSON.parse(guardado) as ProductoCarrito[]);
+        productosCargados = JSON.parse(guardado) as ProductoCarrito[];
+        setProductos(productosCargados);
       }
+
+      // Inicializar por defecto el método de envío como "Servientrega" para cada tienda presente
+      const tiendasUnicas = Array.from(new Set(productosCargados.map((p) => p.tiendaNombre || "Tienda")));
+      const enviosIniciales: Record<string, TipoEntrega> = {};
+      tiendasUnicas.forEach((tienda) => {
+        enviosIniciales[tienda] = "Servientrega";
+      });
+      setTiposEntregaPorTienda(enviosIniciales);
 
       const tienda = localStorage.getItem("ultimaTienda");
       if (tienda) {
@@ -45,6 +61,16 @@ export default function Carrito() {
   const guardar = (nuevos: ProductoCarrito[]) => {
     setProductos(nuevos);
     localStorage.setItem("carrito", JSON.stringify(nuevos));
+
+    // Re-sincronizar tiendas en caso de que se eliminen productos
+    const tiendasUnicas = Array.from(new Set(nuevos.map((p) => p.tiendaNombre || "Tienda")));
+    setTiposEntregaPorTienda((prev) => {
+      const actualizado: Record<string, TipoEntrega> = {};
+      tiendasUnicas.forEach((t) => {
+        actualizado[t] = prev[t] || "Servientrega";
+      });
+      return actualizado;
+    });
   };
 
   const eliminar = (id: string) => {
@@ -52,40 +78,44 @@ export default function Carrito() {
   };
 
   const cambiarCantidad = (id: string, delta: number) => {
-    guardar(
-      productos.map((p) =>
-        p.id === id ? { ...p, cantidad: Math.max(1, p.cantidad + delta) } : p
-      )
-    );
+    const nuevosProductos = productos.map((p) => {
+      if (p.id !== id) return p;
+
+      const nuevaCantidad = p.cantidad + delta;
+
+      if (nuevaCantidad < 1) {
+        return p;
+      }
+
+      if (nuevaCantidad > p.stock) {
+        setMensaje(`Solo hay ${p.stock} unidades disponibles de ${p.nombre}`);
+        return p;
+      }
+
+      return {
+        ...p,
+        cantidad: nuevaCantidad,
+      };
+    });
+
+    guardar(nuevosProductos);
   };
 
-  const subtotal = productos.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
-
-  // Cálculo del peso total general en el carrito
-  const pesoTotalGeneral = productos.reduce(
-    (acc, p) => acc + (p.peso || 1) * p.cantidad,
-    0
-  );
-
-  // --- CÁLCULO DE ENVÍO SEGÚN LOS PARÁMETROS ESTABLECIDOS ---
-  const calcularEnvio = () => {
-    if (productos.length === 0) return 0;
-
+  // Función para calcular el costo de envío según el peso y tipo de entrega seleccionado
+  const calcularCostoEnvioParaTienda = (pesoTienda: number, tipoEntrega: TipoEntrega) => {
     if (tipoEntrega === "Servientrega") {
-      // Hasta 2kg cuesta $4.50. Por cada kilo adicional se suman $1.25.
-      if (pesoTotalGeneral <= 2) {
+      if (pesoTienda <= 2) {
         return 4.50;
       } else {
-        const kilosExtras = Math.ceil(pesoTotalGeneral - 2);
+        const kilosExtras = Math.ceil(pesoTienda - 2);
         return 4.50 + kilosExtras * 1.25;
       }
     } 
     
     if (tipoEntrega === "Cooperativa") {
-      // Rangos de peso para cooperativa
-      if (pesoTotalGeneral <= 4.5) {
+      if (pesoTienda <= 4.5) {
         return 4.00; 
-      } else if (pesoTotalGeneral <= 22) {
+      } else if (pesoTienda <= 22) {
         return 5.75; 
       } else {
         return 7.00; 
@@ -94,9 +124,6 @@ export default function Carrito() {
 
     return 0;
   };
-
-  const costoEnvio = calcularEnvio();
-  const totalGeneral = subtotal + costoEnvio;
 
   const tiendasAgrupadas: Record<string, ProductoCarrito[]> = productos.reduce(
     (acc, producto) => {
@@ -130,26 +157,30 @@ export default function Carrito() {
       (p) => p.tiendaNombre === nombreTienda
     );
 
-    // Guardamos también el tipo de entrega y costo de envío calculado para pasarlo al checkout
+    const tipoEntregaTienda = tiposEntregaPorTienda[nombreTienda] || "Servientrega";
+    const pesoTienda = productosPago.reduce((acc, p) => acc + (p.peso || 1) * p.cantidad, 0);
+    const costoEnvioTienda = calcularCostoEnvioParaTienda(pesoTienda, tipoEntregaTienda);
+
+    // Guardamos los datos específicos de la tienda seleccionada para el pago
     localStorage.setItem("carritoPago", JSON.stringify(productosPago));
-    localStorage.setItem("tipoEntregaSeleccionado", tipoEntrega);
-    localStorage.setItem("costoEnvioSeleccionado", costoEnvio.toString());
+    localStorage.setItem("tipoEntregaSeleccionado", tipoEntregaTienda);
+    localStorage.setItem("costoEnvioSeleccionado", costoEnvioTienda.toString());
 
     router.push("/cliente/checkout");
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       <div className="bg-gradient-to-r from-blue-700 to-cyan-500 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
+            {/* CORREGIDO: Redirige explícitamente al catálogo en lugar de usar router.back() */}
             <button
-                  onClick={() => router.back()}
-                     className="text-white hover:bg-white/20 p-2 rounded-xl transition"
-                        >
-                  ← Volver
-              </button>
-
+              onClick={() => router.push("/cliente/catalogo")}
+              className="text-white hover:bg-white/20 p-2 rounded-xl transition font-medium"
+            >
+              ← Volver
+            </button>
 
             <Image
               src="/logo-lumya.png"
@@ -159,11 +190,6 @@ export default function Carrito() {
               className="rounded-xl"
             />
             <span className="text-xl font-bold text-white">Mi Carrito</span>
-            {productos.length > 0 && productos[0].tiendaNombre && (
-              <span className="text-white text-sm">
-                🏪 {productos[0].tiendaNombre}
-              </span>
-            )}
           </div>
           <span className="bg-white/20 text-white px-3 py-1 rounded-xl text-sm font-semibold">
             {productos.length} items
@@ -190,7 +216,7 @@ export default function Carrito() {
             <p className="text-xl font-bold text-blue-900 mb-2">
               Tu carrito está vacío
             </p>
-            <p className="text-blue-400 text-sm mb-8">
+            <p className="text-blue-500 text-sm mb-8">
               Agrega productos para continuar
             </p>
             <Link href="/cliente/catalogo">
@@ -216,10 +242,14 @@ export default function Carrito() {
                     0
                   );
 
+                  const tipoEntregaActual = tiposEntregaPorTienda[nombreTienda] || "Servientrega";
+                  const costoEnvioTienda = calcularCostoEnvioParaTienda(pesoTienda, tipoEntregaActual);
+                  const totalTiendaConEnvio = totalTienda + costoEnvioTienda;
+
                   return (
                     <div
                       key={nombreTienda}
-                      className="bg-white rounded-2xl p-5 shadow-sm border mb-5"
+                      className="bg-white rounded-2xl p-5 shadow-sm border mb-5 text-gray-900"
                     >
                       <h2 className="text-xl font-bold text-blue-900 mb-4">
                         🏪 {nombreTienda}
@@ -231,11 +261,14 @@ export default function Carrito() {
                           className="flex justify-between items-center border-b py-3"
                         >
                           <div>
-                            <p className="font-bold text-gray-800">
+                            <p className="font-bold text-gray-900">
                               {producto.nombre}
                             </p>
-                            <p className="text-blue-600">
-                              ${producto.precio} <span className="text-xs text-gray-400">({producto.peso || 1} kg c/u)</span>
+                            <p className="text-blue-600 font-medium">
+                              ${producto.precio} <span className="text-xs text-gray-500">({producto.peso || 1} kg c/u)</span>
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              Stock disponible: {producto.stock}
                             </p>
                           </div>
 
@@ -268,19 +301,65 @@ export default function Carrito() {
                         </div>
                       ))}
                       
-                      <div className="border-t mt-4 pt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <div>
-                          <div className="font-bold text-blue-900 text-lg">
-                            Subtotal Tienda: ${totalTienda.toFixed(2)}
+                      {/* SELECTOR DE MÉTODO DE ENVÍO INDEPENDIENTE POR TIENDA */}
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-sm font-bold text-blue-900 mb-2">Método de envío para esta tienda:</p>
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setTiposEntregaPorTienda((prev) => ({
+                                ...prev,
+                                [nombreTienda]: "Servientrega",
+                              }))
+                            }
+                            className={`p-2.5 rounded-xl border text-xs font-semibold transition ${
+                              tipoEntregaActual === "Servientrega"
+                                ? "border-blue-600 bg-blue-50 text-blue-900"
+                                : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                            }`}
+                          >
+                            📦 Servientrega
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setTiposEntregaPorTienda((prev) => ({
+                                ...prev,
+                                [nombreTienda]: "Cooperativa",
+                              }))
+                            }
+                            className={`p-2.5 rounded-xl border text-xs font-semibold transition ${
+                              tipoEntregaActual === "Cooperativa"
+                                ? "border-blue-600 bg-blue-50 text-blue-900"
+                                : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                            }`}
+                          >
+                            🚌 Cooperativa
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* RESUMEN Y BOTÓN DE PAGO POR TIENDA */}
+                      <div className="border-t pt-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div className="space-y-1 text-sm">
+                          <div className="text-gray-700">
+                            Subtotal Tienda: <span className="font-semibold text-gray-900">${totalTienda.toFixed(2)}</span>
                           </div>
-                          <div className="text-xs text-gray-500 font-medium">
-                            ⚖️ Peso total de tienda: {pesoTienda.toFixed(1)} kg
+                          <div className="text-gray-700">
+                            Peso total: <span className="font-semibold text-blue-900">{pesoTienda.toFixed(1)} kg</span>
+                          </div>
+                          <div className="text-gray-700">
+                            Envío ({tipoEntregaActual}): <span className="font-semibold text-gray-900">${costoEnvioTienda.toFixed(2)}</span>
+                          </div>
+                          <div className="font-bold text-blue-900 text-base pt-1">
+                            Total Tienda: ${totalTiendaConEnvio.toFixed(2)}
                           </div>
                         </div>
 
                         <button
                           onClick={() => procederAlPago(nombreTienda)}
-                          className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-5 py-2 rounded-xl font-semibold hover:opacity-90 transition w-full sm:w-auto"
+                          className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:opacity-90 transition w-full sm:w-auto shadow-md"
                         >
                           Proceder al pago
                         </button>
@@ -291,69 +370,23 @@ export default function Carrito() {
               )}
             </div>
 
-            {/* SECCIÓN DE MÉTODO DE ENVÍO Y RESUMEN GENERAL */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h3 className="text-lg font-bold text-blue-900 mb-4">
-                Método de envío
-              </h3>
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <button
-                  type="button"
-                  onClick={() => setTipoEntrega("Servientrega")}
-                  className={`p-3 rounded-xl border text-sm font-semibold transition ${
-                    tipoEntrega === "Servientrega"
-                      ? "border-blue-600 bg-blue-50 text-blue-900"
-                      : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  📦 Servientrega
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTipoEntrega("Cooperativa")}
-                  className={`p-3 rounded-xl border text-sm font-semibold transition ${
-                    tipoEntrega === "Cooperativa"
-                      ? "border-blue-600 bg-blue-50 text-blue-900"
-                      : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  🚌 Cooperativa
-                </button>
+            {/* BOTÓN GENERAL PARA VACIAR TODO EL CARRITO */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex justify-between items-center text-gray-900">
+              <div>
+                <h3 className="text-lg font-bold text-blue-900">¿Deseas vaciar el carrito?</h3>
+                <p className="text-xs text-gray-600">Se eliminarán todos los productos agregados de las diferentes tiendas.</p>
               </div>
-
-              <h3 className="text-lg font-bold text-blue-900 mb-4">
-                Resumen del pedido
-              </h3>
-              <div className="flex justify-between mb-2 text-gray-600">
-                <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between mb-2 text-gray-600">
-                <span>Peso Total Estimado</span>
-                <span className="font-semibold text-blue-900">{pesoTotalGeneral.toFixed(1)} kg</span>
-              </div>
-              <div className="flex justify-between mb-2 text-gray-600">
-                <span>Envío ({tipoEntrega})</span>
-                <span className="font-semibold text-gray-800">${costoEnvio.toFixed(2)}</span>
-              </div>
-              <div className="border-t border-gray-100 mt-3 pt-3 flex justify-between">
-                <span className="font-bold text-blue-900 text-lg">Total General</span>
-                <span className="font-bold text-blue-900 text-lg">${totalGeneral.toFixed(2)}</span>
-              </div>
-              
-              <div className="mt-4">
-                <button
-                  onClick={() => {
-                    if (confirm("¿Deseas vaciar todo el carrito?")) {
-                      guardar([]);
-                      localStorage.removeItem("carrito");
-                    }
-                  }}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-semibold"
-                >
-                  🗑 Vaciar carrito
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  if (confirm("¿Deseas vaciar todo el carrito?")) {
+                    guardar([]);
+                    localStorage.removeItem("carrito");
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl font-semibold transition shadow-sm"
+              >
+                🗑 Vaciar carrito
+              </button>
             </div>
           </>
         )}
