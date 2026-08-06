@@ -50,6 +50,7 @@ const formatearFecha = (fechaInput: any) => {
 export default function PedidosCliente() {
   const router = useRouter();
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [fechaFiltro, setFechaFiltro] = useState("");
 
   useEffect(() => {
     const cargarPedidos = async () => {
@@ -158,6 +159,52 @@ export default function PedidosCliente() {
 </button>
 
       <h1>📦 Mis pedidos</h1>
+      <div style={{
+        marginBottom: "20px",
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        background: "linear-gradient(135deg, #e0f2fe, #cffafe)",
+        padding: "14px 18px",
+        borderRadius: "14px",
+        border: "1px solid #7dd3fc",
+        flexWrap: "wrap"
+      }}>
+        <label style={{ fontSize: "14px", fontWeight: "bold", color: "#0c4a6e" }}>
+          📅 Filtrar por fecha:
+        </label>
+        <input
+          type="date"
+          value={fechaFiltro}
+          onChange={(e) => setFechaFiltro(e.target.value)}
+          style={{
+            padding: "8px 12px",
+            borderRadius: "10px",
+            border: "1px solid #38bdf8",
+            background: "#fff",
+            color: "#0c4a6e",
+            fontWeight: "600",
+            outline: "none"
+          }}
+        />
+        {fechaFiltro && (
+          <button
+            onClick={() => setFechaFiltro("")}
+            style={{
+              fontSize: "13px",
+              fontWeight: "bold",
+              color: "#fff",
+              background: "#0284c7",
+              border: "none",
+              borderRadius: "8px",
+              padding: "8px 14px",
+              cursor: "pointer"
+            }}
+          >
+            ✕ Quitar filtro
+          </button>
+        )}
+      </div>
 
       {pedidos.length === 0 ? (
         <div className="pedido-vacio">
@@ -165,7 +212,16 @@ export default function PedidosCliente() {
           <Link href="/cliente/tiendas">Explorar tiendas</Link>
         </div>
       ) : (
-        pedidos.map((pedido, index) => {
+        pedidos
+          .filter((pedido) => {
+            if (!fechaFiltro) return true;
+            const fechaPedido = pedido.fecha && pedido.fecha._seconds
+              ? new Date(pedido.fecha._seconds * 1000)
+              : new Date(pedido.fecha);
+            const fechaISO = fechaPedido.toISOString().split("T")[0];
+            return fechaISO === fechaFiltro;
+          })
+          .map((pedido, index) => {
           const totalSeguro = Number(pedido.total) || 0;
 
           return (
