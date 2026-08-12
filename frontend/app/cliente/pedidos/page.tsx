@@ -16,6 +16,7 @@ interface ProductoPedido {
 }
 
 interface Pedido {
+  comprobante?: string;
   id: string;
   cliente: {
     id?: string;
@@ -122,6 +123,7 @@ export default function PedidosCliente() {
               productos: productosDelPago,
               total: totalVal,
               metodoPago: p.metodo || p.metodoPago || "Transferencia",
+              comprobante: p.comprobante || "",
               tipoEntrega: p.tipoEntrega || "No definido",
               provincia: p.provincia || "",
               ciudad: p.ciudad || "",
@@ -229,6 +231,16 @@ export default function PedidosCliente() {
               <h2>Pedido #{pedido.id ? pedido.id.slice(0, 8) : "N/D"}</h2>
               <p>📅 Fecha: {formatearFecha(pedido.fecha)}</p>
               <p>💳 Método de pago: {pedido.metodoPago}</p>
+              {pedido.comprobante && pedido.comprobante !== "sin_comprobante.jpg" ? (
+                <p>
+                  📎 Comprobante:{" "}
+                  <a href={pedido.comprobante} target="_blank" rel="noopener noreferrer" style={{ color: "#0284c7", fontWeight: "bold" }}>
+                    Ver imagen
+                  </a>
+                </p>
+              ) : (
+                <p style={{ color: "#d97706", fontWeight: "600" }}>📎 Sin comprobante</p>
+              )}
               <p>🔎 Estado: <strong>{pedido.estado}</strong></p>
               <p>🚚 Entrega: <strong>{pedido.tipoEntrega}</strong> {pedido.cooperativa ? `(${pedido.cooperativa})` : ""}</p>
 

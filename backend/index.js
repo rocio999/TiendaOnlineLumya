@@ -736,7 +736,7 @@ app.post("/pagos", async (req, res) => {
     const { 
       usuarioId, vendedorId, producto, monto, metodo, pedidoId,
       tipoEntrega, provincia, ciudad, direccion, referencia,
-      cooperativa, ciudadDestino, costoEnvio, envio, subtotal, montoTotal
+      cooperativa, ciudadDestino, costoEnvio, envio, subtotal, montoTotal, comprobanteUrl, productos
     } = req.body;
 
     if (!usuarioId || !producto || !monto) {
@@ -797,7 +797,7 @@ for (const item of productos) {
       referencia: referencia || "",
       cooperativa: cooperativa || "",
       ciudadDestino: ciudadDestino || "",
-      comprobante: "sin_comprobante.jpg",
+      comprobante: comprobanteUrl || "sin_comprobante.jpg",
       estado: "pendiente",
       fecha: FieldValue.serverTimestamp(),
     });

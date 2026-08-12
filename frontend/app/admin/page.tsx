@@ -15,6 +15,7 @@ export default function PanelAdmin() {
     { titulo: "Gestión de Vendedores", descripcion: "Crear y administrar vendedores", emoji: "🏪", href: "/admin/vendedores" },
     { titulo: "Gestión de Productos", descripcion: "Ver, administrar productos y categorías", emoji: "📦", href: "/admin/productos" },
     { titulo: "Historial de Actividad", descripcion: "Registro de acciones del sistema", emoji: "📋", href: "/admin/auditoria" },
+    { titulo: "Pagos", descripcion: "Ver comprobantes y estado de pagos", emoji: "💳", href: "/admin/pagos" },
   ];
 
   return (

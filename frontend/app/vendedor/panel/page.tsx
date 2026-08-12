@@ -16,6 +16,7 @@ interface Pedido {
     correo?: string;
   };
 
+  comprobante?: string;
   productos: Producto[];
 
   total: number;
@@ -54,6 +55,7 @@ useEffect(() => {
       const misPagos = data.filter((p: any) => p.vendedorId === vendedorId);
       const pedidosTransformados: Pedido[] = misPagos.map((p: any) => ({
         id: p.id,
+        comprobante: p.comprobante || "",
         pagoId: p.id,
         cliente: { nombre: p.clienteNombreResuelto || "Cliente" },
         productos: [{ nombre: p.producto, precio: p.monto, cantidad: 1 }] as any,
@@ -260,6 +262,7 @@ Pedidos recibidos
 <th>Productos</th>
 <th>Entrega</th>
 <th>Pago</th>
+<th>Comprobante</th>
 <th>Estado Pago</th>
 <th>Total</th>
 <th>Estado</th>
@@ -352,6 +355,15 @@ Destino:
   ? "🏦 Transferencia"
   : "📲 DeUna"}
 
+<td>
+{pedido.comprobante && pedido.comprobante !== "sin_comprobante.jpg" ? (
+  <a href={pedido.comprobante} target="_blank" rel="noopener noreferrer">
+    <img src={pedido.comprobante} alt="Comprobante" style={{ width: "50px", height: "50px", objectFit: "cover", borderRadius: "6px", border: "1px solid #cbd5e1" }} />
+  </a>
+) : (
+  <span style={{ fontSize: "12px", color: "#d97706", fontWeight: "600" }}>Sin comprobante</span>
+)}
+</td>
 </td>
 <td>
 

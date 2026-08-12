@@ -28,6 +28,8 @@ export default function Checkout() {
   const [cooperativa, setCooperativa] = useState("");
   const [ciudadDestino, setCiudadDestino] = useState("");
   const [terminosAceptados, setTerminosAceptados] = useState(false);
+  const [comprobanteFile, setComprobanteFile] = useState<File | null>(null);
+  const [subiendoComprobante, setSubiendoComprobante] = useState(false);
 
   // Estados para los datos del cliente vinculados a los inputs
   const [nombreCliente, setNombreCliente] = useState("");
@@ -169,6 +171,19 @@ export default function Checkout() {
     };
 
     try {
+      let comprobanteUrl = "";
+      if (comprobanteFile) {
+        setSubiendoComprobante(true);
+        const formData = new FormData();
+        formData.append("imagen", comprobanteFile);
+        const resImagen = await fetch("http://localhost:3001/imagenes", {
+          method: "POST",
+          body: formData,
+        });
+        const dataImagen = await resImagen.json();
+        comprobanteUrl = dataImagen.url || "";
+        setSubiendoComprobante(false);
+      }
       const pedidosGuardados = JSON.parse(localStorage.getItem("pedidos") || "[]");
       pedidosGuardados.push(pedido);
       localStorage.setItem("pedidos", JSON.stringify(pedidosGuardados));
@@ -193,7 +208,8 @@ export default function Checkout() {
           referencia,
           cooperativa,
           ciudadDestino,
-          cliente
+          cliente,
+          comprobanteUrl
         })
       });
 
@@ -568,6 +584,45 @@ export default function Checkout() {
                 </button>
               </div>
 
+              <div style={{ background: "#f0f9ff", padding: "16px", borderRadius: "12px", border: "1px solid #7dd3fc", marginTop: "10px" }}>
+                <label style={{ fontSize: "13px", fontWeight: "bold", color: "#0c4a6e", display: "block", marginBottom: "10px" }}>
+                  📎 Comprobante de pago
+                </label>
+                <label
+                  htmlFor="inputComprobante"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    background: "#0284c7",
+                    color: "#fff",
+                    fontWeight: "bold",
+                    fontSize: "13px",
+                    padding: "10px 16px",
+                    borderRadius: "10px",
+                    cursor: "pointer",
+                  }}
+                >
+                  📤 Subir comprobante
+                </label>
+                <input
+                  id="inputComprobante"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setComprobanteFile(e.target.files?.[0] || null)}
+                  style={{ display: "none" }}
+                />
+                {comprobanteFile && (
+                  <p style={{ fontSize: "12px", color: "#0284c7", marginTop: "8px" }}>
+                    ✓ Archivo seleccionado: {comprobanteFile.name}
+                  </p>
+                )}
+                {subiendoComprobante && (
+                  <p style={{ fontSize: "12px", color: "#0284c7", marginTop: "6px" }}>
+                    Subiendo comprobante...
+                  </p>
+                )}
+              </div>
               {/* TÉRMINOS Y CONDICIONES */}
               <div style={{ background: "#fffbeb", padding: "12px", borderRadius: "8px", border: "1px solid #fde68a", marginTop: "6px" }}>
                 <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", cursor: "pointer", fontSize: "12px", color: "#92400e", lineHeight: "1.4" }}>
