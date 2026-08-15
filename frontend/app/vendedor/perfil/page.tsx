@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import Image from "next/image";
 import Link from "next/link";
@@ -337,7 +336,7 @@ export default function PerfilVendedor() {
 
             {/* Visualización / Edición de Código QR de "De una" */}
             <div>
-              <label className="text-slate-500 text-xs block mb-1">Código QR "De una"</label>
+              <label className="text-slate-500 text-xs block mb-1">Código QR &quot;De una&quot;</label>
               {perfil.qrDeUnaUrl ? (
                 <div className="mb-2">
                   <Image src={perfil.qrDeUnaUrl} alt="QR De una" width={120} height={120} className="rounded-xl border border-slate-200 object-contain" />

@@ -59,7 +59,7 @@ export default function GestionProductos() {
       const vendRes = await fetch("http://localhost:3001/vendedores");
       const vendData = await vendRes.json();
       setVendedoresOpciones(
-        vendData.map((v: any) => ({ id: v.id, nombreNegocio: v.nombreNegocio || v.nombre }))
+        vendData.map((v: { id: string; nombreNegocio?: string; nombre?: string }) => ({ id: v.id, nombreNegocio: v.nombreNegocio || v.nombre }))
       );
     } catch (error) {
       console.error("Error al cargar productos:", error);
@@ -81,6 +81,7 @@ export default function GestionProductos() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     cargarProductos();
     cargarCategorias();
   }, []);

@@ -53,7 +53,7 @@ export default function RecuperarContrasena() {
       setMensaje("✅ Contraseña actualizada correctamente");
 
 
-    } catch(error){
+    } catch {
 
       setMensaje("Error de conexión con el servidor");
 

@@ -45,7 +45,7 @@ export default function Registro() {
       setTimeout(() => {
         router.push("/admin/login");
       }, 1500);
-    } catch (error) {
+    } catch {
       setMensaje("Error de conexión con el servidor");
       setCargando(false);
     }

@@ -29,7 +29,7 @@ export default function Login() {
       localStorage.setItem("adminId", data.admin.id);
       localStorage.setItem("adminNombre", data.admin.nombre);
       window.location.href = "/admin";
-    } catch (error) {
+    } catch {
       setMensaje("Error de conexión con el servidor");
       setCargando(false);
     }

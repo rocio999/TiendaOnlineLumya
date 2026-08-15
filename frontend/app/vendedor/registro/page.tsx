@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,7 +25,7 @@ export default function RegistroVendedor() {
     password: "", confirmarPassword: "", descripcion: "", cedula: "",
     banco: "", numeroCuenta: "", whatsapp: "",
   });
-  const [logo, setLogo] = useState<File | null>(null);
+  const [, setLogo] = useState<File | null>(null);
   const [qrPago, setQrPago] = useState<File | null>(null);
   const [qrDeUna, setQrDeUna] = useState<File | null>(null);
   const [aceptaTerminos, setAceptaTerminos] = useState(false); // <--- Nuevo estado para los términos
@@ -205,7 +204,7 @@ export default function RegistroVendedor() {
           </div>
 
           <div>
-            <label className="text-blue-800 font-semibold text-xs block mb-1">Código QR "De una" (Imagen)</label>
+            <label className="text-blue-800 font-semibold text-xs block mb-1">Código QR &quot;De una&quot; (Imagen)</label>
             <input type="file" accept="image/*" onChange={(e) => setQrDeUna(e.target.files?.[0] || null)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-purple-700 file:text-white file:font-semibold hover:file:bg-purple-800 transition cursor-pointer" />
           </div>

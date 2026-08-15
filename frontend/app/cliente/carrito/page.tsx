@@ -21,8 +21,6 @@ export default function Carrito() {
   const [productos, setProductos] = useState<ProductoCarrito[]>([]);
   const [mensaje, setMensaje] = useState("");
   const router = useRouter();
-  const [ultimaTienda, setUltimaTienda] = useState("");
-  const [tiendaActual, setTiendaActual] = useState("");
 
   // Estado para guardar el método de envío seleccionado por cada tienda (ej. { "Tienda Jorge": "Servientrega" })
   const [tiposEntregaPorTienda, setTiposEntregaPorTienda] = useState<Record<string, TipoEntrega>>({});
@@ -44,15 +42,6 @@ export default function Carrito() {
       });
       setTiposEntregaPorTienda(enviosIniciales);
 
-      const tienda = localStorage.getItem("ultimaTienda");
-      if (tienda) {
-        setUltimaTienda(tienda);
-      }
-
-      const tiendaActualGuardada = localStorage.getItem("tiendaActual");
-      if (tiendaActualGuardada) {
-        setTiendaActual(tiendaActualGuardada);
-      }
     };
 
     cargarCarrito();

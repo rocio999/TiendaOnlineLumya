@@ -15,6 +15,15 @@ interface Producto {
   imagenUrl?: string;
   descripcion?: string;
 }
+interface VendedorBackend {
+  id: string;
+  nombreNegocio?: string;
+  nombre?: string;
+  estado: string;
+}
+interface ProductoCarrito extends Producto {
+  cantidad: number;
+}
 
 export default function CatalogoGeneral() {
   const router = useRouter();
@@ -50,7 +59,7 @@ export default function CatalogoGeneral() {
       try {
         const res = await fetch("http://localhost:3001/productos");
         const data = await res.json();
-        setProductos(data.filter((p: any) => p.stock > 0));
+        setProductos(data.filter((p: Producto) => p.stock > 0));
       } catch (error) {
         console.error("Error al cargar productos:", error);
       } finally {
@@ -66,8 +75,8 @@ export default function CatalogoGeneral() {
         const res = await fetch("http://localhost:3001/vendedores");
         const data = await res.json();
         const activos = data
-          .filter((v: any) => v.estado === "activo")
-          .map((v: any) => ({ id: v.id, nombreNegocio: v.nombreNegocio || v.nombre || "Tienda" }));
+          .filter((v: VendedorBackend) => v.estado === "activo")
+          .map((v: VendedorBackend) => ({ id: v.id, nombreNegocio: v.nombreNegocio || v.nombre || "Tienda" }));
         setTiendas(activos);
       } catch (error) {
         console.error("Error al cargar tiendas:", error);
@@ -86,7 +95,7 @@ export default function CatalogoGeneral() {
   const handleAgregar = (producto: Producto) => {
   const carritoActual = JSON.parse(localStorage.getItem("carrito") || "[]");
 
-  const existe = carritoActual.find((p: any) => p.id === producto.id);
+  const existe = carritoActual.find((p: ProductoCarrito) => p.id === producto.id);
 
   if (existe) {
 
@@ -95,7 +104,7 @@ export default function CatalogoGeneral() {
       return;
     }
 
-    const actualizado = carritoActual.map((p: any) =>
+    const actualizado = carritoActual.map((p: ProductoCarrito) =>
       p.id === producto.id
         ? { ...p, cantidad: p.cantidad + 1 }
         : p

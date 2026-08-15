@@ -3,11 +3,18 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+interface Notificacion {
+  id: string;
+  usuarioId: string;
+  mensaje: string;
+  tipo: string;
+  leida: boolean;
+}
 import { useRouter } from "next/navigation"; // Importa el router de Next.js
 
 export default function PanelVendedor() {
   const router = useRouter(); // Inicializa el router
-  const [notificaciones, setNotificaciones] = useState<any[]>([]);
+  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [mostrarNotis, setMostrarNotis] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [ultimaActualizacion, setUltimaActualizacion] = useState("");

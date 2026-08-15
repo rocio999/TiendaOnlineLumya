@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 const BANCOS = [
@@ -29,7 +29,7 @@ interface Vendedor {
   numeroCuenta: string;
 }
 
-export default function EditarVendedor() {
+function EditarVendedorContenido() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
 
@@ -244,5 +244,12 @@ export default function EditarVendedor() {
         </div>
       </div>
     </div>
+  );
+}
+export default function EditarVendedor() {
+  return (
+    <Suspense fallback={<div style={{ textAlign: "center", padding: "40px" }}>Cargando...</div>}>
+      <EditarVendedorContenido />
+    </Suspense>
   );
 }

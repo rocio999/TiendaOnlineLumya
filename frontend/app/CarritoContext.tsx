@@ -26,6 +26,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const guardado = localStorage.getItem("carrito");
     if (guardado) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProductos(JSON.parse(guardado));
     }
   }, []);
