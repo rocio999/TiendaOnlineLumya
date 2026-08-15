@@ -274,12 +274,12 @@ const ingresos = pedidos
                   </td>
 
                   <td>
-                    {pedido.productos.map((p, index) => (
-                      <div key={p.id || index}>
-                        {p.nombre} x {p.cantidad}
-                      </div>
-                    ))}
-                  </td>
+  {pedido.productos.map((p, index) => (
+    <div key={p.id || index}>
+      {p.nombre}
+    </div>
+  ))}
+</td>
 
                   <td>
                     {pedido.tipoEntrega === "Servientrega" && (
