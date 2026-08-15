@@ -30,10 +30,14 @@ export default function Checkout() {
   const [terminosAceptados, setTerminosAceptados] = useState(false);
   const [comprobanteFile, setComprobanteFile] = useState<File | null>(null);
   const [subiendoComprobante, setSubiendoComprobante] = useState(false);
+  const [cedulaCliente, setCedulaCliente] = useState("");
+  const [telefonoCliente, setTelefonoCliente] = useState("");
 
   // Estados para los datos del cliente vinculados a los inputs
   const [nombreCliente, setNombreCliente] = useState("");
+  const [apellidoCliente, setApellidoCliente] = useState("");
   const [correoCliente, setCorreoCliente] = useState("");
+
   
   const router = useRouter();
 
@@ -43,10 +47,11 @@ export default function Checkout() {
       : [];
 
   const subtotal = productos.reduce(
-  (total, producto) =>
-    total + Number(producto.precio) * Number(producto.cantidad),
-  0
-);
+    (total, producto) =>
+      total + Number(producto.precio) * Number(producto.cantidad),
+    0
+  );
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const entregaGuardada = localStorage.getItem("tipoEntregaSeleccionado");
@@ -66,7 +71,10 @@ export default function Checkout() {
         try {
           const parsedUser = JSON.parse(usuarioStorage);
           setNombreCliente(parsedUser.nombre || parsedUser.name || "");
+          setApellidoCliente(parsedUser.apellido || "");
           setCorreoCliente(parsedUser.email || parsedUser.correo || "");
+          setCedulaCliente(parsedUser.cedula || "");
+        setTelefonoCliente(parsedUser.telefono || "");
         } catch (e) {
           console.error("Error al parsear usuario", e);
         }
@@ -144,7 +152,10 @@ export default function Checkout() {
     const cliente = {
       ...clienteBase,
       nombre: nombreCliente,
-      correo: correoCliente
+      apellido: apellidoCliente,
+      correo: correoCliente,
+      cedula: cedulaCliente,      // Se añade al objeto
+      telefono: telefonoCliente   // Se añade al objeto
     };
 
     const pedidoId = crypto.randomUUID();
@@ -266,9 +277,13 @@ export default function Checkout() {
             <h2 style={{ fontSize: "18px", fontWeight: "700", color: "#1f2937", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
               👤 Datos del cliente
             </h2>
+
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {/* Nombre */}
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#4b5563", marginBottom: "6px" }}>Nombre completo</label>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#4b5563", marginBottom: "6px" }}>
+                  Nombre
+                </label>
                 <input 
                   type="text" 
                   placeholder="Ingrese su nombre" 
@@ -277,8 +292,43 @@ export default function Checkout() {
                   style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px", outline: "none" }}
                 />
               </div>
+
+              {/* Apellido */}
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#4b5563", marginBottom: "6px" }}>Correo electrónico</label>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#4b5563", marginBottom: "6px" }}>
+                  Apellido
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="Ingrese su apellido" 
+                  value={apellidoCliente}
+                  onChange={(e) => setApellidoCliente(e.target.value)}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "14px", outline: "none" }}
+                /> <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#4b5563", marginBottom: "6px" }}>
+                  Cédula
+                </label><input 
+                type="text" 
+                placeholder="Número de cédula" 
+                value={cedulaCliente} 
+                onChange={(e) => setCedulaCliente(e.target.value)} 
+                style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #d1d5db" }} 
+              /> <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#4b5563", marginBottom: "6px" }}>
+                  Teléfono
+                </label>
+              <input 
+                type="tel" 
+                placeholder="Número de teléfono" 
+                value={telefonoCliente} 
+                onChange={(e) => setTelefonoCliente(e.target.value)} 
+                style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #d1d5db" }} 
+              />
+              </div>
+
+              {/* Correo electrónico */}
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#4b5563", marginBottom: "6px" }}>
+                  Correo electrónico
+                </label>
                 <input 
                   type="email" 
                   placeholder="Ingrese su correo" 
@@ -613,9 +663,9 @@ export default function Checkout() {
                   onChange={(e) => setComprobanteFile(e.target.files?.[0] || null)}
                   style={{ display: "none" }}
                 />
-                {comprobanteFile && (
+                {comprobanteFile !== null && (
                   <p style={{ fontSize: "12px", color: "#0284c7", marginTop: "8px" }}>
-                    ✓ Archivo seleccionado: {comprobanteFile.name}
+                    ✓ Archivo seleccionado: {comprobanteFile?.name}
                   </p>
                 )}
                 {subiendoComprobante && (
@@ -624,6 +674,7 @@ export default function Checkout() {
                   </p>
                 )}
               </div>
+
               {/* TÉRMINOS Y CONDICIONES */}
               <div style={{ background: "#fffbeb", padding: "12px", borderRadius: "8px", border: "1px solid #fde68a", marginTop: "6px" }}>
                 <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", cursor: "pointer", fontSize: "12px", color: "#92400e", lineHeight: "1.4" }}>
@@ -631,37 +682,37 @@ export default function Checkout() {
                     type="checkbox"
                     checked={terminosAceptados}
                     onChange={(e) => setTerminosAceptados(e.target.checked)}
-                    style={{ width: "15px", height: "15px", marginTop: "1px", accentColor: "#d97706" }}
+                    style={{ marginTop: "2px", accentColor: "#d97706" }}
                   />
-                  <span>Estoy de acuerdo con todos los campos y datos ingresados antes de proceder con la compra.</span>
+                  <span>Confirmo que he verificado todos los campos, datos de envío y métodos de pago antes de procesar mi compra.</span>
                 </label>
               </div>
 
-              <div style={{ borderTop: "2px dashed #e5e7eb", marginTop: "10px", paddingTop: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "15px", fontWeight: "700", color: "#111" }}>Total General</span>
-                <span style={{ fontSize: "20px", fontWeight: "800", color: "#2563eb" }}>${totalGeneral.toFixed(2)}</span>
+              {/* TOTAL GENERAL Y BOTÓN DE CONFIRMACIÓN */}
+              <div style={{ borderTop: "2px solid #e5e7eb", marginTop: "10px", paddingTop: "12px", display: "flex", justifyContent: "space-between", fontSize: "16px", fontWeight: "800", color: "#111" }}>
+                <span>Total a pagar</span>
+                <span style={{ color: "#2563eb" }}>${totalGeneral.toFixed(2)}</span>
               </div>
 
               <button
-                className="btn-confirmar"
-                disabled={!metodoPago || !tipoEntrega || !envioAceptado || !terminosAceptados || productos.length === 0}
+                type="button"
                 onClick={confirmarCompra}
-                style={{ 
-                  marginTop: "6px", 
-                  width: "100%", 
-                  padding: "14px", 
-                  background: (!metodoPago || !tipoEntrega || !envioAceptado || !terminosAceptados) ? "#9ca3af" : "#2563eb", 
-                  color: "white", 
-                  border: "none", 
-                  borderRadius: "8px", 
-                  cursor: (!metodoPago || !tipoEntrega || !envioAceptado || !terminosAceptados) ? "not-allowed" : "pointer", 
-                  fontWeight: "700",
+                style={{
+                  width: "100%",
+                  padding: "14px",
+                  background: "#16a34a",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "10px",
                   fontSize: "15px",
-                  boxShadow: "0 4px 6px -1px rgba(37, 99, 235, 0.2)",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  marginTop: "10px",
+                  boxShadow: "0 4px 6px -1px rgba(22, 163, 74, 0.2)",
                   transition: "background 0.2s"
                 }}
               >
-                Confirmar compra
+                Confirmar y Finalizar Compra 🚀
               </button>
             </div>
           )}

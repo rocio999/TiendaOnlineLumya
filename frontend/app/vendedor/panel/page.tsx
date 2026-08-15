@@ -13,37 +13,30 @@ interface Producto {
 
 interface Pedido {
   id: string;
-
   pagoId?: string;
-
   cliente: {
     nombre?: string;
     apellido?: string;
     correo?: string;
+    cedula?: string;
+    telefono?: string;
   };
-
   comprobante?: string;
   productos: Producto[];
-
   total: number;
-
   metodoPago: string;
-
   estadoPago?: "pendiente" | "aprobado" | "rechazado";
-
   tipoEntrega?: string;
   provincia?: string;
   ciudad?: string;
   direccion?: string;
   referencia?: string;
-
   cooperativa?: string;
   ciudadDestino?: string;
-
   estado: string;
-
   fecha: string;
 }
+
 interface Pago {
   id: string;
   vendedorId: string;
@@ -57,6 +50,8 @@ interface Pago {
     apellidos?: string;
     correo?: string;
     email?: string;
+    cedula?: string;
+    telefono?: string;
   };
   clienteNombreResuelto?: string;
   metodo?: string;
@@ -73,556 +68,364 @@ interface Pago {
   };
 }
 
-
 export default function PanelVendedor() {
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  // Estado para llevar el registro de qué filas tienen la información del cliente desplegada
+  const [clientesExpandidos, setClientesExpandidos] = useState<{ [key: string]: boolean }>({});
 
-const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const toggleCliente = (id: string) => {
+    setClientesExpandidos((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
 
+  useEffect(() => {
+    const cargarPedidos = async () => {
+      const vendedorId = localStorage.getItem("vendedorId");
+      if (!vendedorId) return;
+      try {
+        const res = await fetch("http://localhost:3001/pagos");
+        const data: Pago[] = await res.json();
 
-useEffect(() => {
-  const cargarPedidos = async () => {
-    const vendedorId = localStorage.getItem("vendedorId");
-    if (!vendedorId) return;
+        const misPagos = data.filter((p) => p.vendedorId === vendedorId);
+
+        const pedidosTransformados: Pedido[] = misPagos.map((p) => ({
+          id: p.id,
+          comprobante: p.comprobante || "",
+          pagoId: p.id,
+          cliente: {
+            nombre:
+              p.cliente?.nombre ||
+              p.cliente?.name ||
+              p.clienteNombreResuelto ||
+              "Cliente",
+            apellido:
+              p.cliente?.apellido ||
+              p.cliente?.apellidos ||
+              "",
+            correo:
+              p.cliente?.correo ||
+              p.cliente?.email ||
+              "",
+            cedula: p.cliente?.cedula || "No registrada",
+            telefono: p.cliente?.telefono || "No registrado",
+          },
+          productos: [{ nombre: p.producto, precio: p.monto, cantidad: 1 }],
+          total: p.monto,
+          metodoPago: p.metodo || "efectivo",
+          tipoEntrega: p.tipoEntrega || "",
+          provincia: p.provincia || "",
+          ciudad: p.ciudad || "",
+          direccion: p.direccion || "",
+          referencia: p.referencia || "",
+          cooperativa: p.cooperativa || "",
+          ciudadDestino: p.ciudadDestino || "",
+          estadoPago: p.estado,
+          estado: p.estado,
+          fecha: p.fecha?._seconds
+            ? new Date(p.fecha._seconds * 1000).toISOString()
+            : new Date().toISOString(),
+        }));
+        setPedidos(pedidosTransformados);
+      } catch (error) {
+        console.error("Error al cargar pedidos:", error);
+      }
+    };
+    cargarPedidos();
+  }, []);
+
+  const cambiarEstado = (id: string, nuevoEstado: string) => {
+    const actualizados = pedidos.map((pedido) =>
+      pedido.id === id ? { ...pedido, estado: nuevoEstado } : pedido
+    );
+    setPedidos(actualizados);
+    localStorage.setItem("pedidos", JSON.stringify(actualizados));
+  };
+
+  const pendientes = pedidos.filter((p) => p.estado === "pendiente").length;
+  const preparando = pedidos.filter((p) => p.estado === "preparando").length;
+  const entregados = pedidos.filter((p) => p.estado === "entregado").length;
+// Sumar únicamente los pedidos cuyo estadoPago sea "aprobado" y redondear a 3 decimales
+const ingresos = pedidos
+  .filter((p) => p.estadoPago === "aprobado")
+  .reduce((acc, p) => acc + (Number(p.total) || 0), 0)
+  .toFixed(2);
+  const cambiarEstadoPago = async (
+    id: string,
+    nuevoEstado: "pendiente" | "aprobado" | "rechazado"
+  ) => {
     try {
-      const res = await fetch("http://localhost:3001/pagos");
-      const data: Pago[] = await res.json();
+      const pedido = pedidos.find((p) => p.id === id);
+      if (!pedido?.pagoId) return;
 
-const misPagos = data.filter(
-  (p) => p.vendedorId === vendedorId
-);
+      await fetch(`http://localhost:3001/pagos/${pedido.pagoId}/estado`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
 
-const pedidosTransformados: Pedido[] = misPagos.map((p) => ({ id: p.id,
-        comprobante: p.comprobante || "",
-        pagoId: p.id,
-        cliente: {
-        nombre:
-        p.cliente?.nombre ||
-        p.cliente?.name ||
-        p.clienteNombreResuelto ||
-        "Cliente",
+      const nuevos = pedidos.map((p) =>
+        p.id === id ? { ...p, estadoPago: nuevoEstado } : p
+      );
 
-        apellido:
-        p.cliente?.apellido ||
-        p.cliente?.apellidos ||
-        "",
-
-        correo:
-        p.cliente?.correo ||
-        p.cliente?.email ||
-         ""
-        },
-        productos: [{ nombre: p.producto, precio: p.monto, cantidad: 1 }] ,
-        total: p.monto,
-        metodoPago: p.metodo || "efectivo",
-        tipoEntrega: p.tipoEntrega || "",
-        provincia: p.provincia || "",
-        ciudad: p.ciudad || "",
-        direccion: p.direccion || "",
-        referencia: p.referencia || "",
-        cooperativa: p.cooperativa || "",
-        ciudadDestino: p.ciudadDestino || "",
-        estadoPago: p.estado,
-        estado: p.estado,
-        fecha: p.fecha?._seconds
-          ? new Date(p.fecha._seconds * 1000).toISOString()
-          : new Date().toISOString(),
-      }));
-      setPedidos(pedidosTransformados);
+      setPedidos(nuevos);
+      localStorage.setItem("pedidos", JSON.stringify(nuevos));
     } catch (error) {
-      console.error("Error al cargar pedidos:", error);
+      console.log(error);
     }
   };
-  cargarPedidos();
-}, []);
 
-
-
-// cambiar estado pedido
-
-const cambiarEstado = (id:string, nuevoEstado:string)=>{
-
-const actualizados = pedidos.map((pedido)=>
-pedido.id === id
-? {...pedido, estado:nuevoEstado}
-: pedido
-);
-
-
-setPedidos(actualizados);
-
-
-localStorage.setItem(
-"pedidos",
-JSON.stringify(actualizados)
-);
-
-};
-
-
-
-const pendientes = pedidos.filter(
-(p)=>p.estado==="pendiente"
-).length;
-
-
-const preparando = pedidos.filter(
-(p)=>p.estado==="preparando"
-).length;
-
-
-const entregados = pedidos.filter(
-(p)=>p.estado==="entregado"
-).length;
-
-
-const ingresos = pedidos.reduce(
-(acc,p)=>acc+p.total,
-0
-);
-
-
-const cambiarEstadoPago = async (
-id:string,
-nuevoEstado:"pendiente"|"aprobado"|"rechazado"
-)=>{
-
-try{
-
-const pedido = pedidos.find(
-(p)=>p.id===id
-);
-
-if(!pedido?.pagoId) return;
-
-await fetch(
-`http://localhost:3001/pagos/${pedido.pagoId}/estado`,
-{
-
-method:"PUT",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-
-estado:nuevoEstado
-
-})
-
-}
-
-);
-
-const nuevos = pedidos.map((p)=>
-
-p.id===id
-?{
-...p,
-estadoPago:nuevoEstado
-}
-:p
-
-);
-
-setPedidos(nuevos);
-
-localStorage.setItem(
-"pedidos",
-JSON.stringify(nuevos)
-);
-
-}catch(error){
-
-console.log(error);
-
-}
-
-};
-return (
-
-<div className="panel-container">
-
-
-<h1 className="panel-title">
-Panel del Vendedor
-</h1>
-
-
-
-<div className="panel-cards">
-
-
-<div className="card">
-<h2>Pedidos pendientes</h2>
-<p className="yellow">
-{pendientes}
-</p>
-</div>
-
-
-
-<div className="card">
-<h2>En preparación</h2>
-<p className="blue">
-{preparando}
-</p>
-</div>
-
-
-
-<div className="card">
-<h2>Entregados</h2>
-<p className="green">
-{entregados}
-</p>
-</div>
-
-
-
-<div className="card">
-<h2>Ingresos</h2>
-<p className="purple">
-${ingresos}
-</p>
-</div>
-
-
-</div>
-
-
-
-
-
-<div className="orders-box">
-
-
-<h2 className="text-2xl font-semibold mb-5">
-Pedidos recibidos
-</h2>
-
-
-
-<table className="orders-table">
-
-
-<thead>
-
-<tr className="bg-blue-600 text-white">
-
-<th>Pedido</th>
-<th>Cliente</th>
-<th>Productos</th>
-<th>Entrega</th>
-<th>Pago</th>
-<th>Comprobante</th>
-<th>Estado Pago</th>
-<th>Total</th>
-<th>Estado</th>
-<th>Acción</th>
-
-</tr>
-
-</thead>
-
-
-
-<tbody>
-
-
-{pedidos.map((pedido)=>(
-
-
-<tr key={pedido.id}>
-
-
-<td>
-#{pedido.id.slice(0,6)}
-</td>
-
-
-
-<td>
-
-{pedido.cliente.nombre}
-{" "}
-{pedido.cliente.apellido}
-
-</td>
-
-
-
-
-<td>
-  {pedido.productos.map((p, index) => (
-    <div key={p.id || index}>
-      {p.nombre} x {p.cantidad}
+  return (
+    <div className="panel-container">
+      <h1 className="panel-title">Panel del Vendedor</h1>
+
+      <div className="panel-cards">
+        <div className="card">
+          <h2>Pedidos pendientes</h2>
+          <p className="yellow">{pendientes}</p>
+        </div>
+        <div className="card">
+          <h2>En preparación</h2>
+          <p className="blue">{preparando}</p>
+        </div>
+        <div className="card">
+          <h2>Entregados</h2>
+          <p className="green">{entregados}</p>
+        </div>
+        <div className="card">
+          <h2>Ingresos</h2>
+          <p className="purple">${ingresos}</p>
+          </div>
+       </div>
+
+      <div className="orders-box">
+        <h2 className="text-2xl font-semibold mb-5">Pedidos recibidos</h2>
+
+        <table className="orders-table">
+          <thead>
+            <tr className="bg-blue-600 text-white">
+              <th>Pedido</th>
+              <th>Cliente</th>
+              <th>Productos</th>
+              <th>Entrega</th>
+              <th>Pago</th>
+              <th>Comprobante</th>
+              <th>Estado Pago</th>
+              <th>Total</th>
+              <th>Estado</th>
+              <th>Acción Pago</th>
+              <th>Acción Pedido</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pedidos.map((pedido) => {
+              const estaExpandido = clientesExpandidos[pedido.id] || false;
+
+              return (
+                <tr key={pedido.id}>
+                  <td>#{pedido.id.slice(0, 6)}</td>
+
+                  <td>
+                    <div style={{ fontWeight: "600" }}>
+                      {pedido.cliente.nombre} {pedido.cliente.apellido}
+                    </div>
+                    
+                    {/* Botón con flechita para desplegar datos */}
+                    <button
+                      onClick={() => toggleCliente(pedido.id)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#2563eb",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        padding: "4px 0",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        fontWeight: "500"
+                      }}
+                    >
+                      {estaExpandido ? "Ocultar datos ▲" : "Ver datos del cliente ▼"}
+                    </button>
+
+                    {/* Datos desplegables */}
+                    {estaExpandido && (
+                      <div
+                        style={{
+                          marginTop: "6px",
+                          padding: "8px",
+                          background: "#f8fafc",
+                          borderRadius: "6px",
+                          border: "1px solid #e2e8f0",
+                          fontSize: "12px",
+                          color: "#334155",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "3px"
+                        }}
+                      >
+                        <div>🆔 <strong>Cédula:</strong> {pedido.cliente.cedula}</div>
+                        <div>📞 <strong>Teléfono:</strong> {pedido.cliente.telefono}</div>
+                        <div>✉️ <strong>Correo:</strong> {pedido.cliente.correo}</div>
+                      </div>
+                    )}
+                  </td>
+
+                  <td>
+                    {pedido.productos.map((p, index) => (
+                      <div key={p.id || index}>
+                        {p.nombre} x {p.cantidad}
+                      </div>
+                    ))}
+                  </td>
+
+                  <td>
+                    {pedido.tipoEntrega === "Servientrega" && (
+                      <div>
+                        🚚 Servientrega
+                        <br />
+                        {pedido.ciudad}
+                        <br />
+                        {pedido.direccion}
+                      </div>
+                    )}
+                    {pedido.tipoEntrega === "Cooperativa" && (
+                      <div>
+                        🚌Cooperativa {pedido.cooperativa}
+                        <br />
+                        Destino: {pedido.ciudadDestino}
+                      </div>
+                    )}
+                    {pedido.tipoEntrega === "Retiro" && (
+                      <div>🏪 Retiro tienda</div>
+                    )}
+                  </td>
+
+                  <td>
+                    {pedido.metodoPago === "Transferencia"
+                      ? "🏦 Transferencia"
+                      : "📲 DeUna"}
+                  </td>
+
+                  <td>
+                    {pedido.comprobante &&
+                    pedido.comprobante !== "sin_comprobante.jpg" ? (
+                      <a
+                        href={pedido.comprobante}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img
+                          src={pedido.comprobante}
+                          alt="Comprobante"
+                          style={{
+                            width: "50px",
+                            height: "50px",
+                            objectFit: "cover",
+                            borderRadius: "6px",
+                            border: "1px solid #cbd5e1",
+                          }}
+                        />
+                      </a>
+                    ) : (
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          color: "#d97706",
+                          fontWeight: "600",
+                        }}
+                      >
+                        Sin comprobante
+                      </span>
+                    )}
+                  </td>
+
+                  <td>
+                    <span className={`estado-pago ${pedido.estadoPago || "pendiente"}`}>
+                      {pedido.estadoPago || "pendiente"}
+                    </span>
+                  </td>
+
+                  <td>${pedido.total}</td>
+
+                  <td>
+                    <span className={`estado ${pedido.estado}`}>
+                      {pedido.estado}
+                    </span>
+                  </td>
+
+                  <td>
+                    {pedido.estadoPago === "pendiente" ? (
+                      <div className="acciones-pago">
+                        <button
+                          className="btn-aprobar"
+                          onClick={() => cambiarEstadoPago(pedido.id, "aprobado")}
+                        >
+                          ✓ Pago
+                        </button>
+                        <button
+                          className="btn-rechazar"
+                          onClick={() => cambiarEstadoPago(pedido.id, "rechazado")}
+                        >
+                          ✗ Pago
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        className="btn-revertir"
+                        onClick={() => cambiarEstadoPago(pedido.id, "pendiente")}
+                      >
+                        ↺ Revertir
+                      </button>
+                    )}
+                  </td>
+
+                  <td>
+                    {pedido.estado === "pendiente" && (
+                      pedido.estadoPago === "aprobado" ? (
+                        <button
+                          className="btn-ver"
+                          onClick={() => cambiarEstado(pedido.id, "preparando")}
+                        >
+                          Aceptar pedido
+                        </button>
+                      ) : (
+                        <span className="text-red-600 text-sm">
+                          Esperando aprobación del pago
+                        </span>
+                      )
+                    )}
+
+                    {pedido.estado === "preparando" && (
+                      <button
+                        className="btn-ver"
+                        onClick={() => cambiarEstado(pedido.id, "enviado")}
+                      >
+                        Enviar
+                      </button>
+                    )}
+
+                    {pedido.estado === "enviado" && (
+                      <button
+                        className="btn-ver"
+                        onClick={() => cambiarEstado(pedido.id, "entregado")}
+                      >
+                        Entregado
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <Link href="/vendedor">
+        <button className="btn-volver">← Volver a Productos</button>
+      </Link>
     </div>
-  ))}
-</td>
-
-
-
-
-
-<td>
-
-{pedido.tipoEntrega==="Servientrega" && (
-<div>
-🚚 Servientrega
-<br/>
-{pedido.ciudad}
-<br/>
-{pedido.direccion}
-</div>
-)}
-
-
-
-{pedido.tipoEntrega==="Cooperativa" && (
-<div>
-🚌Cooperativa {pedido.cooperativa}
-<br/>
-Destino: 
-{pedido.ciudadDestino}
-</div>
-)}
-
-
-
-{pedido.tipoEntrega==="Retiro" && (
-<div>
-🏪 Retiro tienda
-</div>
-)}
-
-
-</td>
-
-
-
-
-<td>
-
-{pedido.metodoPago === "Transferencia"
-  ? "🏦 Transferencia"
-  : "📲 DeUna"}
-
-</td>
-
-
-<td>
-  {pedido.comprobante &&
-  pedido.comprobante !== "sin_comprobante.jpg" ? (
-    <a
-      href={pedido.comprobante}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      <img
-        src={pedido.comprobante}
-        alt="Comprobante"
-        style={{
-          width: "50px",
-          height: "50px",
-          objectFit: "cover",
-          borderRadius: "6px",
-          border: "1px solid #cbd5e1"
-        }}
-      />
-    </a>
-  ) : (
-    <span
-      style={{
-        fontSize: "12px",
-        color: "#d97706",
-        fontWeight: "600"
-      }}
-    >
-      Sin comprobante
-    </span>
-  )}
-</td>
-
-
-<td>
-
-<span
-className={`estado-pago ${
-pedido.estadoPago || "pendiente"
-}`}
->
-
-{pedido.estadoPago || "pendiente"}
-
-</span>
-
-</td>
-
-
-
-
-<td>
-
-${pedido.total}
-
-</td>
-
-
-
-
-<td>
-
-<span className={`estado ${pedido.estado}`}>
-{pedido.estado}
-</span>
-
-</td>
-
-
-<td>
-{pedido.estadoPago==="pendiente" ? (
-<div className="acciones-pago">
-<button
-className="btn-aprobar"
-onClick={()=>cambiarEstadoPago(
-pedido.id,
-"aprobado"
-)}
->
-✓ Pago
-</button>
-<button
-className="btn-rechazar"
-onClick={()=>cambiarEstadoPago(
-pedido.id,
-"rechazado"
-)}
->
-✗ Pago
-</button>
-</div>
-) : (
-<button
-className="btn-revertir"
-onClick={()=>cambiarEstadoPago(pedido.id, "pendiente")}
->
-↺ Revertir
-</button>
-)}
-</td>
-<td>
-
-
-{pedido.estado==="pendiente" && (
-
-pedido.estadoPago==="aprobado"
-
-?
-
-(
-
-<button
-
-className="btn-ver"
-
-onClick={()=>cambiarEstado(
-
-pedido.id,
-
-"preparando"
-
-)}
-
->
-
-Aceptar pedido
-
-</button>
-
-)
-
-:
-
-(
-
-<span className="text-red-600 text-sm">
-
-Esperando aprobación del pago
-
-</span>
-
-)
-
-)}
-
-
-
-{pedido.estado==="preparando" && (
-
-<button
-className="btn-ver"
-onClick={()=>cambiarEstado(
-pedido.id,
-"enviado"
-)}
->
-Enviar
-</button>
-
-)}
-
-
-
-{pedido.estado==="enviado" && (
-
-<button
-className="btn-ver"
-onClick={()=>cambiarEstado(
-pedido.id,
-"entregado"
-)}
->
-Entregado
-</button>
-
-)}
-
-
-
-</td>
-
-
-
-</tr>
-
-
-))}
-
-
-</tbody>
-
-
-</table>
-
-
-</div>
-
-
-
-
-<Link href="/vendedor">
-
-<button className="btn-volver">
-← Volver a Productos
-</button>
-
-</Link>
-
-
-
-</div>
-
-);
-
+  );
 }

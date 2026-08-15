@@ -94,8 +94,12 @@ export default function PagosAdmin() {
                 {pagos.map((pago) => (
                   <tr key={pago.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
                     <td style={{ padding: "12px", color: "#1e293b" }}>{pago.producto}</td>
-                    <td style={{ padding: "12px", color: "#1e293b" }}>{pago.clienteNombreResuelto || "Cliente"}</td>
-                    <td style={{ padding: "12px", color: "#1e293b" }}>{pago.vendedorNombreResuelto || "Vendedor"}</td>
+                    <td style={{ padding: "12px", color: "#1e293b" }}>
+                     {pago.clienteNombreResuelto
+                     ? pago.clienteNombreResuelto.split(" ").slice(0, 2).join(" ")
+                       : "Cliente"}
+                      </td>              
+                        <td style={{ padding: "12px", color: "#1e293b" }}>{pago.vendedorNombreResuelto || "Vendedor"}</td>
                     <td style={{ padding: "12px" }}>
                       {pago.metodo === "Transferencia" ? "🏦 Transferencia" : "📲 DeUna"}
                     </td>
