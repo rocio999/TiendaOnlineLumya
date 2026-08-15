@@ -708,10 +708,19 @@ app.get("/pagos", async (req, res) => {
     const pagosSnap = await db.collection("pagos").get();
     const usuariosSnap = await db.collection("usuarios").get();
 
-    const mapaUsuarios = {};
-    usuariosSnap.docs.forEach((u) => {
-      mapaUsuarios[u.id] = u.data().nombreNegocio || u.data().nombre || "Desconocido";
-    });
+ const mapaUsuarios = {};
+
+usuariosSnap.docs.forEach((u) => {
+  const datos = u.data();
+
+  if (datos.nombreNegocio) {
+    mapaUsuarios[u.id] = datos.nombreNegocio;
+  } else if (datos.nombre) {
+    mapaUsuarios[u.id] = datos.nombre.split(" ").slice(0, 2).join(" ");
+  } else {
+    mapaUsuarios[u.id] = "Desconocido";
+  }
+});
 
     const lista = pagosSnap.docs.map((p) => {
       const data = p.data();
@@ -733,72 +742,103 @@ app.get("/pagos", async (req, res) => {
 // Crear Pago / Pedido
 app.post("/pagos", async (req, res) => {
   try {
-    const { 
-  usuarioId,
-  vendedorId,
-  producto,
-  monto,
-  metodo,
-  pedidoId,
+    const {
+      usuarioId,
+      vendedorId,
+      producto,
+      monto,
+      metodo,
+      pedidoId,
 
-  // Datos del comprador
-  cliente,
+      // Datos del comprador
+      cliente,
 
-  tipoEntrega,
-  provincia,
-  ciudad,
-  direccion,
-  referencia,
-  cooperativa,
-  ciudadDestino,
+      tipoEntrega,
+      provincia,
+      ciudad,
+      direccion,
+      referencia,
+      cooperativa,
+      ciudadDestino,
 
-  costoEnvio,
-  envio,
-  subtotal,
-  montoTotal,
-  comprobanteUrl,
-  productos
-} = req.body;
+      costoEnvio,
+      envio,
+      subtotal,
+      montoTotal,
+      comprobanteUrl,
+      productos
+    } = req.body;
 
     if (!usuarioId || !producto || !monto) {
-      return res.status(400).json({ message: "Faltan datos obligatorios" });
+      return res.status(400).json({
+        message: "Faltan datos obligatorios"
+      });
+    }
+
+    // Asegurar que productos sea un arreglo
+    if (!Array.isArray(productos) || productos.length === 0) {
+      return res.status(400).json({
+        message: "No hay productos para procesar"
+      });
     }
 
     const costoEnvioFinal = Number(costoEnvio ?? envio ?? 0);
     const montoNum = Number(monto);
 
+    // ==========================================
+    // VERIFICAR Y DESCONTAR STOCK
+    // ==========================================
+
     for (const item of productos) {
+      const docRef = db.collection("productos").doc(item.id);
+      const docSnap = await docRef.get();
 
-  const docRef = db.collection("productos").doc(item.id);
-  const docSnap = await docRef.get();
+      if (!docSnap.exists) {
+        return res.status(404).json({
+          message: `Producto no encontrado: ${item.nombre}`
+        });
+      }
 
-  if (!docSnap.exists) {
-    return res.status(404).json({
-      message: `El producto ${item.nombre} no existe`
-    });
-  }
+      const datos = docSnap.data();
 
-  const datos = docSnap.data();
+      const stockActual = Number(datos.stock || 0);
+      const cantidadComprar = Number(item.cantidad || 0);
 
-  if (datos.stock < item.cantidad) {
-    return res.status(400).json({
-      message: `Solo quedan ${datos.stock} unidades de ${item.nombre}`
-    });
-  }
-}
-for (const item of productos) {
+      // Verificar que la cantidad sea válida
+      if (cantidadComprar <= 0) {
+        return res.status(400).json({
+          message: `Cantidad inválida para ${item.nombre}`
+        });
+      }
 
-  const docRef = db.collection("productos").doc(item.id);
+      // Verificar que haya suficiente stock
+      if (stockActual < cantidadComprar) {
+        return res.status(400).json({
+          message: `Solo quedan ${stockActual} unidades de ${item.nombre}`
+        });
+      }
 
-  const docSnap = await docRef.get();
+      // Calcular nuevo stock
+      const nuevoStock = stockActual - cantidadComprar;
 
-  const datos = docSnap.data();
+      // Descontar stock UNA SOLA VEZ
+      await docRef.update({
+        stock: nuevoStock
+      });
 
-  await docRef.update({
-    stock: datos.stock - item.cantidad
-  });
+      // Notificar al vendedor cuando queda exactamente en 0
+      if (nuevoStock === 0 && datos.vendedorId) {
+        await crearNotificacion(
+          datos.vendedorId,
+          `Tu producto "${datos.nombre}" se quedó sin stock`,
+          "stock"
+        );
+      }
+    }
 
-}
+    // ==========================================
+    // CREAR PAGO / PEDIDO
+    // ==========================================
 
     const nuevoDoc = await db.collection("pagos").add({
       usuarioId,
@@ -806,12 +846,17 @@ for (const item of productos) {
       pedidoId: pedidoId || `pedido_${Date.now()}`,
 
       cliente: cliente || {},
+
       producto,
       productos,
+
       monto: montoNum,
       subtotal: Number(subtotal) || 0,
       costoEnvio: costoEnvioFinal,
-      montoTotal: Number(montoTotal) || montoNum,metodo: metodo || "Efectivo",
+      montoTotal: Number(montoTotal) || montoNum,
+
+      metodo: metodo || "Efectivo",
+
       tipoEntrega: tipoEntrega || "",
       provincia: provincia || "",
       ciudad: ciudad || "",
@@ -819,65 +864,49 @@ for (const item of productos) {
       referencia: referencia || "",
       cooperativa: cooperativa || "",
       ciudadDestino: ciudadDestino || "",
+
       comprobante: comprobanteUrl || "sin_comprobante.jpg",
+
       estado: "pendiente",
+
       fecha: FieldValue.serverTimestamp(),
     });
 
-    await registrarAuditoria(usuarioId, `Realizó una compra: ${producto} - $${monto}`, "pago");
-
-    if (vendedorId) {
-      await crearNotificacion(vendedorId, `Nuevo pedido: ${producto} - $${monto}`, "pedido");
-    }
-
-    res.json({ message: "Pedido registrado correctamente", id: nuevoDoc.id });
-  } catch (error) {
-    console.error("Error en POST /pagos:", error);
-    res.status(500).json({ message: "Error al crear pago" });
-  }
-});
-
-// Actualizar Estado de Pago
-app.put("/pagos/:id/estado", async (req, res) => {
-  try {
-    const { estado } = req.body;
-    const estadosValidos = ["pendiente", "aprobado", "rechazado"];
-
-    if (!estadosValidos.includes(estado)) {
-      return res.status(400).json({ message: "Estado inválido" });
-    }
-
-    const docSnap = await db.collection("pagos").doc(req.params.id).get();
-    const pago = docSnap.data();
-
-    await db.collection("pagos").doc(req.params.id).update({ estado });
-
-    const acciones = {
-      aprobado: "Aprobó",
-      rechazado: "Rechazó",
-      pendiente: "Revirtió a pendiente",
-    };
+    // ==========================================
+    // AUDITORÍA
+    // ==========================================
 
     await registrarAuditoria(
-      pago?.usuarioId || "admin",
-      `${acciones[estado]} el pago de ${pago?.producto} - $${pago?.monto}`,
+      usuarioId,
+      `Realizó una compra: ${producto} - $${monto}`,
       "pago"
     );
 
-    if (estado === "aprobado" || estado === "rechazado") {
-      const textoCliente = estado === "aprobado"
-        ? `Tu pago de ${pago?.producto} fue aprobado`
-        : `Tu pago de ${pago?.producto} fue rechazado`;
-      await crearNotificacion(pago?.usuarioId, textoCliente, "pago");
+    // ==========================================
+    // NOTIFICAR AL VENDEDOR
+    // ==========================================
+
+    if (vendedorId) {
+      await crearNotificacion(
+        vendedorId,
+        `Nuevo pedido: ${producto} - $${monto}`,
+        "pedido"
+      );
     }
 
-    res.json({ message: "Estado actualizado correctamente" });
+    res.json({
+      message: "Pedido registrado correctamente",
+      id: nuevoDoc.id
+    });
+
   } catch (error) {
-    console.error("Error en PUT /pagos/:id/estado:", error);
-    res.status(500).json({ message: "Error al actualizar estado" });
+    console.error("Error en POST /pagos:", error);
+
+    res.status(500).json({
+      message: "Error al crear pago"
+    });
   }
 });
-
 // ----------------------
 // NOTIFICACIONES E HISTORIAL
 // ----------------------
