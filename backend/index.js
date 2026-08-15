@@ -734,10 +734,31 @@ app.get("/pagos", async (req, res) => {
 app.post("/pagos", async (req, res) => {
   try {
     const { 
-      usuarioId, vendedorId, producto, monto, metodo, pedidoId,
-      tipoEntrega, provincia, ciudad, direccion, referencia,
-      cooperativa, ciudadDestino, costoEnvio, envio, subtotal, montoTotal, comprobanteUrl, productos
-    } = req.body;
+  usuarioId,
+  vendedorId,
+  producto,
+  monto,
+  metodo,
+  pedidoId,
+
+  // Datos del comprador
+  cliente,
+
+  tipoEntrega,
+  provincia,
+  ciudad,
+  direccion,
+  referencia,
+  cooperativa,
+  ciudadDestino,
+
+  costoEnvio,
+  envio,
+  subtotal,
+  montoTotal,
+  comprobanteUrl,
+  productos
+} = req.body;
 
     if (!usuarioId || !producto || !monto) {
       return res.status(400).json({ message: "Faltan datos obligatorios" });
@@ -783,13 +804,14 @@ for (const item of productos) {
       usuarioId,
       vendedorId: vendedorId || "",
       pedidoId: pedidoId || `pedido_${Date.now()}`,
+
+      cliente: cliente || {},
       producto,
       productos,
       monto: montoNum,
-      subtotal: Number(subtotal) || montoNum,
+      subtotal: Number(subtotal) || 0,
       costoEnvio: costoEnvioFinal,
-      montoTotal: Number(montoTotal) || (montoNum + costoEnvioFinal),
-      metodo: metodo || "Efectivo",
+      montoTotal: Number(montoTotal) || montoNum,metodo: metodo || "Efectivo",
       tipoEntrega: tipoEntrega || "",
       provincia: provincia || "",
       ciudad: ciudad || "",
