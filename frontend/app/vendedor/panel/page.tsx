@@ -4,6 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import "./panel.css";
 
+interface Producto {
+  id?: string;
+  nombre: string;
+  precio: number;
+  cantidad: number;
+}
 
 interface Pedido {
   id: string;
@@ -38,6 +44,34 @@ interface Pedido {
 
   fecha: string;
 }
+interface Pago {
+  id: string;
+  vendedorId: string;
+  comprobante?: string;
+  producto: string;
+  monto: number;
+  cliente?: {
+    nombre?: string;
+    name?: string;
+    apellido?: string;
+    apellidos?: string;
+    correo?: string;
+    email?: string;
+  };
+  clienteNombreResuelto?: string;
+  metodo?: string;
+  tipoEntrega?: string;
+  provincia?: string;
+  ciudad?: string;
+  direccion?: string;
+  referencia?: string;
+  cooperativa?: string;
+  ciudadDestino?: string;
+  estado: "pendiente" | "aprobado" | "rechazado";
+  fecha?: {
+    _seconds?: number;
+  };
+}
 
 
 export default function PanelVendedor() {
@@ -51,14 +85,33 @@ useEffect(() => {
     if (!vendedorId) return;
     try {
       const res = await fetch("http://localhost:3001/pagos");
-      const data = await res.json();
-      const misPagos = data.filter((p: any) => p.vendedorId === vendedorId);
-      const pedidosTransformados: Pedido[] = misPagos.map((p: any) => ({
-        id: p.id,
+      const data: Pago[] = await res.json();
+
+const misPagos = data.filter(
+  (p) => p.vendedorId === vendedorId
+);
+
+const pedidosTransformados: Pedido[] = misPagos.map((p) => ({ id: p.id,
         comprobante: p.comprobante || "",
         pagoId: p.id,
-        cliente: { nombre: p.clienteNombreResuelto || "Cliente" },
-        productos: [{ nombre: p.producto, precio: p.monto, cantidad: 1 }] as any,
+        cliente: {
+        nombre:
+        p.cliente?.nombre ||
+        p.cliente?.name ||
+        p.clienteNombreResuelto ||
+        "Cliente",
+
+        apellido:
+        p.cliente?.apellido ||
+        p.cliente?.apellidos ||
+        "",
+
+        correo:
+        p.cliente?.correo ||
+        p.cliente?.email ||
+         ""
+        },
+        productos: [{ nombre: p.producto, precio: p.monto, cantidad: 1 }] ,
         total: p.monto,
         metodoPago: p.metodo || "efectivo",
         tipoEntrega: p.tipoEntrega || "",
@@ -355,16 +408,43 @@ Destino:
   ? "🏦 Transferencia"
   : "📲 DeUna"}
 
+</td>
+
+
 <td>
-{pedido.comprobante && pedido.comprobante !== "sin_comprobante.jpg" ? (
-  <a href={pedido.comprobante} target="_blank" rel="noopener noreferrer">
-    <img src={pedido.comprobante} alt="Comprobante" style={{ width: "50px", height: "50px", objectFit: "cover", borderRadius: "6px", border: "1px solid #cbd5e1" }} />
-  </a>
-) : (
-  <span style={{ fontSize: "12px", color: "#d97706", fontWeight: "600" }}>Sin comprobante</span>
-)}
+  {pedido.comprobante &&
+  pedido.comprobante !== "sin_comprobante.jpg" ? (
+    <a
+      href={pedido.comprobante}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <img
+        src={pedido.comprobante}
+        alt="Comprobante"
+        style={{
+          width: "50px",
+          height: "50px",
+          objectFit: "cover",
+          borderRadius: "6px",
+          border: "1px solid #cbd5e1"
+        }}
+      />
+    </a>
+  ) : (
+    <span
+      style={{
+        fontSize: "12px",
+        color: "#d97706",
+        fontWeight: "600"
+      }}
+    >
+      Sin comprobante
+    </span>
+  )}
 </td>
-</td>
+
+
 <td>
 
 <span

@@ -42,11 +42,11 @@ export default function Checkout() {
       ? JSON.parse(localStorage.getItem("carritoPago") || "[]")
       : [];
 
-  const subtotal =
-    typeof window !== "undefined"
-      ? Number(localStorage.getItem("subtotalPago") || 0)
-      : 0;
-    
+  const subtotal = productos.reduce(
+  (total, producto) =>
+    total + Number(producto.precio) * Number(producto.cantidad),
+  0
+);
   useEffect(() => {
     if (typeof window !== "undefined") {
       const entregaGuardada = localStorage.getItem("tipoEntregaSeleccionado");
