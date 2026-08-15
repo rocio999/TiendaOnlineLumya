@@ -53,6 +53,7 @@ export default function Checkout() {
       const envioGuardado = localStorage.getItem("costoEnvioSeleccionado");
 
       if (entregaGuardada) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTipoEntrega(entregaGuardada);
       }
       if (envioGuardado) {
@@ -225,9 +226,9 @@ export default function Checkout() {
       alert("✅ Compra realizada correctamente");
       router.push("/cliente/pedidos");
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creando compra", error);
-      alert("Error al procesar la compra: " + error.message);
+      alert("Error al procesar la compra: " + (error instanceof Error ? error.message : "Error desconocido"));
     }
   };
 

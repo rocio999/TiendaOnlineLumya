@@ -16,12 +16,19 @@ interface Tienda {
   nombreNegocio: string;
   descripcion: string;
 }
+interface Notificacion {
+  id: string;
+  usuarioId: string;
+  mensaje: string;
+  tipo: string;
+  leida: boolean;
+}
 
 export default function Tiendas() {
   const router = useRouter();
   const [tiendas, setTiendas] = useState<Tienda[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [notificaciones, setNotificaciones] = useState<any[]>([]);
+  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [mostrarNotis, setMostrarNotis] = useState(false);
   const [cargandoNotis, setCargandoNotis] = useState(true);
 

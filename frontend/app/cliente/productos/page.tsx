@@ -9,6 +9,9 @@ interface Producto {
   categoria: string;
   stock: number;
 }
+interface ProductoCarrito extends Producto {
+  cantidad: number;
+}
 
 export default function Productos() {
   const router = useRouter();
@@ -21,7 +24,7 @@ export default function Productos() {
       try {
         const res = await fetch("http://localhost:3001/productos");
         const data = await res.json();
-        setProductos(data.filter((p: any) => p.stock > 0));
+        setProductos(data.filter((p: Producto) => p.stock > 0));
       } catch (error) {
         console.error("Error al cargar productos:", error);
       } finally {
@@ -33,10 +36,10 @@ export default function Productos() {
 
   const handleAgregar = (producto: Producto) => {
     const carritoActual = JSON.parse(localStorage.getItem("carrito") || "[]");
-    const existe = carritoActual.find((p: any) => p.id === producto.id);
+    const existe = carritoActual.find((p: ProductoCarrito) => p.id === producto.id);
 
     if (existe) {
-      const actualizado = carritoActual.map((p: any) =>
+      const actualizado = carritoActual.map((p: ProductoCarrito) =>
         p.id === producto.id ? { ...p, cantidad: p.cantidad + 1 } : p
       );
       localStorage.setItem("carrito", JSON.stringify(actualizado));

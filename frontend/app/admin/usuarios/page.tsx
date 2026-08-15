@@ -10,6 +10,14 @@ interface Usuario {
   rol: string;
   estado: string;
 }
+interface UsuarioBackend {
+  id: string;
+  nombre?: string;
+  nombreNegocio?: string;
+  correo?: string;
+  rol?: string;
+  estado?: string;
+}
 
 const estiloEstado: Record<string, string> = {
   activo: "bg-green-100 text-green-700",
@@ -55,7 +63,7 @@ export default function GestionUsuarios() {
           setError("No se pudieron cargar los usuarios");
           return;
         }
-        const lista: Usuario[] = data.map((d: any) => ({
+        const lista: Usuario[] = data.map((d: UsuarioBackend) => ({
           id: d.id,
           nombre: d.nombre || d.nombreNegocio || "Sin nombre",
           correo: d.correo || "",

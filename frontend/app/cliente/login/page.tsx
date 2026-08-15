@@ -51,7 +51,7 @@ if (redirect) {
 } else {
   router.push("/cliente/catalogo");
 }
- } catch (error) {
+ } catch {
     setMensaje("Error de conexión con el servidor");
   }
 };

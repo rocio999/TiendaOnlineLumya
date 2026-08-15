@@ -2,6 +2,18 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+interface Timestamp {
+  _seconds: number;
+  _nanoseconds: number;
+}
+interface RegistroBackend {
+  id: string;
+  usuario: string;
+  rol: string;
+  accion: string;
+  tipo: string;
+  fecha: Timestamp;
+}
 
 interface Registro {
   id: string;
@@ -9,7 +21,7 @@ interface Registro {
   rol: string;
   accion: string;
   tipo: string;
-  fecha: any;
+  fecha: Timestamp;
 }
 
 export default function Auditoria() {
@@ -29,7 +41,7 @@ export default function Auditoria() {
           return;
         }
 
-        const lista: Registro[] = data.map((h: any) => {
+        const lista: Registro[] = data.map((h: RegistroBackend) => {
           const tipoNormalizado =
             h.tipo === "categoria" ? "Producto" :
             h.tipo === "producto" ? "Producto" :
@@ -59,7 +71,7 @@ export default function Auditoria() {
     cargarHistorial();
   }, []);
 
-  const formatearFechaHora = (fecha: any) => {
+  const formatearFechaHora = (fecha: Timestamp | null | undefined) => {
     if (!fecha) return { fecha: "Sin fecha", hora: "" };
     if (fecha._seconds) {
       const d = new Date(fecha._seconds * 1000);

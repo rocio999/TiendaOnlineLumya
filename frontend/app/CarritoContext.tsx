@@ -24,13 +24,13 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
 
   // Cargar del localStorage al iniciar
   useEffect(() => {
-  const guardado = localStorage.getItem("carrito");
 
-  if (guardado) {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setProductos(JSON.parse(guardado));
-  }
-}, []);
+    const guardado = localStorage.getItem("carrito");
+    if (guardado) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setProductos(JSON.parse(guardado));
+    }
+  }, []);
 
   // Guardar en localStorage cada vez que cambia
   useEffect(() => {

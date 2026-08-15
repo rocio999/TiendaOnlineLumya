@@ -2,6 +2,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+interface Timestamp {
+  _seconds: number;
+  _nanoseconds: number;
+}
 
 interface Pago {
   id: string;
@@ -12,7 +16,7 @@ interface Pago {
   comprobante?: string;
   vendedorNombreResuelto?: string;
   clienteNombreResuelto?: string;
-  fecha?: any;
+  fecha?: Timestamp;
 }
 
 export default function PagosAdmin() {
@@ -40,7 +44,7 @@ export default function PagosAdmin() {
     rechazado: "background:#fee2e2;color:#b91c1c;",
   };
 
-  const formatearFecha = (fecha: any) => {
+  const formatearFecha = (fecha: Timestamp | null | undefined) => {
     if (!fecha) return "Sin fecha";
     if (fecha._seconds) {
       return new Date(fecha._seconds * 1000).toLocaleDateString("es-EC");
@@ -53,7 +57,7 @@ export default function PagosAdmin() {
       <div style={{ background: "linear-gradient(90deg, #1e3a8a, #1e40af)", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <Image src="/logo-lumya.png" alt="Lumya" width={36} height={36} style={{ borderRadius: "10px" }} />
-          <span style={{ color: "#fff", fontWeight: "bold", fontSize: "18px" }}>Pagos (Solo lectura)</span>
+          <span style={{ color: "#fff", fontWeight: "bold", fontSize: "18px" }}>Pagos</span>
         </div>
         <Link href="/admin">
           <button style={{ color: "#fff", background: "rgba(255,255,255,0.2)", border: "none", padding: "8px 14px", borderRadius: "10px", cursor: "pointer" }}>
@@ -64,7 +68,7 @@ export default function PagosAdmin() {
 
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "24px" }}>
         <p style={{ color: "#64748b", marginBottom: "20px", fontSize: "14px" }}>
-          Esta vista es únicamente de supervisión. La aprobación o rechazo de pagos se gestiona desde el panel del vendedor.
+          Aquí puedes ver todos los pagos. Recuerda que aprobarlos o rechazarlos se hace desde el panel del vendedor.
         </p>
 
         {cargando ? (
@@ -89,9 +93,9 @@ export default function PagosAdmin() {
               <tbody>
                 {pagos.map((pago) => (
                   <tr key={pago.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                    <td style={{ padding: "12px" }}>{pago.producto}</td>
-                    <td style={{ padding: "12px" }}>{pago.clienteNombreResuelto || "Cliente"}</td>
-                    <td style={{ padding: "12px" }}>{pago.vendedorNombreResuelto || "Vendedor"}</td>
+                    <td style={{ padding: "12px", color: "#1e293b" }}>{pago.producto}</td>
+                    <td style={{ padding: "12px", color: "#1e293b" }}>{pago.clienteNombreResuelto || "Cliente"}</td>
+                    <td style={{ padding: "12px", color: "#1e293b" }}>{pago.vendedorNombreResuelto || "Vendedor"}</td>
                     <td style={{ padding: "12px" }}>
                       {pago.metodo === "Transferencia" ? "🏦 Transferencia" : "📲 DeUna"}
                     </td>

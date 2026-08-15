@@ -17,6 +17,7 @@ export default function Perfil() {
   useEffect(() => {
     const guardado = localStorage.getItem("usuario");
     if (guardado) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUsuario(JSON.parse(guardado));
     }
   }, []);

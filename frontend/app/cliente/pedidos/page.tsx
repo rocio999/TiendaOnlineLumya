@@ -1,8 +1,43 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+interface Timestamp {
+  _seconds: number;
+  _nanoseconds: number;
+}
+interface ProductoBackend {
+  id?: string;
+  nombre?: string;
+  precio?: number;
+  cantidad?: number;
+  tiendaNombre?: string;
+}
+interface PagoBackend {
+  id: string;
+  pedidoId?: string;
+  usuarioId?: string;
+  clienteId?: string;
+  cliente?: { id?: string };
+  producto?: string;
+  productos?: ProductoBackend[];
+  monto?: number;
+  montoTotal?: number;
+  metodo?: string;
+  metodoPago?: string;
+  tipoEntrega?: string;
+  provincia?: string;
+  ciudad?: string;
+  direccion?: string;
+  referencia?: string;
+  cooperativa?: string;
+  ciudadDestino?: string;
+  comprobante?: string;
+  estado?: string;
+  fecha?: Timestamp;
+  anticipo?: number;
+  saldoPendiente?: number;
+}
 import "./pedido.css";
 import { useRouter } from "next/navigation";
 
@@ -33,14 +68,15 @@ interface Pedido {
   cooperativa?: string;
   ciudadDestino?: string;
   estado: string;
-  fecha: any;
+  fecha: Timestamp | null;
 }
 
-const formatearFecha = (fechaInput: any) => {
+const formatearFecha = (fechaInput: Timestamp | string | null | undefined) => {
   if (!fechaInput) return "Fecha no disponible";
   if (typeof fechaInput === "object" && fechaInput._seconds) {
     return new Date(fechaInput._seconds * 1000).toLocaleDateString();
   }
+  if (typeof fechaInput !== "string") return "Fecha no disponible";
   const fechaParsed = new Date(fechaInput);
   if (!isNaN(fechaParsed.getTime())) {
     return fechaParsed.toLocaleDateString();
@@ -69,20 +105,20 @@ export default function PedidosCliente() {
 
         const data = await res.json();
         
-        const misPagos = data.filter((p: any) => {
+        const misPagos = data.filter((p: PagoBackend) => {
           const idVenta = p.usuarioId || p.clienteId || p.cliente?.id;
           return String(idVenta) === String(idUsuarioActual);
         });
         
         const pedidosAgrupadosMap: { [key: string]: Pedido } = {};
 
-        misPagos.forEach((p: any, index: number) => {
+        misPagos.forEach((p: PagoBackend, index: number) => {
           const pedidoIdKey = p.pedidoId || p.id || `pedido-${index}`;
           
           let productosDelPago: ProductoPedido[] = [];
 
           if (p.productos && Array.isArray(p.productos)) {
-            productosDelPago = p.productos.map((prod: any, prodIdx: number) => ({
+            productosDelPago = p.productos.map((prod: ProductoBackend, prodIdx: number) => ({
               id: prod.id || `${pedidoIdKey}-prod-${prodIdx}`,
               nombre: prod.nombre || "Producto",
               precio: Number(prod.precio) || 0,
@@ -217,9 +253,10 @@ export default function PedidosCliente() {
         pedidos
           .filter((pedido) => {
             if (!fechaFiltro) return true;
-            const fechaPedido = pedido.fecha && pedido.fecha._seconds
+            if (!pedido.fecha) return false;
+            const fechaPedido = pedido.fecha._seconds
               ? new Date(pedido.fecha._seconds * 1000)
-              : new Date(pedido.fecha);
+              : new Date();
             const fechaISO = fechaPedido.toISOString().split("T")[0];
             return fechaISO === fechaFiltro;
           })

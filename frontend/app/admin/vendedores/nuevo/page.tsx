@@ -1,7 +1,7 @@
 "use client";
 
 import styles from "./CrearVendedor.module.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface Solicitud {
@@ -20,7 +20,7 @@ interface Solicitud {
   estado: string;
 }
 
-export default function RevisarSolicitudVendedor() {
+function RevisarSolicitudVendedorContenido() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
@@ -168,7 +168,7 @@ export default function RevisarSolicitudVendedor() {
               )}
               {solicitud.qrDeUnaUrl && (
                 <div style={{ textAlign: "center" }}>
-                  <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "5px" }}>QR "De una"</p>
+                  <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "5px" }}>QR &quot;De una&quot;</p>
                   <img src={solicitud.qrDeUnaUrl} alt="QR De una" style={{ width: "150px", height: "150px", objectFit: "contain", border: "1px solid #e2e8f0", borderRadius: "10px" }} />
                 </div>
               )}
@@ -204,5 +204,12 @@ export default function RevisarSolicitudVendedor() {
         </div>
       </div>
     </div>
+  );
+}
+export default function RevisarSolicitudVendedor() {
+  return (
+    <Suspense fallback={<div style={{ textAlign: "center", padding: "40px" }}>Cargando...</div>}>
+      <RevisarSolicitudVendedorContenido />
+    </Suspense>
   );
 }
