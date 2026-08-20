@@ -20,12 +20,16 @@ type TipoEntrega = "Servientrega" | "Cooperativa";
 export default function Carrito() {
   const [productos, setProductos] = useState<ProductoCarrito[]>([]);
   const [mensaje, setMensaje] = useState("");
+  const [cargando, setCargando] = useState(true);
   const router = useRouter();
 
-  // Estado para guardar el método de envío seleccionado por cada tienda (ej. { "Tienda Jorge": "Servientrega" })
+  // Estado para guardar el método de envío seleccionado por cada tienda
   const [tiposEntregaPorTienda, setTiposEntregaPorTienda] = useState<Record<string, TipoEntrega>>({});
 
   useEffect(() => {
+    // Forzar que el scroll siempre empiece arriba al cargar o volver de otra vista
+    window.scrollTo(0, 0);
+
     const cargarCarrito = () => {
       const guardado = localStorage.getItem("carrito");
       let productosCargados: ProductoCarrito[] = [];
@@ -34,14 +38,15 @@ export default function Carrito() {
         setProductos(productosCargados);
       }
 
-      // Inicializar por defecto el método de envío como "Servientrega" para cada tienda presente
+      // Inicializar por defecto el método de envío como "Servientrega" para cada tienda
       const tiendasUnicas = Array.from(new Set(productosCargados.map((p) => p.tiendaNombre || "Tienda")));
       const enviosIniciales: Record<string, TipoEntrega> = {};
       tiendasUnicas.forEach((tienda) => {
         enviosIniciales[tienda] = "Servientrega";
       });
       setTiposEntregaPorTienda(enviosIniciales);
-
+      
+      setCargando(false);
     };
 
     cargarCarrito();
@@ -158,12 +163,20 @@ export default function Carrito() {
     router.push("/cliente/checkout");
   };
 
+  // Evitamos renderizar elementos vacíos o desalineados mientras lee el localStorage
+  if (cargando) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-blue-900 font-semibold">Cargando carrito...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <div className="bg-gradient-to-r from-blue-700 to-cyan-500 px-4 py-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* CORREGIDO: Redirige explícitamente al catálogo en lugar de usar router.back() */}
             <button
               onClick={() => router.push("/cliente/catalogo")}
               className="text-white hover:bg-white/20 p-2 rounded-xl transition font-medium"
@@ -215,8 +228,8 @@ export default function Carrito() {
             </Link>
           </div>
         ) : (
-          <>
-            <div className="flex flex-col gap-6 mb-6">
+          <div className="space-y-6">
+            <div className="flex flex-col gap-6">
               {Object.entries(tiendasAgrupadas).map(
                 ([nombreTienda, productosTienda]) => {
                   const totalTienda = productosTienda.reduce(
@@ -238,7 +251,7 @@ export default function Carrito() {
                   return (
                     <div
                       key={nombreTienda}
-                      className="bg-white rounded-2xl p-5 shadow-sm border mb-5 text-gray-900"
+                      className="bg-white rounded-2xl p-5 shadow-sm border text-gray-900"
                     >
                       <h2 className="text-xl font-bold text-blue-900 mb-4">
                         🏪 {nombreTienda}
@@ -291,7 +304,7 @@ export default function Carrito() {
                       ))}
                       
                       {/* SELECTOR DE MÉTODO DE ENVÍO INDEPENDIENTE POR TIENDA */}
-                      <div className="mt-4 pt-4 border-t">
+                      <div className="mt-4 pt-4 border-t border-gray-100">
                         <p className="text-sm font-bold text-blue-900 mb-2">Método de envío para esta tienda:</p>
                         <div className="grid grid-cols-2 gap-3 mb-4">
                           <button
@@ -304,8 +317,8 @@ export default function Carrito() {
                             }
                             className={`p-2.5 rounded-xl border text-xs font-semibold transition ${
                               tipoEntregaActual === "Servientrega"
-                                ? "border-blue-600 bg-blue-50 text-blue-900"
-                                : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                                ? "border-blue-600 bg-blue-50 text-blue-900 font-bold"
+                                : "border-gray-200 text-gray-900 bg-white hover:bg-gray-50"
                             }`}
                           >
                             📦 Servientrega
@@ -320,8 +333,8 @@ export default function Carrito() {
                             }
                             className={`p-2.5 rounded-xl border text-xs font-semibold transition ${
                               tipoEntregaActual === "Cooperativa"
-                                ? "border-blue-600 bg-blue-50 text-blue-900"
-                                : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                                ? "border-blue-600 bg-blue-50 text-blue-900 font-bold"
+                                : "border-gray-200 text-gray-900 bg-white hover:bg-gray-50"
                             }`}
                           >
                             🚌 Cooperativa
@@ -377,7 +390,7 @@ export default function Carrito() {
                 🗑 Vaciar carrito
               </button>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

@@ -187,12 +187,3 @@
   font-weight: bold;
   margin-bottom: 20px;
 }
-/* Asegura que todo el texto dentro del checkout sea negro por defecto */
-body, input, select, button, label, p, span, h1, h2, h3, h4 {
-  color: #111827 !important;
-}
-
-/* Excepciones para textos que necesitan mantenerse claros por diseño (como botones o alertas) */
-button {
-  color: #ffffff !important;
-}
