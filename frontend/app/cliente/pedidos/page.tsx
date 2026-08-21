@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
 interface Timestamp {
   _seconds: number;
   _nanoseconds: number;
 }
+
 interface ProductoBackend {
   id?: string;
   nombre?: string;
@@ -13,6 +15,7 @@ interface ProductoBackend {
   cantidad?: number;
   tiendaNombre?: string;
 }
+
 interface PagoBackend {
   id: string;
   pedidoId?: string;
@@ -34,13 +37,13 @@ interface PagoBackend {
   ciudadDestino?: string;
   comprobante?: string;
   estado?: string;
-  fecha?: Timestamp;
+  fecha?: Timestamp | string;
   anticipo?: number;
   saldoPendiente?: number;
 }
+
 import "./pedido.css";
 import { useRouter } from "next/navigation";
-
 
 interface ProductoPedido {
   id: string;
@@ -68,20 +71,43 @@ interface Pedido {
   cooperativa?: string;
   ciudadDestino?: string;
   estado: string;
-  fecha: Timestamp | null;
+  fecha: Timestamp | string | null;
 }
 
-const formatearFecha = (fechaInput: Timestamp | string | null | undefined) => {
+/* =========================================================
+   CORRECCIÓN DE FECHA
+   Se mantiene todo lo demás igual.
+   ========================================================= */
+
+const formatearFecha = (
+  fechaInput: Timestamp | string | null | undefined
+) => {
   if (!fechaInput) return "Fecha no disponible";
-  if (typeof fechaInput === "object" && fechaInput._seconds) {
-    return new Date(fechaInput._seconds * 1000).toLocaleDateString();
+
+  let fecha: Date;
+
+  // Fecha proveniente de Firestore como Timestamp serializado
+  if (
+    typeof fechaInput === "object" &&
+    "_seconds" in fechaInput &&
+    typeof fechaInput._seconds === "number"
+  ) {
+    fecha = new Date(fechaInput._seconds * 1000);
+  } else if (typeof fechaInput === "string") {
+    fecha = new Date(fechaInput);
+  } else {
+    return "Fecha no disponible";
   }
-  if (typeof fechaInput !== "string") return "Fecha no disponible";
-  const fechaParsed = new Date(fechaInput);
-  if (!isNaN(fechaParsed.getTime())) {
-    return fechaParsed.toLocaleDateString();
+
+  if (isNaN(fecha.getTime())) {
+    return "Fecha no disponible";
   }
-  return "Fecha no disponible";
+
+  return fecha.toLocaleDateString("es-EC", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 };
 
 export default function PedidosCliente() {
@@ -92,75 +118,112 @@ export default function PedidosCliente() {
   useEffect(() => {
     const cargarPedidos = async () => {
       const usuarioGuardado = localStorage.getItem("usuario");
+
       if (!usuarioGuardado) {
         setPedidos([]);
         return;
       }
+
       const usuario = JSON.parse(usuarioGuardado);
       const idUsuarioActual = usuario.id || usuario._id;
 
       try {
         const res = await fetch("http://localhost:3001/pagos");
+
         if (!res.ok) return;
 
         const data = await res.json();
-        
+
         const misPagos = data.filter((p: PagoBackend) => {
-          const idVenta = p.usuarioId || p.clienteId || p.cliente?.id;
+          const idVenta =
+            p.usuarioId || p.clienteId || p.cliente?.id;
+
           return String(idVenta) === String(idUsuarioActual);
         });
-        
-        const pedidosAgrupadosMap: { [key: string]: Pedido } = {};
+
+        const pedidosAgrupadosMap: {
+          [key: string]: Pedido;
+        } = {};
 
         misPagos.forEach((p: PagoBackend, index: number) => {
-          const pedidoIdKey = p.pedidoId || p.id || `pedido-${index}`;
-          
+          const pedidoIdKey =
+            p.pedidoId || p.id || `pedido-${index}`;
+
           let productosDelPago: ProductoPedido[] = [];
 
           if (p.productos && Array.isArray(p.productos)) {
-            productosDelPago = p.productos.map((prod: ProductoBackend, prodIdx: number) => ({
-              id: prod.id || `${pedidoIdKey}-prod-${prodIdx}`,
-              nombre: prod.nombre || "Producto",
-              precio: Number(prod.precio) || 0,
-              cantidad: Number(prod.cantidad) || 1,
-              tiendaNombre: prod.tiendaNombre || ""
-            }));
+            productosDelPago = p.productos.map(
+              (prod: ProductoBackend, prodIdx: number) => ({
+                id:
+                  prod.id ||
+                  `${pedidoIdKey}-prod-${prodIdx}`,
+                nombre: prod.nombre || "Producto",
+                precio: Number(prod.precio) || 0,
+                cantidad: Number(prod.cantidad) || 1,
+                tiendaNombre: prod.tiendaNombre || "",
+              })
+            );
           } else {
-            // Extraer la cantidad si viene en el texto (ej: "kids de belleza x2")
+            // Extraer la cantidad si viene en el texto
+            // (ej: "kids de belleza x2")
             let textoProducto = p.producto || "Producto";
             let cantidadExtraida = 1;
 
-            const matchCantidad = textoProducto.match(/x(\d+)/i);
+            const matchCantidad =
+              textoProducto.match(/x(\d+)/i);
+
             if (matchCantidad) {
-              cantidadExtraida = parseInt(matchCantidad[1], 10);
-              textoProducto = textoProducto.replace(/x\d+/gi, "").trim();
+              cantidadExtraida = parseInt(
+                matchCantidad[1],
+                10
+              );
+
+              textoProducto = textoProducto
+                .replace(/x\d+/gi, "")
+                .trim();
             }
 
             const montoTotalDoc = Number(p.monto) || 0;
-            const precioUnitarioEstimado = cantidadExtraida > 0 ? montoTotalDoc / cantidadExtraida : montoTotalDoc;
 
-            productosDelPago = [{
-              id: `${pedidoIdKey}-prod-0`,
-              nombre: textoProducto,
-              precio: precioUnitarioEstimado,
-              cantidad: cantidadExtraida,
-              tiendaNombre: "Tienda"
-            }];
+            const precioUnitarioEstimado =
+              cantidadExtraida > 0
+                ? montoTotalDoc / cantidadExtraida
+                : montoTotalDoc;
+
+            productosDelPago = [
+              {
+                id: `${pedidoIdKey}-prod-0`,
+                nombre: textoProducto,
+                precio: precioUnitarioEstimado,
+                cantidad: cantidadExtraida,
+                tiendaNombre: "Tienda",
+              },
+            ];
           }
 
-          const totalVal = Number(p.montoTotal || p.monto) || 0;
+          const totalVal =
+            Number(p.montoTotal || p.monto) || 0;
 
           if (pedidosAgrupadosMap[pedidoIdKey]) {
-            pedidosAgrupadosMap[pedidoIdKey].productos.push(...productosDelPago);
+            pedidosAgrupadosMap[pedidoIdKey].productos.push(
+              ...productosDelPago
+            );
           } else {
             pedidosAgrupadosMap[pedidoIdKey] = {
               id: pedidoIdKey,
-              cliente: { id: idUsuarioActual, nombre: usuario.nombre },
+              cliente: {
+                id: idUsuarioActual,
+                nombre: usuario.nombre,
+              },
               productos: productosDelPago,
               total: totalVal,
-              metodoPago: p.metodo || p.metodoPago || "Transferencia",
+              metodoPago:
+                p.metodo ||
+                p.metodoPago ||
+                "Transferencia",
               comprobante: p.comprobante || "",
-              tipoEntrega: p.tipoEntrega || "No definido",
+              tipoEntrega:
+                p.tipoEntrega || "No definido",
               provincia: p.provincia || "",
               ciudad: p.ciudad || "",
               direccion: p.direccion || "",
@@ -171,15 +234,16 @@ export default function PedidosCliente() {
               fecha: p.fecha || null,
             };
           }
-          
-
-
         });
 
-        setPedidos(Object.values(pedidosAgrupadosMap));
-
+        setPedidos(
+          Object.values(pedidosAgrupadosMap)
+        );
       } catch (error) {
-        console.error("Error al cargar pedidos:", error);
+        console.error(
+          "Error al cargar pedidos:",
+          error
+        );
       }
     };
 
@@ -187,34 +251,46 @@ export default function PedidosCliente() {
   }, []);
 
   return (
-    
     <div className="pedidos-container">
       <button
-  onClick={() => router.back()}
-  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition mb-4"
->
-  ← Volver
-</button>
+        onClick={() => router.back()}
+        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition mb-4"
+      >
+        ← Volver
+      </button>
 
       <h1>📦 Mis pedidos</h1>
-      <div style={{
-        marginBottom: "20px",
-        display: "flex",
-        alignItems: "center",
-        gap: "12px",
-        background: "linear-gradient(135deg, #e0f2fe, #cffafe)",
-        padding: "14px 18px",
-        borderRadius: "14px",
-        border: "1px solid #7dd3fc",
-        flexWrap: "wrap"
-      }}>
-        <label style={{ fontSize: "14px", fontWeight: "bold", color: "#0c4a6e" }}>
+
+      <div
+        style={{
+          marginBottom: "20px",
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          background:
+            "linear-gradient(135deg, #e0f2fe, #cffafe)",
+          padding: "14px 18px",
+          borderRadius: "14px",
+          border: "1px solid #7dd3fc",
+          flexWrap: "wrap",
+        }}
+      >
+        <label
+          style={{
+            fontSize: "14px",
+            fontWeight: "bold",
+            color: "#0c4a6e",
+          }}
+        >
           📅 Filtrar por fecha:
         </label>
+
         <input
           type="date"
           value={fechaFiltro}
-          onChange={(e) => setFechaFiltro(e.target.value)}
+          onChange={(e) =>
+            setFechaFiltro(e.target.value)
+          }
           style={{
             padding: "8px 12px",
             borderRadius: "10px",
@@ -222,9 +298,10 @@ export default function PedidosCliente() {
             background: "#fff",
             color: "#0c4a6e",
             fontWeight: "600",
-            outline: "none"
+            outline: "none",
           }}
         />
+
         {fechaFiltro && (
           <button
             onClick={() => setFechaFiltro("")}
@@ -236,7 +313,7 @@ export default function PedidosCliente() {
               border: "none",
               borderRadius: "8px",
               padding: "8px 14px",
-              cursor: "pointer"
+              cursor: "pointer",
             }}
           >
             ✕ Quitar filtro
@@ -246,58 +323,178 @@ export default function PedidosCliente() {
 
       {pedidos.length === 0 ? (
         <div className="pedido-vacio">
-          <p>Todavía no tienes pedidos realizados.</p>
-          <Link href="/cliente/tiendas">Explorar tiendas</Link>
+          <p>
+            Todavía no tienes pedidos realizados.
+          </p>
+
+          <Link href="/cliente/tiendas">
+            Explorar tiendas
+          </Link>
         </div>
       ) : (
         pedidos
           .filter((pedido) => {
             if (!fechaFiltro) return true;
+
             if (!pedido.fecha) return false;
-            const fechaPedido = pedido.fecha._seconds
-              ? new Date(pedido.fecha._seconds * 1000)
-              : new Date();
-            const fechaISO = fechaPedido.toISOString().split("T")[0];
-            return fechaISO === fechaFiltro;
+
+            let fechaPedido: Date;
+
+            /*
+             * CORRECCIÓN:
+             * No usamos toISOString() para comparar
+             * la fecha porque convierte a UTC y puede
+             * cambiar el día.
+             */
+            if (
+              typeof pedido.fecha === "object" &&
+              "_seconds" in pedido.fecha &&
+              typeof pedido.fecha._seconds === "number"
+            ) {
+              fechaPedido = new Date(
+                pedido.fecha._seconds * 1000
+              );
+            } else if (
+              typeof pedido.fecha === "string"
+            ) {
+              fechaPedido = new Date(pedido.fecha);
+            } else {
+              return false;
+            }
+
+            if (isNaN(fechaPedido.getTime())) {
+              return false;
+            }
+
+            /*
+             * Obtenemos año, mes y día usando la zona
+             * horaria local del navegador (Ecuador).
+             */
+            const año = fechaPedido.getFullYear();
+
+            const mes = String(
+              fechaPedido.getMonth() + 1
+            ).padStart(2, "0");
+
+            const dia = String(
+              fechaPedido.getDate()
+            ).padStart(2, "0");
+
+            const fechaLocal =
+              `${año}-${mes}-${dia}`;
+
+            return fechaLocal === fechaFiltro;
           })
           .map((pedido, index) => {
-          const totalSeguro = Number(pedido.total) || 0;
+            const totalSeguro =
+              Number(pedido.total) || 0;
 
-          return (
-            <div key={`${pedido.id}-${index}`} className="pedido-card">
-              <h2>Pedido #{pedido.id ? pedido.id.slice(0, 8) : "N/D"}</h2>
-              <p>📅 Fecha: {formatearFecha(pedido.fecha)}</p>
-              <p>💳 Método de pago: {pedido.metodoPago}</p>
-              {pedido.comprobante && pedido.comprobante !== "sin_comprobante.jpg" ? (
+            return (
+              <div
+                key={`${pedido.id}-${index}`}
+                className="pedido-card"
+              >
+                <h2>
+                  Pedido #
+                  {pedido.id
+                    ? pedido.id.slice(0, 8)
+                    : "N/D"}
+                </h2>
+
                 <p>
-                  📎 Comprobante:{" "}
-                  <a href={pedido.comprobante} target="_blank" rel="noopener noreferrer" style={{ color: "#0284c7", fontWeight: "bold" }}>
-                    Ver imagen
-                  </a>
+                  📅 Fecha:{" "}
+                  {formatearFecha(pedido.fecha)}
                 </p>
-              ) : (
-                <p style={{ color: "#d97706", fontWeight: "600" }}>📎 Sin comprobante</p>
-              )}
-              <p>🔎 Estado: <strong>{pedido.estado}</strong></p>
-              <p>🚚 Entrega: <strong>{pedido.tipoEntrega}</strong> {pedido.cooperativa ? `(${pedido.cooperativa})` : ""}</p>
 
-              <h3>Productos:</h3>
-              {pedido.productos?.map((producto, idx) => (
-                <div key={`${producto.id}-${idx}`} className="producto-pedido">
-                  <span>{producto.nombre} x {producto.cantidad}</span>
-                  <span>${(producto.precio * producto.cantidad).toFixed(2)}</span>
-                </div>
-              ))}
+                <p>
+                  💳 Método de pago:{" "}
+                  {pedido.metodoPago}
+                </p>
 
-              <hr style={{ margin: "10px 0" }} />
+                {pedido.comprobante &&
+                pedido.comprobante !==
+                  "sin_comprobante.jpg" ? (
+                  <p>
+                    📎 Comprobante:{" "}
+                    <a
+                      href={pedido.comprobante}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: "#0284c7",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Ver imagen
+                    </a>
+                  </p>
+                ) : (
+                  <p
+                    style={{
+                      color: "#d97706",
+                      fontWeight: "600",
+                    }}
+                  >
+                    📎 Sin comprobante
+                  </p>
+                )}
 
-              <h3 style={{ color: "#0070f3" }}>
-                Total Pagado: ${totalSeguro.toFixed(2)}
-              </h3>
-            </div>
-          
-          );
-        })
+                <p>
+                  🔎 Estado:{" "}
+                  <strong>{pedido.estado}</strong>
+                </p>
+
+                <p>
+                  🚚 Entrega:{" "}
+                  <strong>
+                    {pedido.tipoEntrega}
+                  </strong>{" "}
+                  {pedido.cooperativa
+                    ? `(${pedido.cooperativa})`
+                    : ""}
+                </p>
+
+                <h3>Productos:</h3>
+
+                {pedido.productos?.map(
+                  (producto, idx) => (
+                    <div
+                      key={`${producto.id}-${idx}`}
+                      className="producto-pedido"
+                    >
+                      <span>
+                        {producto.nombre} x{" "}
+                        {producto.cantidad}
+                      </span>
+
+                      <span>
+                        $
+                        {(
+                          producto.precio *
+                          producto.cantidad
+                        ).toFixed(2)}
+                      </span>
+                    </div>
+                  )
+                )}
+
+                <hr
+                  style={{
+                    margin: "10px 0",
+                  }}
+                />
+
+                <h3
+                  style={{
+                    color: "#0070f3",
+                  }}
+                >
+                  Total Pagado: $
+                  {totalSeguro.toFixed(2)}
+                </h3>
+              </div>
+            );
+          })
       )}
     </div>
   );
