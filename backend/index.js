@@ -16,6 +16,7 @@ initializeApp({
 });
 
 const app = express();
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Configuración de CORS
 app.use(cors({
@@ -23,7 +24,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
-app.options("*", cors());
+app.options(/.*/, cors());
 
 app.use(express.json());
 
