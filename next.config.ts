@@ -1,17 +1,7 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  turbopack: {
-    root: "/app",
-  },
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "ik.imagekit.io",
-      },
-    ],
-  },
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Forzamos a que webpack o el entorno respeten la raíz local
+  distDir: '.next',
 };
 
-export default nextConfig;
+module.exports = nextConfig;

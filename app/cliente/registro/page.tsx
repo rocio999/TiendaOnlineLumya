@@ -14,7 +14,6 @@ export default function Registro() {
 const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const router = useRouter();
 
   const handleRegistro = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -42,14 +41,25 @@ const [aceptaTerminos, setAceptaTerminos] = useState(false);
     const datos = { nombre, apellido, correo, password };
 
     try {
-      const res = await fetch("http://localhost:3001/registro-cliente", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datos),
-      });
+    
 
-      const data = await res.json();
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
+// ... dentro de tu función de envío:
+const res = await fetch(`${API_URL}/registro-cliente`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    nombre,
+    apellido,
+    correo,
+    password,
+  }),
+});
+
+const data = await res.json();
       if (!res.ok) {
         throw new Error(data.message || "Error al registrar");
       }

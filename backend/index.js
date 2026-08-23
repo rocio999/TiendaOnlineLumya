@@ -16,6 +16,17 @@ app.use(express.json());
 const JWT_SECRET = process.env.JWT_SECRET || "secreto123";
 const ADMIN_KEY = process.env.ADMIN_KEY || "lumya-admin-2026";
 
+const express = require("express");
+const cors = require("cors");
+
+
+// Configuración de CORS permitiendo tu frontend de Vercel
+app.use(cors({
+  origin: ["https://tienda-online-lumya.vercel.app", "http://localhost:3000"],
+  credentials: true
+}));
+
+app.use(express.json());
 // ======================
 // MIDDLEWARES & HELPERS
 // ======================
