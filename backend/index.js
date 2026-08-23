@@ -19,12 +19,13 @@ const ADMIN_KEY = process.env.ADMIN_KEY || "lumya-admin-2026";
 const express = require("express");
 const cors = require("cors");
 
-
-// Configuración de CORS permitiendo tu frontend de Vercel
+// Coloca esto justo antes de tus rutas
 app.use(cors({
-  origin: ["https://tienda-online-lumya.vercel.app", "http://localhost:3000"],
-  credentials: true
+  origin: "*", // O puedes dejarlo abierto temporalmente para asegurar que pase
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
+app.options("*", cors()); // Crucial para que el navegador pase la petición preflight
 
 app.use(express.json());
 // ======================
