@@ -26,7 +26,7 @@ app.use(cors({
 }));
 app.options(/.*/, cors());
 
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 const JWT_SECRET = process.env.JWT_SECRET || "secreto123";
 const ADMIN_KEY = process.env.ADMIN_KEY || "lumya-admin-2026";
