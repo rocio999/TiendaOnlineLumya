@@ -8,29 +8,28 @@ const { db, FieldValue } = require("./firebase");
 const imagekit = require("./imagekit");
 
 const app = express();
-const upload = multer({ storage: multer.memoryStorage() });
 
-app.use(cors());
-app.use(express.json());
+const upload = multer({
+  storage: multer.memoryStorage()
+});
 
 const JWT_SECRET = process.env.JWT_SECRET || "secreto123";
 const ADMIN_KEY = process.env.ADMIN_KEY || "lumya-admin-2026";
 
-const express = require("express");
-const cors = require("cors");
-
-// Coloca esto justo antes de tus rutas
+// CORS
 app.use(cors({
-  origin: "*", // O puedes dejarlo abierto temporalmente para asegurar que pase
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
-app.options("*", cors()); // Crucial para que el navegador pase la petición preflight
 
+// JSON
 app.use(express.json());
+
 // ======================
 // MIDDLEWARES & HELPERS
 // ======================
+
 
 function verificarAdmin(req, res, next) {
   const key = req.headers["x-admin-key"];
