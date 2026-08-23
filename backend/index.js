@@ -1,43 +1,46 @@
-const express = require("express");
-const cors = require("cors");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const multer = require("multer");
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import multer from "multer";
+import { initializeApp, cert } from "firebase-admin/app";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 
-const { db, FieldValue } = require("./firebase");
-const imagekit = require("./imagekit");
+// Si usas archivos locales (asegúrate de que terminen en .js si son locales)
+// import { db } from "./firebase.js"; 
+// import imagekit from "./imagekit.js";
+
+// Inicializar Firebase usando la variable de entorno
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+initializeApp({
+  credential: cert(serviceAccount)
+});
 
 const app = express();
 
-const upload = multer({
-  storage: multer.memoryStorage()
-});
+// Configuración de CORS
+app.use(cors({
+  origin: "*", 
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+app.options("*", cors());
+
+app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || "secreto123";
 const ADMIN_KEY = process.env.ADMIN_KEY || "lumya-admin-2026";
 
-// CORS
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
-
-// JSON
-app.use(express.json());
-
 // ======================
 // MIDDLEWARES & HELPERS
 // ======================
-
-
 function verificarAdmin(req, res, next) {
   const key = req.headers["x-admin-key"];
   if (key !== ADMIN_KEY) {
-    return res.status(403).json({ message: "No autorizado" });
+    return res.status(401).json({ error: "No autorizado" });
   }
   next();
 }
+
 
 async function registrarAuditoria(usuarioId, accion, tipo) {
   try {
