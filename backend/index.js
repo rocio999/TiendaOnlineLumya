@@ -4,16 +4,23 @@ import cors from "cors";
 import multer from "multer";
 import { initializeApp, cert } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 // Si usas archivos locales (asegúrate de que terminen en .js si son locales)
 // import { db } from "./firebase.js"; 
 // import imagekit from "./imagekit.js";
 
 // Inicializar Firebase usando la variable de entorno
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-initializeApp({
+import fs from 'fs';
+
+const serviceAccount = JSON.parse(
+  fs.readFileSync('./lumya-cd461-firebase-adminsdk-fbsvc-7a3ad4cc66.json', 'utf8')
+);initializeApp({
   credential: cert(serviceAccount)
 });
+
+const db = getFirestore(); // <--- ¡Esta es la línea que falta!
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -519,7 +526,6 @@ app.get("/productos", async (req, res) => {
   try {
     const productosSnap = await db.collection("productos").get();
     const vendedoresSnap = await db.collection("usuarios").where("rol", "==", "vendedor").get();
-
     const mapaVendedores = {};
     vendedoresSnap.docs.forEach((v) => {
       mapaVendedores[v.id] = v.data().nombreNegocio || v.data().nombre || "Vendedor";

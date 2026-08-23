@@ -58,12 +58,17 @@ export default function CatalogoGeneral() {
     const cargarProductos = async () => {
       try {
         const res = await fetch("http://localhost:3001/productos");
-        const data = await res.json();
+        const json = await res.json();
+        
+        console.log("Respuesta del backend para productos:", json);
+
+        const data = Array.isArray(json) ? json : (json.productos || json.data || []);
+
         setProductos(data.filter((p: Producto) => p.stock > 0));
       } catch (error) {
         console.error("Error al cargar productos:", error);
       } finally {
-        setCargando(false);
+        setCargando(false); // <--- ¡Esto es lo que faltaba para apagar el indicador de carga!
       }
     };
     cargarProductos();
@@ -73,17 +78,23 @@ export default function CatalogoGeneral() {
     const cargarTiendas = async () => {
       try {
         const res = await fetch("http://localhost:3001/vendedores");
-        const data = await res.json();
+        const json = await res.json();
+        
+        // Verificamos si lo que llegó es un arreglo directamente, 
+        // o si viene dentro de una propiedad (como json.vendedores o json.data)
+        const data = Array.isArray(json) ? json : (json.vendedores || json.data || []);
+
         const activos = data
           .filter((v: VendedorBackend) => v.estado === "activo")
           .map((v: VendedorBackend) => ({ id: v.id, nombreNegocio: v.nombreNegocio || v.nombre || "Tienda" }));
+        
         setTiendas(activos);
       } catch (error) {
         console.error("Error al cargar tiendas:", error);
       }
     };
     cargarTiendas();
-  }, []);
+  }, [],);
 
   const cerrarSesion = () => {
     localStorage.removeItem("usuario");

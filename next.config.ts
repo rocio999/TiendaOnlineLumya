@@ -1,7 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Forzamos a que webpack o el entorno respeten la raíz local
-  distDir: '.next',
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'ik.imagekit.io',
+      },
+    ],
+  },
 };
 
 module.exports = nextConfig;
