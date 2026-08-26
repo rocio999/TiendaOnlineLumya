@@ -1,44 +1,13 @@
 import "dotenv/config";
 import { initializeApp, cert } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import fs from "fs";
-
-let serviceAccount;
-
-if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-
-  serviceAccount = JSON.parse(
-    process.env.FIREBASE_SERVICE_ACCOUNT_JSON
-  );
-
-} else if (process.env.FIREBASE_KEY) {
-
-  serviceAccount = JSON.parse(
-    fs.readFileSync(process.env.FIREBASE_KEY, "utf8")
-  );
-
-} else {
-
-  try {
-
-    serviceAccount = JSON.parse(
-      fs.readFileSync(
-        "./lumya-cd461-firebase-adminsdk-fbsvc-7a3ad4cc66.json",
-        "utf8"
-      )
-    );
-
-  } catch (error) {
-
-    throw new Error(
-      "No se encontró FIREBASE_SERVICE_ACCOUNT_JSON, FIREBASE_KEY ni el archivo JSON local."
-    );
-
-  }
-}
 
 const app = initializeApp({
-  credential: cert(serviceAccount),
+  credential: cert({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
+  }),
 });
 
 const db = getFirestore(app);
