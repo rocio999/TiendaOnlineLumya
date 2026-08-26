@@ -43,7 +43,7 @@ const [aceptaTerminos, setAceptaTerminos] = useState(false);
     try {
     
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://brown-lark-804410.hostingersite.com";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://brown-lark-804410.hostingersite.com";
 
 // ... dentro de tu función de envío:
 const res = await fetch(`${API_URL}/registro-cliente`, {
