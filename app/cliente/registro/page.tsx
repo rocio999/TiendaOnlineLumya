@@ -39,7 +39,8 @@ export default function Registro() {
     }
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://brown-lark-804410.hostingersite.com";
+      const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "https://brown-lark-804410.hostingersite.com";
+      const API_URL = rawApiUrl.replace(/\/+$/, ""); // 👈 Esto quita cualquier barra sobrante al final
 
       const res = await fetch(`${API_URL}/registro-cliente`, {
         method: "POST",
