@@ -1,7 +1,11 @@
-const { initializeApp, cert } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+import { initializeApp, cert } from "firebase-admin/app";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import fs from "fs";
 
-const serviceAccount = require("./serviceAccountKey.json");
+// Cargar el archivo JSON de forma compatible con ES Modules
+const serviceAccount = JSON.parse(
+  fs.readFileSync('./serviceAccountKey.json', 'utf8')
+);
 
 initializeApp({
   credential: cert(serviceAccount),
@@ -9,4 +13,4 @@ initializeApp({
 
 const db = getFirestore();
 
-module.exports = db;
+export { db, FieldValue };

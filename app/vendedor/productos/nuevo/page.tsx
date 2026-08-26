@@ -1,14 +1,15 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+
 
 export default function NuevoProducto() {
   const router = useRouter();
   const [nombre, setNombre] = useState("");
   const [precio, setPrecio] = useState("");
-  const [peso, setPeso] = useState(""); // 👈 Nuevo estado para el peso en kg
+  const [peso, setPeso] = useState(""); 
   const [descripcion, setDescripcion] = useState("");
   const [categoria, setCategoria] = useState("");
   const [stock, setStock] = useState("");
@@ -16,6 +17,39 @@ export default function NuevoProducto() {
   const [cargando, setCargando] = useState(false);
   const [imagen, setImagen] = useState<File | null>(null);
 
+  interface Categoria {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  emoji: string;
+  estado: string;
+}
+
+const [categorias, setCategorias] = useState<Categoria[]>([]);
+
+useEffect(() => {
+  const cargarCategorias = async () => {
+    try {
+      const res = await fetch("http://localhost:3001/categorias");
+
+      if (!res.ok) {
+        throw new Error("No se pudieron cargar las categorías");
+      }
+
+      const data = await res.json();
+
+      const categoriasActivas = data.filter(
+        (categoria: Categoria) => categoria.estado === "Activa"
+      );
+
+      setCategorias(categoriasActivas);
+    } catch (error) {
+      console.error("Error al cargar categorías:", error);
+    }
+  };
+
+  cargarCategorias();
+}, []);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -53,7 +87,7 @@ export default function NuevoProducto() {
         body: JSON.stringify({
           nombre,
           precio: Number(precio),
-          peso: Number(peso), // 👈 Se envía el peso convertido a número
+          peso: Number(peso), 
           descripcion,
           categoria,
           stock: Number(stock),
@@ -140,19 +174,25 @@ export default function NuevoProducto() {
             </div>
 
             <div>
-              <label className="text-blue-800 font-semibold text-sm block mb-1">Categoría</label>
-              <select value={categoria} onChange={(e) => setCategoria(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400" required>
-                <option value="">Selecciona una categoría</option>
-                <option value="Ropa">👕 Ropa</option>
-                <option value="Electrónica">📱 Electrónica</option>
-                <option value="Calzado">👟 Calzado</option>
-                <option value="Hogar">🏠 Hogar</option>
-                <option value="Deportes">⚽ Deportes</option>
-                <option value="Accesorios">👜 Accesorios</option>
-                <option value="Otros">📦 Otros</option>
-              </select>
-            </div>
+  <label className="text-blue-800 font-semibold text-sm block mb-1">
+    Categoría
+  </label>
+
+  <select
+    value={categoria}
+    onChange={(e) => setCategoria(e.target.value)}
+    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:border-cyan-400"
+    required
+  >
+    <option value="">Selecciona una categoría</option>
+
+    {categorias.map((cat) => (
+      <option key={cat.id} value={cat.nombre}>
+        {cat.emoji} {cat.nombre}
+      </option>
+    ))}
+  </select>
+</div>
 
             <div>
               <label className="text-blue-800 font-semibold text-sm block mb-1">Descripción</label>

@@ -7,6 +7,7 @@ interface Producto {
   id: string;
   nombre: string;
   precio: number;
+  peso: number;
   stock: number;
   categoria: string;
   vendedorId: string;
@@ -24,6 +25,7 @@ export default function MisProductos() {
   const [productoEditando, setProductoEditando] = useState<Producto | null>(null);
   const [nombreEdit, setNombreEdit] = useState("");
   const [precioEdit, setPrecioEdit] = useState(0);
+  const [pesoEdit, setPesoEdit] = useState(0);
   const [stockEdit, setStockEdit] = useState(0);
   const [imagenUrlEdit, setImagenUrlEdit] = useState("");
 
@@ -63,6 +65,7 @@ export default function MisProductos() {
     setProductoEditando(producto);
     setNombreEdit(producto.nombre);
     setPrecioEdit(producto.precio);
+    setPesoEdit(producto.peso || 0);
     setStockEdit(producto.stock);
     setImagenUrlEdit(producto.imagenUrl || "");
   };
@@ -77,6 +80,7 @@ export default function MisProductos() {
         ...productoEditando,
         nombre: nombreEdit,
         precio: Number(precioEdit),
+        peso: Number(pesoEdit),
         stock: Number(stockEdit),
         imagenUrl: imagenUrlEdit,
       };
@@ -129,7 +133,6 @@ export default function MisProductos() {
     }
   };
 
-  // Clases comunes para los inputs para asegurar texto negro y buen contraste
   const inputClasses = "w-full bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-400";
 
   return (
@@ -161,7 +164,6 @@ export default function MisProductos() {
           </Link>
         </div>
 
-        {/* Mensajes de éxito / error */}
         {mensajeExito && (
           <div className="bg-emerald-100 border border-emerald-300 text-emerald-800 p-3 rounded-xl mb-5 text-center font-semibold text-sm">
             ✅ {mensajeExito}
@@ -180,10 +182,17 @@ export default function MisProductos() {
           <div className="flex flex-col gap-3">
             {productos.map((producto) => (
               <div key={producto.id} className="bg-white rounded-2xl p-4 shadow-md border border-slate-200 flex items-center gap-4">
-                {/* Foto del producto */}
+                
+                {/* 🟢 IMAGEN OPTIMIZADA CON SIZES */}
                 <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center flex-shrink-0 overflow-hidden relative border border-slate-100">
-                  {producto.imagenUrl ? (
-                    <Image src={producto.imagenUrl} alt={producto.nombre} fill className="object-cover" />
+                  {producto.imagenUrl && producto.imagenUrl.startsWith("http") ? (
+                    <Image 
+                      src={producto.imagenUrl} 
+                      alt={producto.nombre} 
+                      fill 
+                      sizes="(max-width: 768px) 100vw, 64px"
+                      className="object-cover" 
+                    />
                   ) : (
                     <span className="font-bold text-lg text-blue-800">{producto.nombre.charAt(0)}</span>
                   )}
@@ -193,7 +202,8 @@ export default function MisProductos() {
                   <p className="font-bold text-slate-800">{producto.nombre}</p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-700">{producto.categoria}</span>
-                    <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">Stock actual: <strong>{producto.stock}</strong></span>
+                    <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">Stock: <strong>{producto.stock}</strong></span>
+                    <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">Peso: <strong>{producto.peso || 0} Kg</strong></span>
                     <span className="text-xs font-bold text-blue-900">${producto.precio}</span>
                   </div>
                 </div>
@@ -204,7 +214,6 @@ export default function MisProductos() {
                   {producto.estado === "activo" ? "Activo" : "Suspendido"}
                 </span>
 
-                {/* Botones de Acción (Editar y Eliminar) */}
                 <div className="flex items-center gap-2 ml-2">
                   <button
                     onClick={() => abrirEdicion(producto)}
@@ -246,7 +255,7 @@ export default function MisProductos() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="text-xs font-bold text-slate-600 block mb-1">Precio ($)</label>
                   <input
@@ -259,7 +268,18 @@ export default function MisProductos() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-600 block mb-1">Stock Actual</label>
+                  <label className="text-xs font-bold text-slate-600 block mb-1">Peso (Kg)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={pesoEdit}
+                    onChange={(e) => setPesoEdit(Number(e.target.value))}
+                    className={inputClasses}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-600 block mb-1">Stock</label>
                   <input
                     type="number"
                     value={stockEdit}

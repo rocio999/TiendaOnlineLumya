@@ -6,6 +6,7 @@ import { initializeApp, cert } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import imagekit from "./imagekit.js";
 
 // Si usas archivos locales (asegúrate de que terminen en .js si son locales)
 // import { db } from "./firebase.js"; 
@@ -27,9 +28,9 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Configuración de CORS
 app.use(cors({
-  origin: "*", 
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization", "x-admin-key"]
 }));
 app.options(/.*/, cors());
 
@@ -552,15 +553,27 @@ app.get("/productos", async (req, res) => {
 // Crear Producto
 app.post("/productos", async (req, res) => {
   try {
-    const { nombre, precio, descripcion, categoria, stock, vendedorId, imagenUrl } = req.body;
+    const { nombre, precio, peso, descripcion, categoria, stock, vendedorId, imagenUrl } = req.body;
 
     if (!nombre || !precio || !categoria || stock === undefined || !vendedorId) {
       return res.status(400).json({ message: "Faltan datos obligatorios" });
     }
+    const categoriaSnap = await db
+  .collection("categorias")
+  .where("nombre", "==", categoria)
+  .where("estado", "==", "Activa")
+  .get();
+
+if (categoriaSnap.empty) {
+  return res.status(400).json({
+    message: "La categoría seleccionada no existe o está inactiva"
+  });
+}
 
     const nuevoDoc = await db.collection("productos").add({
       nombre,
       precio: Number(precio),
+      peso: Number(peso) || 0, // 👈 Se guarda el peso correctamente
       descripcion: descripcion || "",
       categoria,
       stock: Number(stock),
@@ -612,7 +625,55 @@ app.put("/productos/:id", async (req, res) => {
     res.status(500).json({ message: "Error al actualizar el producto" });
   }
 });
+// Cambiar Estado Producto
+app.put("/productos/:id/estado", verificarAdmin, async (req, res) => {
+  try {
+    const { estado } = req.body;
 
+    const estadosValidos = ["activo", "suspendido"];
+
+    if (!estadosValidos.includes(estado)) {
+      return res.status(400).json({
+        message: "Estado inválido"
+      });
+    }
+
+    const docRef = db.collection("productos").doc(req.params.id);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return res.status(404).json({
+        message: "Producto no encontrado"
+      });
+    }
+
+    const producto = docSnap.data();
+
+    await docRef.update({
+      estado
+    });
+
+    const accion = estado === "suspendido" ? "Suspendió" : "Activó";
+
+    await registrarAuditoria(
+      producto.vendedorId || "vendedor",
+      `${accion} el producto ${producto.nombre}`,
+      "producto"
+    );
+
+    res.json({
+      message: "Estado del producto actualizado correctamente",
+      estado
+    });
+
+  } catch (error) {
+    console.error("Error en PUT /productos/:id/estado:", error);
+
+    res.status(500).json({
+      message: "Error al actualizar estado del producto"
+    });
+  }
+});
 // Eliminar un producto (Sin restricción de admin estricta para permitir borrado directo desde el panel del vendedor)
 app.delete("/productos/:id", async (req, res) => {
   try {

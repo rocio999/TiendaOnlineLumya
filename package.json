@@ -2,14 +2,15 @@
   "name": "tienda-online-lumya",
   "version": "0.1.0",
   "private": true,
- "scripts": {
-  "dev": "next dev",
-  "build": "next build",
-  "start": "next start",
-  "lint": "next lint"
-},
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
   "dependencies": {
     "firebase": "^12.16.0",
+    "imagekit": "^6.0.0",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4"
@@ -25,4 +26,3 @@
     "typescript": "^5"
   }
 }
-
