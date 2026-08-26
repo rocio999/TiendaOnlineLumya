@@ -1,19 +1,9 @@
-import "dotenv/config";
 import { initializeApp, cert } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
-
-// Limpiamos y formateamos correctamente la llave privada por si el panel de Hostinger la aplana
-let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-if (privateKey) {
-  privateKey = privateKey.replace(/\\n/g, '\n');
-}
+import serviceAccount from "./lumya-cd461-firebase-adminsdk-fbsvc-7a3ad4cc66.json" assert { type: "json" };
 
 const app = initializeApp({
-  credential: cert({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: privateKey,
-  }),
+  credential: cert(serviceAccount),
 });
 
 const db = getFirestore(app);
