@@ -38,7 +38,7 @@ export default function MisProductos() {
       }
 
       try {
-        const res = await fetch("http://localhost:3001/productos");
+        const res = await fetch("http://brown-lark-804410.hostingersite.com/productos");
         const data = await res.json();
 
         if (!res.ok) {
@@ -85,7 +85,7 @@ export default function MisProductos() {
         imagenUrl: imagenUrlEdit,
       };
 
-      const res = await fetch(`http://localhost:3001/productos/${productoEditando.id}`, {
+      const res = await fetch(`http://brown-lark-804410.hostingersite.com/productos/${productoEditando.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -116,7 +116,7 @@ export default function MisProductos() {
     if (!confirm("¿Estás seguro de que deseas eliminar este producto?")) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/productos/${id}`, {
+      const res = await fetch(`http://brown-lark-804410.hostingersite.com/productos/${id}`, {
         method: "DELETE",
       });
 

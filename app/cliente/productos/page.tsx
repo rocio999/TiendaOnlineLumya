@@ -22,7 +22,7 @@ export default function Productos() {
   useEffect(() => {
     const cargarProductos = async () => {
       try {
-        const res = await fetch("http://localhost:3001/productos");
+        const res = await fetch("http://brown-lark-804410.hostingersite.com/productos");
         const data = await res.json();
         setProductos(data.filter((p: Producto) => p.stock > 0));
       } catch (error) {

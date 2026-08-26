@@ -26,7 +26,7 @@ export default function PagosAdmin() {
   useEffect(() => {
     const cargarPagos = async () => {
       try {
-        const res = await fetch("http://localhost:3001/pagos");
+        const res = await fetch("http://brown-lark-804410.hostingersite.com/pagos");
         const data = await res.json();
         setPagos(data);
       } catch (error) {

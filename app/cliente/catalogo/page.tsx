@@ -57,7 +57,7 @@ export default function CatalogoGeneral() {
   useEffect(() => {
     const cargarProductos = async () => {
       try {
-        const res = await fetch("http://localhost:3001/productos");
+        const res = await fetch("http://brown-lark-804410.hostingersite.com/productos");
         const json = await res.json();
         
         console.log("Respuesta del backend para productos:", json);
@@ -77,7 +77,7 @@ export default function CatalogoGeneral() {
   useEffect(() => {
     const cargarTiendas = async () => {
       try {
-        const res = await fetch("http://localhost:3001/vendedores");
+        const res = await fetch("http://brown-lark-804410.hostingersite.com/vendedores");
         const json = await res.json();
         
         // Verificamos si lo que llegó es un arreglo directamente, 

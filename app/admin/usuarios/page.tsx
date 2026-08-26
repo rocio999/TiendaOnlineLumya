@@ -57,7 +57,7 @@ export default function GestionUsuarios() {
   useEffect(() => {
     const cargarUsuarios = async () => {
       try {
-        const res = await fetch("http://localhost:3001/usuarios");
+        const res = await fetch("http://brown-lark-804410.hostingersite.com/usuarios");
         const data = await res.json();
         if (!res.ok) {
           setError("No se pudieron cargar los usuarios");
@@ -85,7 +85,7 @@ export default function GestionUsuarios() {
     const nuevoEstado = estadoActual === "activo" ? "suspendido" : "activo";
     setActualizandoId(id);
     try {
-      const res = await fetch(`http://localhost:3001/usuarios/${id}/estado`, {
+      const res = await fetch(`http://brown-lark-804410.hostingersite.com/usuarios/${id}/estado`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
         body: JSON.stringify({ estado: nuevoEstado }),

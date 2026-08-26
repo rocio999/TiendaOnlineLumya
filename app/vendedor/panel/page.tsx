@@ -85,7 +85,7 @@ export default function PanelVendedor() {
       const vendedorId = localStorage.getItem("vendedorId");
       if (!vendedorId) return;
       try {
-        const res = await fetch("http://localhost:3001/pagos");
+        const res = await fetch("http://brown-lark-804410.hostingersite.com/pagos");
         const data: Pago[] = await res.json();
 
         const misPagos = data.filter((p) => p.vendedorId === vendedorId);
@@ -159,7 +159,7 @@ const ingresos = pedidos
       const pedido = pedidos.find((p) => p.id === id);
       if (!pedido?.pagoId) return;
 
-      await fetch(`http://localhost:3001/pagos/${pedido.pagoId}/estado`, {
+      await fetch(`http://brown-lark-804410.hostingersite.com/pagos/${pedido.pagoId}/estado`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado: nuevoEstado }),

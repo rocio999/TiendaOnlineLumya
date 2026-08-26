@@ -36,7 +36,7 @@ export default function PanelVendedor() {
 
       try {
         const res = await fetch(
-          `http://localhost:3001/notificaciones/${vendedorId}`,
+          `http://brown-lark-804410.hostingersite.com/notificaciones/${vendedorId}`,
           { cache: "no-store" }
         );
 
@@ -61,7 +61,7 @@ export default function PanelVendedor() {
 
   const marcarLeida = async (id: string) => {
     try {
-      await fetch(`http://localhost:3001/notificaciones/${id}/leida`, {
+      await fetch(`http://brown-lark-804410.hostingersite.com/notificaciones/${id}/leida`, {
         method: "PUT",
       });
 

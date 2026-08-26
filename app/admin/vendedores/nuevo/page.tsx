@@ -37,7 +37,7 @@ function RevisarSolicitudVendedorContenido() {
         return;
       }
       try {
-        const res = await fetch(`http://localhost:3001/vendedores/${id}`);
+        const res = await fetch(`http://brown-lark-804410.hostingersite.com/vendedores/${id}`);
         const data = await res.json();
         if (res.ok) {
           setSolicitud(data);
@@ -56,7 +56,7 @@ function RevisarSolicitudVendedorContenido() {
     if (!id) return;
     setProcesando(true);
     try {
-      const res = await fetch(`http://localhost:3001/vendedores/${id}/estado`, {
+      const res = await fetch(`http://brown-lark-804410.hostingersite.com/vendedores/${id}/estado`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
         body: JSON.stringify({ estado: nuevoEstado }),

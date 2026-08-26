@@ -73,7 +73,7 @@ export default function RegistroVendedor() {
         deUnaBase64 = await convertirABase64(qrDeUna);
       }
 
-      const res = await fetch("http://localhost:3001/registro-vendedor", {
+      const res = await fetch("http://brown-lark-804410.hostingersite.com/registro-vendedor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

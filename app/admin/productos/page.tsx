@@ -52,11 +52,11 @@ export default function GestionProductos() {
 
   const cargarProductos = async () => {
     try {
-      const res = await fetch("http://localhost:3001/productos");
+      const res = await fetch("http://brown-lark-804410.hostingersite.com/productos");
       const data = await res.json();
       setProductosReales(data);
 
-      const vendRes = await fetch("http://localhost:3001/vendedores");
+      const vendRes = await fetch("http://brown-lark-804410.hostingersite.com/vendedores");
       const vendData = await vendRes.json();
       setVendedoresOpciones(
         vendData.map((v: { id: string; nombreNegocio?: string; nombre?: string }) => ({ id: v.id, nombreNegocio: v.nombreNegocio || v.nombre }))
@@ -70,7 +70,8 @@ export default function GestionProductos() {
 
   const cargarCategorias = async () => {
     try {
-      const res = await fetch("http://localhost:3001/categorias");
+      const res = await fetch("http://brown-lark-804410.hostingersite.com/categorias");
+      
       const data = await res.json();
       setCategorias(data);
     } catch (error) {
@@ -90,7 +91,7 @@ export default function GestionProductos() {
     const nuevoEstado = estadoActual === "activo" ? "suspendido" : "activo";
     setActualizandoId(id);
     try {
-      const res = await fetch(`http://localhost:3001/productos/${id}/estado`, {
+      const res = await fetch(`http://brown-lark-804410.hostingersite.com/productos/${id}/estado`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
         body: JSON.stringify({ estado: nuevoEstado }),
@@ -109,7 +110,7 @@ export default function GestionProductos() {
   const toggleEstadoCategoria = async (id: string, estadoActual: string) => {
     const nuevoEstado = estadoActual === "Activa" ? "Inactiva" : "Activa";
     try {
-      const res = await fetch(`http://localhost:3001/categorias/${id}/estado`, {
+      const res = await fetch(`http://brown-lark-804410.hostingersite.com/categorias/${id}/estado`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
         body: JSON.stringify({ estado: nuevoEstado }),
@@ -127,7 +128,7 @@ export default function GestionProductos() {
       return;
     }
     try {
-      const res = await fetch("http://localhost:3001/categorias", {
+      const res = await fetch("http://brown-lark-804410.hostingersite.com/categorias", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
         body: JSON.stringify(nuevaCategoria),
@@ -158,7 +159,7 @@ export default function GestionProductos() {
 
   const eliminarCategoria = async (id: string) => {
     try {
-      const res = await fetch(`http://localhost:3001/categorias/${id}`, {
+      const res = await fetch(`http://brown-lark-804410.hostingersite.com/categorias/${id}`, {
         method: "DELETE",
         headers: { "x-admin-key": "lumya-admin-2026" },
       });
@@ -177,7 +178,7 @@ export default function GestionProductos() {
     }
     setPublicando(true);
     try {
-      const res = await fetch("http://localhost:3001/productos", {
+      const res = await fetch("http://brown-lark-804410.hostingersite.com/productos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(nuevoProducto),

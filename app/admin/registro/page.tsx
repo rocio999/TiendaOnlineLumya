@@ -30,7 +30,7 @@ export default function Registro() {
     }
     setCargando(true);
     try {
-      const res = await fetch("http://localhost:3001/registro-admin", {
+      const res = await fetch("http://brown-lark-804410.hostingersite.com/registro-admin", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
         body: JSON.stringify({ nombre, apellido, correo, password }),

@@ -100,7 +100,7 @@ export default function Checkout() {
       const vendedorId = productos[0].vendedorId;
       if (!vendedorId) return;
       try {
-        const res = await fetch(`http://localhost:3001/vendedores/${vendedorId}`);
+        const res = await fetch(`http://brown-lark-804410.hostingersite.com/vendedores/${vendedorId}`);
         const data = await res.json();
         if (res.ok) {
           setDatosVendedor({
@@ -188,7 +188,7 @@ export default function Checkout() {
         setSubiendoComprobante(true);
         const formData = new FormData();
         formData.append("imagen", comprobanteFile);
-        const resImagen = await fetch("http://localhost:3001/imagenes", {
+        const resImagen = await fetch("http://brown-lark-804410.hostingersite.com/imagenes", {
           method: "POST",
           body: formData,
         });
@@ -200,7 +200,7 @@ export default function Checkout() {
       pedidosGuardados.push(pedido);
       localStorage.setItem("pedidos", JSON.stringify(pedidosGuardados));
       
-      const res = await fetch("http://localhost:3001/pagos", {
+      const res = await fetch("http://brown-lark-804410.hostingersite.com/pagos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

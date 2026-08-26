@@ -27,7 +27,7 @@ export default function RecuperarContrasena() {
     try {
 
       const res = await fetch(
-        "http://localhost:3001/recuperar-contrasena",
+        "http://brown-lark-804410.hostingersite.com/recuperar-contrasena",
         {
           method: "POST",
           headers:{

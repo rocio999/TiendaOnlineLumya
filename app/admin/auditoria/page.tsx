@@ -34,7 +34,7 @@ export default function Auditoria() {
   useEffect(() => {
     const cargarHistorial = async () => {
       try {
-        const res = await fetch("http://localhost:3001/historial");
+        const res = await fetch("http://brown-lark-804410.hostingersite.com/historial");
         const data = await res.json();
         if (!res.ok) {
           setError("No se pudo cargar el historial");

@@ -128,7 +128,7 @@ export default function PedidosCliente() {
       const idUsuarioActual = usuario.id || usuario._id;
 
       try {
-        const res = await fetch("http://localhost:3001/pagos");
+        const res = await fetch("http://brown-lark-804410.hostingersite.com/pagos");
 
         if (!res.ok) return;
 

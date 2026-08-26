@@ -19,7 +19,7 @@ export default function Login() {
   return;
 }
     try {
-      const res = await fetch("http://localhost:3001/login", {
+      const res = await fetch("http://brown-lark-804410.hostingersite.com/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

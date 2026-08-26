@@ -17,7 +17,7 @@ export default function LoginVendedor() {
     setCargando(true);
 
     try {
-      const res = await fetch("http://localhost:3001/login-vendedor", {
+      const res = await fetch("http://brown-lark-804410.hostingersite.com/login-vendedor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo, password }),

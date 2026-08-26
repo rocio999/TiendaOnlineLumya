@@ -45,7 +45,7 @@ function EditarVendedorContenido() {
         return;
       }
       try {
-        const res = await fetch(`http://localhost:3001/vendedores/${id}`);
+        const res = await fetch(`http://brown-lark-804410.hostingersite.com/vendedores/${id}`);
         const data = await res.json();
         if (res.ok) {
           setVendedor(data);
@@ -70,7 +70,7 @@ function EditarVendedorContenido() {
     if (!id || !vendedor) return;
     setGuardando(true);
     try {
-      const res = await fetch(`http://localhost:3001/vendedores/${id}`, {
+      const res = await fetch(`http://brown-lark-804410.hostingersite.com/vendedores/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "x-admin-key": "lumya-admin-2026" },
         body: JSON.stringify(vendedor),

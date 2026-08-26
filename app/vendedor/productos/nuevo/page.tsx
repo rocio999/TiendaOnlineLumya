@@ -30,7 +30,7 @@ const [categorias, setCategorias] = useState<Categoria[]>([]);
 useEffect(() => {
   const cargarCategorias = async () => {
     try {
-      const res = await fetch("http://localhost:3001/categorias");
+      const res = await fetch("http://brown-lark-804410.hostingersite.com/categorias");
 
       if (!res.ok) {
         throw new Error("No se pudieron cargar las categorías");
@@ -70,7 +70,7 @@ useEffect(() => {
       const formData = new FormData();
       formData.append("imagen", imagen);
 
-      const resImg = await fetch("http://localhost:3001/imagenes", {
+      const resImg = await fetch("http://brown-lark-804410.hostingersite.com/imagenes", {
         method: "POST",
         body: formData,
       });
@@ -81,7 +81,7 @@ useEffect(() => {
       console.log("Imagen subida, URL recibida:", imagenUrl);
 
       // 2. Crear producto con la URL y el peso
-      const res = await fetch("http://localhost:3001/productos", {
+      const res = await fetch("http://brown-lark-804410.hostingersite.com/productos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

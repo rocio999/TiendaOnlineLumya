@@ -63,8 +63,8 @@ export default function TiendaDetalle() {
     const cargarDatos = async () => {
       try {
         const [resVendedor, resProductos] = await Promise.all([
-          fetch(`http://localhost:3001/vendedores/${vendedorId}`),
-          fetch("http://localhost:3001/productos"),
+          fetch(`http://brown-lark-804410.hostingersite.com/vendedores/${vendedorId}`),
+          fetch("http://brown-lark-804410.hostingersite.com/productos"),
         ]);
 
         const dataVendedor = await resVendedor.json();

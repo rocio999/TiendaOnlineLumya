@@ -54,7 +54,7 @@ export default function PerfilVendedor() {
       }
 
       try {
-        const res = await fetch(`http://localhost:3001/vendedores/${id}`);
+        const res = await fetch(`http://brown-lark-804410.hostingersite.com/vendedores/${id}`);
         const data = await res.json();
 
         if (!res.ok) {
@@ -112,7 +112,7 @@ export default function PerfilVendedor() {
         qrDeUnaUrl: deUnaBase64,
       };
 
-      const res = await fetch(`http://localhost:3001/vendedores/${vendedorId}`, {
+      const res = await fetch(`http://brown-lark-804410.hostingersite.com/vendedores/${vendedorId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(datosAEnviar),

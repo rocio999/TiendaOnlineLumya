@@ -35,7 +35,7 @@ export default function Tiendas() {
   useEffect(() => {
     const cargarTiendas = async () => {
       try {
-        const res = await fetch("http://localhost:3001/vendedores");
+        const res = await fetch("http://brown-lark-804410.hostingersite.com/vendedores");
         const data = await res.json();
         const activos = data
           .filter((v: Vendedor) => v.estado === "activo")
@@ -63,7 +63,7 @@ export default function Tiendas() {
       }
       try {
         const usuario = JSON.parse(usuarioGuardado);
-        const res = await fetch(`http://localhost:3001/notificaciones/${usuario.id}`);
+        const res = await fetch(`http://brown-lark-804410.hostingersite.com/notificaciones/${usuario.id}`);
         const data = await res.json();
         if (res.ok) setNotificaciones(data);
       } catch (error) {
@@ -79,7 +79,7 @@ export default function Tiendas() {
 
   const marcarLeida = async (id: string) => {
     try {
-      await fetch(`http://localhost:3001/notificaciones/${id}/leida`, {
+      await fetch(`http://brown-lark-804410.hostingersite.com/notificaciones/${id}/leida`, {
         method: "PUT",
       });
       setNotificaciones((prev) =>
