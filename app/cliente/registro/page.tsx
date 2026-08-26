@@ -11,7 +11,7 @@ export default function Registro() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [loading, setLoading] = useState(false);
-const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
@@ -21,10 +21,10 @@ const [aceptaTerminos, setAceptaTerminos] = useState(false);
     setLoading(true);
 
     if (!aceptaTerminos) {
-  setMensaje("Debes aceptar los términos y condiciones para registrarte.");
-  setLoading(false);
-  return;
-}
+      setMensaje("Debes aceptar los términos y condiciones para registrarte.");
+      setLoading(false);
+      return;
+    }
 
     if (!nombre.trim() || !apellido.trim() || !correo.trim() || !password.trim()) {
       setMensaje("Todos los campos son obligatorios");
@@ -38,34 +38,40 @@ const [aceptaTerminos, setAceptaTerminos] = useState(false);
       return;
     }
 
-    const datos = { nombre, apellido, correo, password };
-
     try {
-    
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://brown-lark-804410.hostingersite.com";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://brown-lark-804410.hostingersite.com";
+      const res = await fetch(`${API_URL}/registro-cliente`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nombre,
+          apellido,
+          correo,
+          password,
+        }),
+      });
 
-// ... dentro de tu función de envío:
-const res = await fetch(`${API_URL}/registro-cliente`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    nombre,
-    apellido,
-    correo,
-    password,
-  }),
-});
-
-const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.message || "Error al registrar");
+        const errorText = await res.text();
+        let errorMessage = "Error al registrar";
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorMessage;
+        } catch {
+          errorMessage = `Error del servidor (${res.status}): Asegúrate de que la ruta /registro-cliente exista en el backend.`;
+        }
+        throw new Error(errorMessage);
       }
+
+      const data = await res.json();
+      console.log("Registro exitoso:", data);
 
       setMensaje("Usuario creado 🚀. Redirigiendo...");
       setTimeout(() => router.push("/cliente/login"), 2000);
+      
     } catch (error) {
       if (error instanceof Error) {
         setMensaje(error.message);
@@ -158,22 +164,20 @@ const data = await res.json();
 
             <div className="terms-container">
                <label>
-  <input
-    type="checkbox"
-    checked={aceptaTerminos}
-    onChange={(e) => setAceptaTerminos(e.target.checked)}
-  />
-
-  Acepto los{" "}y autorizo el tratamiento de mis datos personales.
-  <a 
-    href="/terminos" 
-    target="_blank"
-    className="text-blue-600 underline"
-  >
-    términos y condiciones
-  </a>{" "}
-  
-</label>
+              <input
+                type="checkbox"
+                checked={aceptaTerminos}
+                onChange={(e) => setAceptaTerminos(e.target.checked)}
+              />
+              Acepto los{" "}y autorizo el tratamiento de mis datos personales.
+              <a 
+                href="/terminos" 
+                target="_blank"
+                className="text-blue-600 underline"
+              >
+                términos y condiciones
+              </a>{" "}
+            </label>
               </div>
             <button type="submit" className="submit-btn" disabled={loading}>
               {loading ? "CREANDO..." : "Registrarse"}
