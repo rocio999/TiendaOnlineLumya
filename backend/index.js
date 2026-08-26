@@ -2,26 +2,16 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import multer from "multer";
-import { initializeApp, cert } from "firebase-admin/app";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import imagekit from "./imagekit.js";
+import { db, FieldValue } from "./firebase.js";
 
 // Si usas archivos locales (asegúrate de que terminen en .js si son locales)
 // import { db } from "./firebase.js"; 
 // import imagekit from "./imagekit.js";
 
 // Inicializar Firebase usando la variable de entorno
-import fs from 'fs';
-
-const serviceAccount = JSON.parse(
-  fs.readFileSync('./lumya-cd461-firebase-adminsdk-fbsvc-7a3ad4cc66.json', 'utf8')
-);initializeApp({
-  credential: cert(serviceAccount)
-});
-
-const db = getFirestore(); // <--- ¡Esta es la línea que falta!
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
