@@ -1,19 +1,20 @@
-import "dotenv/config";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { initializeApp, cert } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 
-// Limpiamos la clave privada por si el panel de Hostinger le quita los saltos de línea
-let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-if (privateKey) {
-  privateKey = privateKey.replace(/\\n/g, '\n');
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Leemos el archivo JSON original directamente como texto y lo convertimos con JSON.parse
+// Esto evita cualquier problema con las variables de entorno de Hostinger y con la palabra 'assert'
+const jsonPath = path.join(__dirname, "lumya-cd461-firebase-adminsdk-fbsvc-7a3ad4cc66.json");
+const fileContent = fs.readFileSync(jsonPath, "utf8");
+const serviceAccount = JSON.parse(fileContent);
 
 const app = initializeApp({
-  credential: cert({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: privateKey,
-  }),
+  credential: cert(serviceAccount),
 });
 
 const db = getFirestore(app);
