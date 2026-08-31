@@ -246,14 +246,7 @@ export default function GestionProductos() {
           >
             📦 Productos
           </button>
-          <button
-            onClick={() => setVista("nuevo")}
-            className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
-              vista === "nuevo" ? "bg-white text-blue-900" : "bg-white/20 text-white hover:bg-white/30"
-            }`}
-          >
-            
-          </button>
+          
           <button
             onClick={() => setVista("categorias")}
             className={`px-4 py-2 rounded-xl font-semibold text-sm transition ${
