@@ -252,7 +252,7 @@ export default function GestionProductos() {
               vista === "nuevo" ? "bg-white text-blue-900" : "bg-white/20 text-white hover:bg-white/30"
             }`}
           >
-            ➕ Subir Producto
+            
           </button>
           <button
             onClick={() => setVista("categorias")}
