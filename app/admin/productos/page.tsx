@@ -12,7 +12,7 @@ interface ProductoReal {
   vendedorId: string;
   vendedorNombre: string;
   estado: string;
-  imagen?: string;
+  imagenUrl?: string;
 }
 
 interface CategoriaReal {
@@ -320,19 +320,19 @@ export default function GestionProductos() {
               <div className="flex flex-col gap-3">
                 {productosFiltrados.map((producto) => (
                   <div key={producto.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center flex-shrink-0">
-                    {producto.imagen ? (
+                   <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center flex-shrink-0">
+  {producto.imagenUrl ? (
     <img
-      src={producto.imagen}
+      src={producto.imagenUrl}
       alt={producto.nombre}
       className="w-full h-full object-cover"
     />
-                     ) : (
-                    <span className="font-bold text-lg text-blue-800">
-                    {producto.nombre.charAt(0)}
-                    </span>
-                             )}
-                    </div>
+  ) : (
+    <span className="font-bold text-lg text-blue-800">
+      {producto.nombre.charAt(0)}
+    </span>
+  )}
+</div>
                     <div className="flex-1">
                       <p className="font-bold text-slate-800">{producto.nombre}</p>
                       <p className="text-slate-400 text-sm">Vendedor: {producto.vendedorNombre}</p>
