@@ -145,9 +145,7 @@ export default function GestionVendedores() {
                       ) : (
                         <>
                           <Link href={`/admin/vendedores/editar?id=${vendedor.id}`}>
-                            <button className="text-blue-700 hover:text-blue-900 text-sm font-semibold mr-4">
-                              Editar
-                            </button>
+                           
                           </Link>
                           <button
                             onClick={() =>
