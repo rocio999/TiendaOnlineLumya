@@ -410,40 +410,144 @@ export default function Checkout() {
               </label>
 
               {metodoPago === "DeUna" && (
-                <div style={{ display: "flex", gap: "15px", alignItems: "center", flexWrap: "wrap", background: "#faf5ff", padding: "16px", borderRadius: "8px", border: "1px solid #d8b4fe" }}>
-                  <div style={{ flex: 1, fontSize: "13px", color: "#4c1d95", display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#581c87", marginBottom: "4px" }}>Pago con DeUna</h3>
-                    {datosVendedor ? (
-                      <>
-                        <p>🏪 <strong>Tienda:</strong> {datosVendedor.nombreNegocio}</p>
-                        <p>📱 <strong>Celular DeUna:</strong> {datosVendedor.numeroCuenta}</p>
-                        <p style={{ fontWeight: "700", color: "#7c3aed", marginTop: "4px" }}>Total a pagar: ${totalGeneral.toFixed(2)}</p>
-                      </>
-                    ) : (
-                      <p>Cargando datos de la tienda...</p>
-                    )}
-                    <p style={{ fontSize: "11px", color: "#6b21a8", marginTop: "4px" }}>Escanee el QR y envíe su comprobante.</p>
-                  </div>
-                  <div style={{ textAlign: "center", background: "#fff", padding: "12px", borderRadius: "8px", border: "1px solid #e9d5ff" }}>
-                    <p style={{ fontSize: "11px", marginBottom: "6px", fontWeight: "700" }}>QR DeUna</p>
-                    <div style={{ width: "76px", height: "76px", background: "#f8f7fc", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px auto", overflow: "hidden", borderRadius: "6px" }}>
-                      {datosVendedor?.qrDeUnaUrl ? (
-                        <img src={datosVendedor.qrDeUnaUrl} alt="QR DeUna" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                      ) : (
-                        <span style={{ fontSize: "10px", color: "#94a3b8" }}>[Sin QR]</span>
-                      )}
-                    </div>
-                    <a 
-                      href={`https://wa.me/${datosVendedor?.whatsapp || '593900000000'}?text=${encodeURIComponent(`Hola, aquí adjunto el comprobante de mi pago con DeUna por un valor total de $${totalGeneral.toFixed(2)}.`)}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      style={{ fontSize: "11px", color: "#16a34a", fontWeight: "700", textDecoration: "none", display: "block" }}
-                    >
-                      Enviar WhatsApp ↗
-                    </a>
-                  </div>
-                </div>
-              )}
+  <div style={{ 
+    display: "flex", 
+    gap: "15px", 
+    alignItems: "center", 
+    flexWrap: "wrap", 
+    background: "#faf5ff", 
+    padding: "16px", 
+    borderRadius: "8px", 
+    border: "1px solid #d8b4fe" 
+  }}>
+    
+    <div style={{ 
+      flex: 1, 
+      fontSize: "13px", 
+      color: "#4c1d95", 
+      display: "flex", 
+      flexDirection: "column", 
+      gap: "6px" 
+    }}>
+      
+      <h3 style={{ 
+        fontSize: "14px", 
+        fontWeight: "700", 
+        color: "#581c87", 
+        marginBottom: "4px" 
+      }}>
+        💜 Pago con DeUna
+      </h3>
+
+      {datosVendedor ? (
+        <>
+          <p>
+            🏪 <strong>Tienda:</strong> {datosVendedor.nombreNegocio}
+          </p>
+
+          <p>
+            📱 <strong>Número para recibir el pago:</strong>{" "}
+            {datosVendedor.numeroCuenta}
+          </p>
+
+          <p style={{ 
+            fontWeight: "700", 
+            color: "#7c3aed", 
+            marginTop: "4px" 
+          }}>
+            💰 Total a pagar: ${totalGeneral.toFixed(2)}
+          </p>
+
+          <div style={{
+            marginTop: "6px",
+            padding: "10px",
+            background: "#f3e8ff",
+            borderRadius: "8px",
+            fontSize: "12px",
+            lineHeight: "1.5",
+            color: "#581c87"
+          }}>
+            <strong>¿Cómo realizar el pago?</strong>
+            <br />
+            1️⃣ Escanea el código QR con DeUna.
+            <br />
+            2️⃣ Realiza el pago por el valor de{" "}
+            <strong>${totalGeneral.toFixed(2)}</strong>.
+            <br />
+            3️⃣ Guarda tu comprobante y envíalo por WhatsApp.
+          </div>
+        </>
+      ) : (
+        <p>Cargando datos de la tienda...</p>
+      )}
+
+    </div>
+
+    <div style={{ 
+      textAlign: "center", 
+      background: "#fff", 
+      padding: "12px", 
+      borderRadius: "8px", 
+      border: "1px solid #e9d5ff" 
+    }}>
+      
+      <p style={{ 
+        fontSize: "11px", 
+        marginBottom: "6px", 
+        fontWeight: "700" 
+      }}>
+        QR DeUna
+      </p>
+
+      <div style={{ 
+        width: "76px", 
+        height: "76px", 
+        background: "#f8f7fc", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center", 
+        margin: "0 auto 8px auto", 
+        overflow: "hidden", 
+        borderRadius: "6px" 
+      }}>
+        {datosVendedor?.qrDeUnaUrl ? (
+          <img 
+            src={datosVendedor.qrDeUnaUrl} 
+            alt="QR DeUna" 
+            style={{ 
+              width: "100%", 
+              height: "100%", 
+              objectFit: "contain" 
+            }} 
+          />
+        ) : (
+          <span style={{ 
+            fontSize: "10px", 
+            color: "#94a3b8" 
+          }}>
+            [Sin QR]
+          </span>
+        )}
+      </div>
+
+      <a 
+        href={`https://wa.me/${datosVendedor?.whatsapp || '593900000000'}?text=${encodeURIComponent(`Hola, aquí adjunto el comprobante de mi pago con DeUna por un valor total de $${totalGeneral.toFixed(2)}.`)}`} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        style={{ 
+          fontSize: "11px", 
+          color: "#16a34a", 
+          fontWeight: "700", 
+          textDecoration: "none", 
+          display: "block" 
+        }}
+      >
+        📱 Enviar comprobante por WhatsApp ↗
+      </a>
+
+    </div>
+  </div>
+)}
             </div>
           </div>
 
