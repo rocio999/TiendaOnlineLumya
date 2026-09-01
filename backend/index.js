@@ -454,8 +454,7 @@ app.get("/vendedores/:id", async (req, res) => {
 });
 
 // Cambiar Estado Vendedor
-app.put("/vendedores/:id/estado", verificarAdmin, async (req, res) => {
-  try {
+app.put("/vendedores/:id", async (req, res) => {  try {
     const { estado } = req.body;
     const estadosValidos = ["activo", "rechazado", "suspendido", "pendiente"];
 
