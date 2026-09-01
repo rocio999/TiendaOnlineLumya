@@ -445,10 +445,7 @@ export default function Checkout() {
             🏪 <strong>Tienda:</strong> {datosVendedor.nombreNegocio}
           </p>
 
-          <p>
-            📱 <strong>Número para recibir el pago:</strong>{" "}
-            {datosVendedor.numeroCuenta}
-          </p>
+          
 
           <p style={{ 
             fontWeight: "700", 
