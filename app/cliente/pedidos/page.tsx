@@ -264,50 +264,50 @@ export default function PedidosCliente() {
   <div className="filtro-fecha-contenido">
     <div className="filtro-icono">📅</div>
 
+    <div className="filtro-texto">
+      <label htmlFor="fecha-pedido">
+        Filtrar pedidos
+      </label>
 
-<div className="filtro-texto">
-  <label htmlFor="fecha-pedido">
-    Filtrar pedidos
-  </label>
-  <span>
-    Consulta tus pedidos por fecha
-  </span>
-</div>
+      <span>
+        Consulta tus pedidos por fecha
+      </span>
+    </div>
 
-<input
-  id="fecha-pedido"
-  type="date"
-  value={fechaFiltro}
-  onChange={(e) =>
-    setFechaFiltro(e.target.value)
-  }
-  className="fecha-input"
-/>
+    <input
+      id="fecha-pedido"
+      type="date"
+      value={fechaFiltro}
+      onChange={(e) => setFechaFiltro(e.target.value)}
+      className="fecha-input"
+    />
 
-{fechaFiltro && (
-  <button
-    onClick={() => setFechaFiltro("")}
-    className="quitar-filtro"
-    type="button"
-  >
-    ✕ Limpiar
-  </button>
-)}
-
-
+    {fechaFiltro && (
+      <button
+        onClick={() => setFechaFiltro("")}
+        className="quitar-filtro"
+        type="button"
+      >
+        ✕ Limpiar
+      </button>
+    )}
   </div>
 
-{fechaFiltro && ( <div className="fecha-seleccionada">
-Mostrando pedidos del{" "} <strong>
-{new Date(
-`${fechaFiltro}T00:00:00`
-).toLocaleDateString("es-EC", {
-day: "2-digit",
-month: "long",
-year: "numeric",
-})} </strong> </div>
-)}
-
+  {fechaFiltro && (
+    <div className="fecha-seleccionada">
+      Mostrando pedidos del{" "}
+      <strong>
+        {new Date(`${fechaFiltro}T00:00:00`).toLocaleDateString(
+          "es-EC",
+          {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+          }
+        )}
+      </strong>
+    </div>
+  )}
 </div>
 
 
