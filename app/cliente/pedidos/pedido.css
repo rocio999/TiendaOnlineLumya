@@ -339,8 +339,7 @@ text-align: center;
 
 .pedido-vacio {
 padding: 35px 18px;
-}
-}
+
 /* =========================================================
 FILTRO DE FECHA - DISEÑO PROFESIONAL
 ========================================================= */
@@ -538,5 +537,4 @@ grid-column: 1 / -1;
 .fecha-seleccionada {
 font-size: 12px;
 line-height: 1.5;
-}
-}
+}}}}

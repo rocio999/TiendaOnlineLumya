@@ -260,12 +260,11 @@ export default function PedidosCliente() {
       </button>
 
       <h1>📦 Mis pedidos</h1>
-
       <div className="filtro-fecha">
   <div className="filtro-fecha-contenido">
     <div className="filtro-icono">📅</div>
 
-
+```
 <div className="filtro-texto">
   <label htmlFor="fecha-pedido">
     Filtrar pedidos
@@ -294,7 +293,7 @@ export default function PedidosCliente() {
     ✕ Limpiar
   </button>
 )}
-
+```
 
   </div>
 
@@ -310,6 +309,9 @@ year: "numeric",
 )}
 
 </div>
+
+
+      
 
 
       {pedidos.length === 0 ? (
