@@ -1,147 +1,146 @@
 /* =========================================================
-   CONTENEDOR GENERAL
+   PANEL DEL VENDEDOR - DISEÑO MODERNO LUMYA
+   Solo estilos - no modifica ninguna funcionalidad
    ========================================================= */
 
 .panel-container {
   min-height: 100vh;
-  background: #f1f5f9;
-  padding: 40px 30px;
+  padding: 32px;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 35%),
+    radial-gradient(circle at top right, rgba(6, 182, 212, 0.08), transparent 30%),
+    #f8fafc;
+  color: #0f172a;
   font-family: Arial, Helvetica, sans-serif;
-
-  /* CENTRAR EL CONTENIDO */
-  max-width: 1400px;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-
-
-/* =========================================================
-   TITULO
-   ========================================================= */
-
-.panel-title {
-  font-size: 32px;
-  font-weight: 800;
-  color: #0f3d91;
-  margin: 0 0 35px;
-  text-align: center;
-}
-
-
-/* =========================================================
-   TARJETAS RESUMEN
-   ========================================================= */
-
-.panel-cards {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto 40px;
-
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
-}
-
-
-.card {
-  background: white;
-  padding: 28px 20px;
-  border-radius: 20px;
-
-  box-shadow: 0 8px 20px rgba(0, 0, 0, .08);
-
-  transition: .3s;
-
-  text-align: center;
-
-  min-height: 130px;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-
-  box-sizing: border-box;
-}
-
-
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, .12);
-}
-
-
-.card h2 {
-  color: #64748b;
-  font-size: 16px;
-  margin: 0 0 10px;
-  font-weight: 700;
-}
-
-
-/* NÚMEROS */
-
-.yellow,
-.blue,
-.green,
-.purple {
-  font-size: 35px;
-  font-weight: 900;
-  line-height: 1;
-}
-
-
-.yellow {
-  color: #eab308;
-}
-
-
-.blue {
-  color: #2563eb;
-}
-
-
-.green {
-  color: #16a34a;
-}
-
-
-.purple {
-  color: #9333ea;
-}
-
-
-/* =========================================================
-   CAJA DE PEDIDOS
-   ========================================================= */
-
-.orders-box {
-  width: 100%;
-  max-width: 1300px;
-  margin: 0 auto;
-
-  background: white;
-  border-radius: 20px;
-  padding: 30px;
-
-  box-shadow: 0 10px 25px rgba(0, 0, 0, .08);
-
-  box-sizing: border-box;
-
   overflow-x: auto;
 }
 
+/* =========================================================
+   TÍTULO
+   ========================================================= */
 
-.orders-box h2 {
-  color: #0f3d91;
-  text-align: center;
+.panel-title {
+  max-width: 1500px;
+  margin: 0 auto 30px;
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f2d5c;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-  margin: 0 0 10px;
+.panel-title::before {
+  content: "";
+  width: 6px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #2563eb, #06b6d4);
+}
 
-  font-size: 22px;
+/* =========================================================
+   TARJETAS DE RESUMEN
+   ========================================================= */
+
+.panel-cards {
+  max-width: 1500px;
+  margin: 0 auto 30px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 24px;
+  min-height: 140px;
+  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  right: -30px;
+  top: -30px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 35px rgba(15, 23, 42, 0.10);
+  border-color: #bfdbfe;
+}
+
+.card h2 {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 15px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card p {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 34px;
+  line-height: 1;
   font-weight: 800;
 }
 
+/* Colores de estadísticas */
+
+.card .yellow {
+  color: #d97706;
+}
+
+.card .blue {
+  color: #2563eb;
+}
+
+.card .green {
+  color: #059669;
+}
+
+.card .purple {
+  color: #7c3aed;
+}
+
+/* =========================================================
+   CONTENEDOR DE PEDIDOS
+   ========================================================= */
+
+.orders-box {
+  max-width: 1500px;
+  margin: 0 auto;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  padding: 26px;
+  box-shadow: 0 10px 35px rgba(15, 23, 42, 0.07);
+}
+
+.orders-box h2 {
+  margin: 0 0 22px;
+  color: #0f2d5c;
+  font-size: 22px;
+  font-weight: 800;
+}
 
 /* =========================================================
    TABLA
@@ -151,302 +150,275 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-
-  margin-top: 20px;
-
-  min-width: 1000px;
-
   overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  font-size: 13px;
+  background: white;
 }
 
+.orders-table thead tr {
+  background: linear-gradient(135deg, #0f2d5c, #2563eb) !important;
+}
 
 .orders-table th {
-  background: linear-gradient(
-    90deg,
-    #2563eb,
-    #06b6d4
-  );
-
+  padding: 15px 13px;
   color: white;
-
-  padding: 15px 12px;
-
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
-
-  text-align: center;
-
+  text-align: left;
   white-space: nowrap;
+  border-bottom: none;
 }
-
 
 .orders-table th:first-child {
-  border-top-left-radius: 10px;
+  border-top-left-radius: 14px;
 }
-
 
 .orders-table th:last-child {
-  border-top-right-radius: 10px;
+  border-top-right-radius: 14px;
 }
 
-
 .orders-table td {
-  padding: 16px 12px;
-
-  border-bottom: 1px solid #e5e7eb;
-
-  color: #000000;
-
+  padding: 15px 13px;
+  color: #334155;
+  border-bottom: 1px solid #eef2f7;
   vertical-align: middle;
+  background: #ffffff;
+}
 
-  text-align: center;
+.orders-table tbody tr {
+  transition: background 0.2s ease;
+}
 
+.orders-table tbody tr:hover td {
+  background: #f8fbff;
+}
+
+.orders-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* =========================================================
+   DATOS DEL CLIENTE
+   ========================================================= */
+
+.orders-table td:first-child {
+  font-weight: 800;
+  color: #2563eb;
+}
+
+.orders-table td:nth-child(2) {
+  min-width: 190px;
+}
+
+.orders-table td:nth-child(2) > div:first-child {
+  color: #0f172a;
   font-size: 14px;
 }
 
-
-.orders-table tr:hover {
-  background: #f8fafc;
+.orders-table td button[style] {
+  color: #2563eb !important;
+  font-weight: 700 !important;
+  transition: color 0.2s ease;
 }
 
+.orders-table td button[style]:hover {
+  color: #1d4ed8 !important;
+}
 
 /* =========================================================
-   INFORMACIÓN DENTRO DE LA TABLA
+   ESTADOS DE PAGO
    ========================================================= */
 
-.orders-table td div {
-  line-height: 1.6;
+.estado-pago {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: capitalize;
+  border: 1px solid transparent;
 }
 
-
-.orders-table td strong {
-  font-weight: 700;
+.estado-pago.pendiente {
+  color: #b45309;
+  background: #fef3c7;
+  border-color: #fde68a;
 }
 
+.estado-pago.aprobado {
+  color: #047857;
+  background: #d1fae5;
+  border-color: #a7f3d0;
+}
+
+.estado-pago.rechazado {
+  color: #b91c1c;
+  background: #fee2e2;
+  border-color: #fecaca;
+}
 
 /* =========================================================
    ESTADOS DEL PEDIDO
    ========================================================= */
 
 .estado {
-  padding: 7px 14px;
-
-  border-radius: 20px;
-
-  font-weight: 700;
-
-  font-size: 13px;
-
   display: inline-flex;
-
   align-items: center;
   justify-content: center;
-
-  white-space: nowrap;
+  min-width: 85px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: capitalize;
+  background: #f1f5f9;
+  color: #475569;
 }
-
 
 .estado.pendiente {
   background: #fef3c7;
   color: #92400e;
 }
 
-
 .estado.preparando {
   background: #dbeafe;
   color: #1d4ed8;
 }
 
-
 .estado.enviado {
-  background: #cffafe;
-  color: #0e7490;
+  background: #e0e7ff;
+  color: #4338ca;
 }
-
 
 .estado.entregado {
-  background: #dcfce7;
-  color: #166534;
-}
-
-
-.estado.cancelado {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-
-/* =========================================================
-   ESTADO DEL PAGO
-   ========================================================= */
-
-.estado-pago {
-  display: inline-flex;
-
-  align-items: center;
-  justify-content: center;
-
-  padding: 5px 12px;
-
-  border-radius: 9999px;
-
-  font-size: 12px;
-
-  font-weight: 600;
-
-  text-transform: capitalize;
-
-  white-space: nowrap;
-}
-
-
-.estado-pago.pendiente {
-  background-color: #fef3c7;
-  color: #b45309;
-}
-
-
-.estado-pago.aprobado {
-  background-color: #d1fae5;
+  background: #d1fae5;
   color: #047857;
 }
 
-
-.estado-pago.rechazado {
-  background-color: #fee2e2;
-  color: #b91c1c;
-}
-
-
 /* =========================================================
-   BOTÓN VER
+   COMPROBANTE
    ========================================================= */
 
-.btn-ver {
-  background: linear-gradient(
-    90deg,
-    #2563eb,
-    #06b6d4
-  );
-
-  color: white;
-
-  border: none;
-
-  padding: 10px 18px;
-
-  border-radius: 12px;
-
-  font-weight: 700;
-
-  cursor: pointer;
-
-  transition: .3s;
-
-  white-space: nowrap;
+.orders-table img {
+  width: 58px !important;
+  height: 58px !important;
+  object-fit: cover;
+  border-radius: 10px !important;
+  border: 2px solid #e2e8f0 !important;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-
-.btn-ver:hover {
-  transform: scale(1.05);
-
-  box-shadow: 0 8px 20px rgba(37,99,235,.3);
+.orders-table img:hover {
+  transform: scale(1.08);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.15);
 }
 
+.orders-table a {
+  display: inline-block;
+}
+
+.orders-table span[style] {
+  display: inline-block;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  padding: 6px 9px;
+  border-radius: 8px;
+}
 
 /* =========================================================
-   ACCIONES DE PAGO
+   BOTONES DE PAGO
    ========================================================= */
 
 .acciones-pago {
   display: flex;
-
-  gap: 8px;
-
-  justify-content: center;
-  align-items: center;
-
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 105px;
 }
 
+.btn-aprobar,
+.btn-rechazar,
+.btn-revertir,
+.btn-ver {
+  border: none;
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+  white-space: nowrap;
+}
 
 .btn-aprobar {
-  background-color: #10b981;
-
-  color: white;
-
-  border: none;
-
-  padding: 7px 12px;
-
-  border-radius: 8px;
-
-  font-weight: 600;
-
-  cursor: pointer;
-
-  font-size: 13px;
-
-  transition: .2s;
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
 }
-
 
 .btn-aprobar:hover {
-  background-color: #059669;
+  background: #bbf7d0;
+  transform: translateY(-1px);
 }
-
 
 .btn-rechazar {
-  background-color: #ef4444;
-
-  color: white;
-
-  border: none;
-
-  padding: 7px 12px;
-
-  border-radius: 8px;
-
-  font-weight: 600;
-
-  cursor: pointer;
-
-  font-size: 13px;
-
-  transition: .2s;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
 }
-
 
 .btn-rechazar:hover {
-  background-color: #dc2626;
+  background: #fecaca;
+  transform: translateY(-1px);
 }
-
 
 .btn-revertir {
-  background-color: #64748b;
-
-  color: white;
-
-  border: none;
-
-  padding: 7px 12px;
-
-  border-radius: 8px;
-
-  font-weight: 600;
-
-  cursor: pointer;
-
-  font-size: 13px;
-
-  transition: .2s;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
 }
-
 
 .btn-revertir:hover {
-  background-color: #475569;
+  background: #e2e8f0;
+  transform: translateY(-1px);
 }
 
+.btn-ver {
+  background: linear-gradient(135deg, #2563eb, #0891b2);
+  color: white;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.18);
+}
+
+.btn-ver:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 15px rgba(37, 99, 235, 0.25);
+}
+
+/* =========================================================
+   MENSAJE DE PAGO PENDIENTE
+   ========================================================= */
+
+.text-red-600 {
+  display: block;
+  max-width: 150px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #dc2626 !important;
+  font-size: 11px !important;
+  line-height: 1.4;
+  font-weight: 700;
+}
 
 /* =========================================================
    BOTÓN VOLVER
@@ -454,270 +426,89 @@
 
 .btn-volver {
   display: block;
-
-  margin: 30px auto 0;
-
-  background: #0f3d91;
-
-  color: white;
-
-  padding: 12px 25px;
-
-  border-radius: 15px;
-
-  border: none;
-
-  font-weight: bold;
-
+  margin: 25px auto 0;
+  padding: 12px 22px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: white;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
-
-  transition: .3s;
+  box-shadow: 0 5px 15px rgba(15, 23, 42, 0.06);
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
 }
-
 
 .btn-volver:hover {
-  background: #2563eb;
+  background: #eff6ff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.12);
 }
 
-
 /* =========================================================
-   RESPONSIVE - TABLET
+   RESPONSIVE
    ========================================================= */
 
-@media (max-width: 1000px) {
-
+@media (max-width: 1100px) {
   .panel-container {
-    padding: 30px 20px;
+    padding: 24px;
   }
 
   .panel-cards {
     grid-template-columns: repeat(2, 1fr);
   }
 
-}
-
-
-/* =========================================================
-   RESPONSIVE - CELULAR
-   ========================================================= */
-
-@media (max-width: 768px) {
-
-  .panel-container {
-    padding: 20px 12px;
+  .orders-box {
+    overflow-x: auto;
   }
 
+  .orders-table {
+    min-width: 1250px;
+  }
+}
+
+@media (max-width: 700px) {
+  .panel-container {
+    padding: 18px 12px;
+  }
 
   .panel-title {
     font-size: 25px;
-    margin-bottom: 25px;
+    margin-bottom: 22px;
   }
 
+  .panel-title::before {
+    height: 30px;
+    width: 5px;
+  }
 
   .panel-cards {
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 25px;
+    grid-template-columns: 1fr;
+    gap: 13px;
   }
-
 
   .card {
-    padding: 20px 12px;
-    min-height: 110px;
+    min-height: 115px;
+    padding: 20px;
   }
 
-
-  .card h2 {
-    font-size: 14px;
+  .card p {
+    font-size: 30px;
   }
-
-
-  .yellow,
-  .blue,
-  .green,
-  .purple {
-    font-size: 28px;
-  }
-
 
   .orders-box {
-    padding: 18px 12px;
-    border-radius: 15px;
+    padding: 16px;
+    border-radius: 16px;
   }
-
 
   .orders-box h2 {
     font-size: 19px;
   }
 
-
   .orders-table {
-    min-width: 950px;
+    min-width: 1200px;
   }
-
-}
-
-
-/* =========================================================
-   CELULAR PEQUEÑO
-   ========================================================= */
-
-@media (max-width: 480px) {
-
-  .panel-container {
-    padding: 15px 10px;
-  }
-
-
-  .panel-cards {
-    grid-template-columns: 1fr;
-  }
-
-
-  .card {
-    min-height: 100px;
-  }
-
-
-  .orders-box {
-    padding: 15px 8px;
-  }
-
-}
-
-/* =====================================================
-   INFORMACIÓN DEL CLIENTE
-   ===================================================== */
-
-.cliente-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  gap: 3px;
-
-  min-width: 150px;
-}
-
-
-/* Nombre */
-
-.cliente-nombre {
-  color: #000000;
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-
-/* Apellido */
-
-.cliente-apellido {
-  color: #000000;
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-
-/* =====================================================
-   BOTÓN VER DATOS
-   ===================================================== */
-
-.btn-datos-cliente {
-  margin-top: 5px;
-
-  background: transparent;
-  border: none;
-
-  color: #2563eb;
-
-  font-size: 13px;
-  font-weight: 500;
-
-  cursor: pointer;
-
-  padding: 4px 6px;
-
-  border-radius: 6px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  gap: 5px;
-
-  transition: all 0.2s ease;
-}
-
-
-/* Hover */
-
-.btn-datos-cliente:hover {
-  background: #eff6ff;
-  color: #1d4ed8;
-}
-
-
-/* Cuando está abierto */
-
-.btn-datos-cliente.activo {
-  color: #1d4ed8;
-}
-
-
-/* Flecha */
-
-.flecha {
-  font-size: 10px;
-
-  transition: transform 0.2s ease;
-}
-
-
-/* =====================================================
-   DATOS DESPLEGABLES
-   ===================================================== */
-
-.datos-cliente {
-  width: 100%;
-
-  margin-top: 7px;
-
-  padding: 10px;
-
-  background: #f8fafc;
-
-  border-radius: 8px;
-
-  border: 1px solid #e2e8f0;
-
-  font-size: 12px;
-
-  color: #334155;
-
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 6px;
-
-  text-align: left;
-
-  box-sizing: border-box;
-}
-
-
-/* Cada dato */
-
-.datos-cliente div {
-  line-height: 1.5;
-}
-
-
-/* Texto importante */
-
-.datos-cliente strong {
-  color: #1e293b;
 }
