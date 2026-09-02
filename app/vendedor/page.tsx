@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import "./panel-vendedor.css";
 
 interface Notificacion {
   id: string;
@@ -81,181 +82,280 @@ export default function PanelVendedor() {
 
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-50 to-slate-50">
-      <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-4 sticky top-0 z-50 shadow-lg">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Image
-              src="/logo-lumya.png"
-              alt="Lumya"
-              width={40}
-              height={40}
-              className="rounded-xl"
-            />
-            <span className="text-xl font-bold text-white">
-              Panel de Vendedor
-            </span>
+ return (
+  <div className="panel-vendedor">
+
+    {/* HEADER */}
+    <header className="pv-header">
+      <div className="pv-header-content">
+
+        <div className="pv-brand">
+          <Image
+            src="/logo-lumya.png"
+            alt="Lumya"
+            width={45}
+            height={45}
+            className="pv-logo"
+          />
+
+          <div>
+            <h1>Panel de Vendedor</h1>
+            <span>Administración de tu tienda</span>
           </div>
+        </div>
 
-          <div className="flex items-center gap-4">
-            {/* Notificaciones */}
-            <div className="relative">
-              <button
-                onClick={() => setMostrarNotis(!mostrarNotis)}
-                className="relative text-white hover:bg-white/20 p-2 rounded-xl transition"
-              >
-                <span className="text-2xl">🔔</span>
+        <div className="pv-header-actions">
 
-                {noLeidas > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                    {noLeidas}
-                  </span>
-                )}
-              </button>
+          {/* NOTIFICACIONES */}
+          <div className="pv-notification-wrapper">
 
-              <p
-                style={{
-                  fontSize: "10px",
-                  color: "white",
-                  marginTop: "4px",
-                }}
-              >
-                Ult: {ultimaActualizacion}
-              </p>
+            <button
+              onClick={() => setMostrarNotis(!mostrarNotis)}
+              className="pv-notification-button"
+            >
+              <span className="pv-bell">🔔</span>
 
-              {mostrarNotis && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 max-h-96 overflow-y-auto">
-                  <div className="p-4 border-b border-slate-100">
-                    <p className="font-bold text-blue-900">
-                      Notificaciones
-                    </p>
+              {noLeidas > 0 && (
+                <span className="pv-notification-count">
+                  {noLeidas}
+                </span>
+              )}
+            </button>
+
+            <p className="pv-update">
+              Ult. {ultimaActualizacion}
+            </p>
+
+            {mostrarNotis && (
+              <div className="pv-notifications">
+
+                <div className="pv-notifications-header">
+                  <div>
+                    <strong>Notificaciones</strong>
+                    <span>
+                      {noLeidas > 0
+                        ? `${noLeidas} sin leer`
+                        : "Todo al día"}
+                    </span>
                   </div>
 
-                  {cargando ? (
-                    <p className="p-4 text-slate-400 text-sm">
-                      Cargando...
-                    </p>
-                  ) : notificaciones.length === 0 ? (
-                    <p className="p-4 text-slate-400 text-sm">
-                      No tienes notificaciones.
-                    </p>
-                  ) : (
-                    notificaciones.map((n) => (
+                  <span className="pv-notification-icon">
+                    🔔
+                  </span>
+                </div>
+
+                {cargando ? (
+                  <div className="pv-notification-empty">
+                    <div className="pv-mini-spinner"></div>
+                    <p>Cargando...</p>
+                  </div>
+                ) : notificaciones.length === 0 ? (
+                  <div className="pv-notification-empty">
+                    <div className="pv-empty-bell">
+                      🔕
+                    </div>
+                    <strong>No tienes notificaciones</strong>
+                    <p>Te avisaremos cuando tengas novedades.</p>
+                  </div>
+                ) : (
+                  <div className="pv-notification-list">
+
+                    {notificaciones.map((n) => (
                       <div
                         key={n.id}
                         onClick={() => marcarLeida(n.id)}
-                        className={`p-4 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition ${
-                          !n.leida ? "bg-cyan-50" : ""
+                        className={`pv-notification ${
+                          !n.leida ? "pv-notification-unread" : ""
                         }`}
                       >
-                        <p className="text-sm text-slate-700">
-                          {n.mensaje}
-                        </p>
+                        <div className="pv-notification-status">
+                          {!n.leida ? "●" : "✓"}
+                        </div>
 
-                        {!n.leida && (
-                          <span className="text-xs text-cyan-600 font-semibold">
-                            ● Nueva
-                          </span>
-                        )}
+                        <div className="pv-notification-content">
+                          <p>{n.mensaje}</p>
+
+                          {!n.leida && (
+                            <span>● Nueva notificación</span>
+                          )}
+                        </div>
                       </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
+                    ))}
 
-            {/* Botón de sesión */}
-            {sesionActiva ? (
-              <button
-                onClick={cerrarSesion}
-                type="button"
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-semibold z-10 relative cursor-pointer"
-              >
-                Cerrar sesión
-              </button>
-            ) : (
-              <button
-                onClick={() => router.push("/vendedor/login")}
-                type="button"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold z-10 relative cursor-pointer"
-              >
-                Iniciar sesión
-              </button>
+                  </div>
+                )}
+
+              </div>
             )}
-          </div>
-        </div>
-      </div>
 
-      {/* Resto del contenido */}
-      <div className="max-w-4xl mx-auto px-4 py-10">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-blue-900">
-            Bienvenido
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Aquí puedes gestionar tus productos
+          </div>
+
+          {/* SESIÓN */}
+          {sesionActiva ? (
+            <button
+              onClick={cerrarSesion}
+              type="button"
+              className="pv-logout"
+            >
+              <span>↪</span>
+              Cerrar sesión
+            </button>
+          ) : (
+            <button
+              onClick={() => router.push("/vendedor/login")}
+              type="button"
+              className="pv-login"
+            >
+              Iniciar sesión
+            </button>
+          )}
+
+        </div>
+
+      </div>
+    </header>
+
+    {/* CONTENIDO */}
+    <main className="pv-main">
+
+      <section className="pv-welcome">
+
+        <div>
+          <span className="pv-welcome-label">
+            PANEL DE CONTROL
+          </span>
+
+          <h2>Bienvenido 👋</h2>
+
+          <p>
+            Gestiona fácilmente los productos y la información
+            de tu tienda en Lumya.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Link href="/vendedor/productos">
-            <div className="bg-white rounded-2xl p-8 shadow-md border border-slate-200 hover:shadow-lg hover:border-cyan-300 transition cursor-pointer flex flex-col items-center text-center">
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
-                <span className="text-3xl">📦</span>
-              </div>
-
-              <h2 className="text-lg font-bold text-blue-900 mb-1">
-                Mis Productos
-              </h2>
-
-              <p className="text-slate-400 text-sm">
-                Ver y gestionar tus productos
-              </p>
-            </div>
-          </Link>
-
-          <Link href="/vendedor/productos/nuevo">
-            <div className="bg-white rounded-2xl p-8 shadow-md border border-slate-200 hover:shadow-lg hover:border-cyan-300 transition cursor-pointer flex flex-col items-center text-center">
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
-                <span className="text-3xl">➕</span>
-              </div>
-
-              <h2 className="text-lg font-bold text-blue-900 mb-1">
-                Subir Producto
-              </h2>
-
-              <p className="text-slate-400 text-sm">
-                Publicar un nuevo producto
-              </p>
-            </div>
-          </Link>
-
-          <Link href="/vendedor/perfil">
-            <div className="bg-white rounded-2xl p-8 shadow-md border border-slate-200 hover:shadow-lg hover:border-cyan-300 transition cursor-pointer flex flex-col items-center text-center">
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
-                <span className="text-3xl">👤</span>
-              </div>
-
-              <h2 className="text-lg font-bold text-blue-900 mb-1">
-                Mi Perfil
-              </h2>
-
-              <p className="text-slate-400 text-sm">
-                Ver y editar tu información
-              </p>
-            </div>
-          </Link>
+        <div className="pv-welcome-decoration">
+          🏪
         </div>
 
-        <div className="mt-6 flex justify-center">
-          <Link href="/vendedor/panel">
-            <button className="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 font-semibold">
-              Panel del administracion
-            </button>
-          </Link>
+      </section>
+
+      {/* TARJETAS */}
+      <section className="pv-cards">
+
+        <Link
+          href="/vendedor/productos"
+          className="pv-card-link"
+        >
+          <div className="pv-card">
+
+            <div className="pv-card-icon pv-blue">
+              📦
+            </div>
+
+            <div className="pv-card-text">
+              <h3>Mis Productos</h3>
+
+              <p>
+                Consulta y gestiona todos los productos
+                publicados en tu tienda.
+              </p>
+            </div>
+
+            <div className="pv-card-arrow">
+              →
+            </div>
+
+          </div>
+        </Link>
+
+        <Link
+          href="/vendedor/productos/nuevo"
+          className="pv-card-link"
+        >
+          <div className="pv-card">
+
+            <div className="pv-card-icon pv-cyan">
+              ＋
+            </div>
+
+            <div className="pv-card-text">
+              <h3>Subir Producto</h3>
+
+              <p>
+                Publica un nuevo producto para que
+                tus clientes puedan encontrarlo.
+              </p>
+            </div>
+
+            <div className="pv-card-arrow">
+              →
+            </div>
+
+          </div>
+        </Link>
+
+        <Link
+          href="/vendedor/perfil"
+          className="pv-card-link"
+        >
+          <div className="pv-card">
+
+            <div className="pv-card-icon pv-purple">
+              👤
+            </div>
+
+            <div className="pv-card-text">
+              <h3>Mi Perfil</h3>
+
+              <p>
+                Consulta y actualiza la información
+                de tu cuenta de vendedor.
+              </p>
+            </div>
+
+            <div className="pv-card-arrow">
+              →
+            </div>
+
+          </div>
+        </Link>
+
+      </section>
+
+      {/* ACCESO AL PANEL */}
+      <section className="pv-admin-section">
+
+        <div className="pv-admin-info">
+          <div className="pv-admin-icon">
+            ⚙️
+          </div>
+
+          <div>
+            <h3>Administración de la tienda</h3>
+            <p>
+              Accede al panel completo para administrar
+              tu negocio.
+            </p>
+          </div>
         </div>
-      </div>
-    </div>
-  );
-}
+
+        <Link
+          href="/vendedor/panel"
+          className="pv-admin-button"
+        >
+          Ir al panel
+          <span>→</span>
+        </Link>
+
+      </section>
+
+    </main>
+
+    <footer className="pv-footer">
+      <span>© {new Date().getFullYear()} Lumya</span>
+      <span>Panel de Vendedor</span>
+    </footer>
+
+  </div>
+);
+} 

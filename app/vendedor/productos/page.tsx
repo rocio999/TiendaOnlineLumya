@@ -158,9 +158,7 @@ export default function MisProductos() {
             <p className="text-slate-500 mt-1">Gestiona tu catálogo</p>
           </div>
           <Link href="/vendedor/productos/nuevo">
-            <button className="bg-blue-800 hover:bg-blue-900 text-white font-semibold px-5 py-3 rounded-xl shadow-sm transition">
-              + Nuevo Producto
-            </button>
+            
           </Link>
         </div>
 
