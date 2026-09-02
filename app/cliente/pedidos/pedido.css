@@ -341,3 +341,202 @@ text-align: center;
 padding: 35px 18px;
 }
 }
+/* =========================================================
+FILTRO DE FECHA - DISEÑO PROFESIONAL
+========================================================= */
+
+.filtro-fecha {
+width: 100%;
+margin-bottom: 26px;
+padding: 18px 20px;
+box-sizing: border-box;
+background: #ffffff;
+border: 1px solid #e2e8f0;
+border-radius: 16px;
+box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+}
+
+/* Contenido principal del filtro */
+
+.filtro-fecha-contenido {
+display: flex;
+align-items: center;
+gap: 14px;
+}
+
+/* Icono */
+
+.filtro-icono {
+width: 44px;
+height: 44px;
+flex-shrink: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+background: #eff6ff;
+border: 1px solid #bfdbfe;
+border-radius: 12px;
+font-size: 21px;
+}
+
+/* Texto */
+
+.filtro-texto {
+display: flex;
+flex-direction: column;
+min-width: 170px;
+}
+
+.filtro-texto label {
+margin: 0;
+color: #0f172a;
+font-size: 15px;
+font-weight: 700;
+}
+
+.filtro-texto span {
+margin-top: 3px;
+color: #64748b;
+font-size: 12px;
+}
+
+/* Input de fecha */
+
+.fecha-input {
+height: 42px;
+min-width: 170px;
+padding: 0 12px;
+box-sizing: border-box;
+border: 1px solid #cbd5e1;
+border-radius: 10px;
+background: #f8fafc;
+color: #0f172a;
+font-family: inherit;
+font-size: 14px;
+font-weight: 600;
+outline: none;
+cursor: pointer;
+transition:
+border-color 0.2s ease,
+box-shadow 0.2s ease,
+background 0.2s ease;
+}
+
+.fecha-input:hover {
+background: #ffffff;
+border-color: #93c5fd;
+}
+
+.fecha-input:focus {
+background: #ffffff;
+border-color: #2563eb;
+box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* Botón limpiar */
+
+.quitar-filtro {
+height: 42px;
+padding: 0 15px;
+border: 1px solid #fecaca;
+border-radius: 10px;
+background: #fff1f2;
+color: #dc2626;
+font-family: inherit;
+font-size: 13px;
+font-weight: 700;
+cursor: pointer;
+transition:
+background 0.2s ease,
+border-color 0.2s ease,
+transform 0.2s ease;
+}
+
+.quitar-filtro:hover {
+background: #fee2e2;
+border-color: #fca5a5;
+transform: translateY(-1px);
+}
+
+/* Información de fecha seleccionada */
+
+.fecha-seleccionada {
+margin-top: 14px;
+padding: 10px 13px;
+background: #f0f9ff;
+border: 1px solid #bae6fd;
+border-radius: 9px;
+color: #0369a1;
+font-size: 13px;
+}
+
+.fecha-seleccionada strong {
+color: #0c4a6e;
+}
+
+/* =========================================================
+RESPONSIVE - TABLET
+========================================================= */
+
+@media (max-width: 768px) {
+.filtro-fecha-contenido {
+flex-wrap: wrap;
+}
+
+.filtro-texto {
+flex: 1;
+}
+
+.fecha-input {
+flex: 1;
+}
+}
+
+/* =========================================================
+RESPONSIVE - CELULAR
+========================================================= */
+
+@media (max-width: 480px) {
+.filtro-fecha {
+padding: 15px;
+border-radius: 14px;
+}
+
+.filtro-fecha-contenido {
+display: grid;
+grid-template-columns: auto 1fr;
+gap: 12px;
+}
+
+.filtro-icono {
+width: 40px;
+height: 40px;
+}
+
+.filtro-texto {
+min-width: 0;
+}
+
+.filtro-texto label {
+font-size: 14px;
+}
+
+.filtro-texto span {
+font-size: 11px;
+}
+
+.fecha-input {
+width: 100%;
+grid-column: 1 / -1;
+}
+
+.quitar-filtro {
+width: 100%;
+grid-column: 1 / -1;
+}
+
+.fecha-seleccionada {
+font-size: 12px;
+line-height: 1.5;
+}
+}

@@ -261,65 +261,56 @@ export default function PedidosCliente() {
 
       <h1>📦 Mis pedidos</h1>
 
-      <div
-        style={{
-          marginBottom: "20px",
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          background:
-            "linear-gradient(135deg, #e0f2fe, #cffafe)",
-          padding: "14px 18px",
-          borderRadius: "14px",
-          border: "1px solid #7dd3fc",
-          flexWrap: "wrap",
-        }}
-      >
-        <label
-          style={{
-            fontSize: "14px",
-            fontWeight: "bold",
-            color: "#0c4a6e",
-          }}
-        >
-          📅 Filtrar por fecha:
-        </label>
+      <div className="filtro-fecha">
+  <div className="filtro-fecha-contenido">
+    <div className="filtro-icono">📅</div>
 
-        <input
-          type="date"
-          value={fechaFiltro}
-          onChange={(e) =>
-            setFechaFiltro(e.target.value)
-          }
-          style={{
-            padding: "8px 12px",
-            borderRadius: "10px",
-            border: "1px solid #38bdf8",
-            background: "#fff",
-            color: "#0c4a6e",
-            fontWeight: "600",
-            outline: "none",
-          }}
-        />
+```
+<div className="filtro-texto">
+  <label htmlFor="fecha-pedido">
+    Filtrar pedidos
+  </label>
+  <span>
+    Consulta tus pedidos por fecha
+  </span>
+</div>
 
-        {fechaFiltro && (
-          <button
-            onClick={() => setFechaFiltro("")}
-            style={{
-              fontSize: "13px",
-              fontWeight: "bold",
-              color: "#fff",
-              background: "#0284c7",
-              border: "none",
-              borderRadius: "8px",
-              padding: "8px 14px",
-              cursor: "pointer",
-            }}
-          >
-            ✕ Quitar filtro
-          </button>
-        )}
-      </div>
+<input
+  id="fecha-pedido"
+  type="date"
+  value={fechaFiltro}
+  onChange={(e) =>
+    setFechaFiltro(e.target.value)
+  }
+  className="fecha-input"
+/>
+
+{fechaFiltro && (
+  <button
+    onClick={() => setFechaFiltro("")}
+    className="quitar-filtro"
+    type="button"
+  >
+    ✕ Limpiar
+  </button>
+)}
+```
+
+  </div>
+
+{fechaFiltro && ( <div className="fecha-seleccionada">
+Mostrando pedidos del{" "} <strong>
+{new Date(
+`${fechaFiltro}T00:00:00`
+).toLocaleDateString("es-EC", {
+day: "2-digit",
+month: "long",
+year: "numeric",
+})} </strong> </div>
+)}
+
+</div>
+
 
       {pedidos.length === 0 ? (
         <div className="pedido-vacio">
