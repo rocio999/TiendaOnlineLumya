@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import "./vendedores.css";
 
 interface Vendedor {
   id: string;
@@ -75,105 +76,409 @@ export default function GestionVendedores() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-50 to-slate-50">
+ return (
+  <div className="vendedores-page">
 
-      <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-4 sticky top-0 z-50 shadow-lg">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/admin">
-              <button className="text-white hover:bg-white/20 p-2 rounded-xl transition">
-                ← Volver
-              </button>
-            </Link>
-            <Image src="/logo-lumya.png" alt="Lumya" width={36} height={36} className="rounded-xl" />
-            <span className="text-lg font-bold text-white">Gestión de Vendedores</span>
+    {/* HEADER */}
+    <header className="vendedores-header">
+      <div className="vendedores-header-inner">
+
+        <Link href="/admin" className="btn-volver">
+          <span>←</span>
+          Volver al administrador
+        </Link>
+
+        <div className="header-brand">
+          <Image
+            src="/logo-lumya.png"
+            alt="Lumya"
+            width={42}
+            height={42}
+            className="header-logo"
+          />
+
+          <div>
+            <h1>Gestión de Vendedores</h1>
+            <p>Panel de administración</p>
+          </div>
+        </div>
+
+        <div className="admin-badge">
+          <span>●</span>
+          ADMIN
+        </div>
+
+      </div>
+    </header>
+
+    {/* CONTENIDO */}
+    <main className="vendedores-content">
+
+      <div className="page-title">
+        <div>
+          <div className="title-icon">🏪</div>
+
+          <div>
+            <h2>Vendedores</h2>
+            <p>
+              Administra las tiendas y solicitudes de vendedores de Lumya.
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      {/* ERROR */}
+      {error && (
+        <div className="error-box">
+          <span>⚠️</span>
+          <div>
+            <strong>Ocurrió un problema</strong>
+            <p>{error}</p>
+          </div>
+        </div>
+      )}
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-blue-900">Gestión de Vendedores</h1>
-          <p className="text-slate-500 mt-1">Revisa solicitudes y administra las tiendas de Lumya</p>
+      {/* ESTADÍSTICAS */}
+      {!cargando && (
+        <div className="stats-grid">
+
+          <div className="stat-card">
+            <div className="stat-icon blue">
+              👥
+            </div>
+
+            <div>
+              <span>Total vendedores</span>
+              <strong>{vendedores.length}</strong>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-icon green">
+              ✓
+            </div>
+
+            <div>
+              <span>Tiendas activas</span>
+              <strong>
+                {vendedores.filter((v) => v.estado === "activo").length}
+              </strong>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-icon yellow">
+              ⏳
+            </div>
+
+            <div>
+              <span>Solicitudes pendientes</span>
+              <strong>
+                {vendedores.filter((v) => v.estado === "pendiente").length}
+              </strong>
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* ENCABEZADO LISTA */}
+      {!cargando && vendedores.length > 0 && (
+        <div className="list-header">
+          <div>
+            <h3>Listado de vendedores</h3>
+            <p>
+              Consulta y administra el estado de cada vendedor.
+            </p>
+          </div>
+
+          <span className="total-badge">
+            {vendedores.length} registrados
+          </span>
+        </div>
+      )}
+
+      {/* CARGANDO */}
+      {cargando ? (
+        <div className="loading-card">
+          <div className="spinner"></div>
+          <h3>Cargando vendedores</h3>
+          <p>Estamos obteniendo la información...</p>
         </div>
 
-        {error && (
-          <div className="bg-red-100 border border-red-300 text-red-700 p-3 rounded-xl mb-5 text-center font-semibold text-sm">
-            ⚠️ {error}
-          </div>
-        )}
+      ) : vendedores.length === 0 ? (
 
-        {cargando ? (
-          <div className="text-center py-16 text-slate-400">Cargando vendedores...</div>
-        ) : vendedores.length === 0 ? (
-          <div className="text-center py-16 text-slate-400">Aún no hay vendedores registrados.</div>
-        ) : (
-          <div className="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
-            <table className="w-full text-left">
-              <thead className="bg-cyan-50">
+        /* SIN VENDEDORES */
+        <div className="empty-card">
+          <div className="empty-icon">
+            🏪
+          </div>
+
+          <h3>Aún no hay vendedores</h3>
+
+          <p>
+            Cuando un vendedor se registre, aparecerá aquí para que
+            puedas administrar su tienda.
+          </p>
+
+          <Link href="/admin" className="empty-button">
+            Volver al administrador
+          </Link>
+        </div>
+
+      ) : (
+
+        <>
+          {/* TABLA DESKTOP */}
+          <div className="vendedores-table-container">
+
+            <table className="vendedores-table">
+
+              <thead>
                 <tr>
-                  <th className="px-6 py-4 text-sm font-semibold text-blue-900">Negocio</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-blue-900">Propietario</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-blue-900">Correo</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-blue-900">Estado</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-blue-900 text-right">Acciones</th>
+                  <th>NEGOCIO</th>
+                  <th>PROPIETARIO</th>
+                  <th>CORREO ELECTRÓNICO</th>
+                  <th>ESTADO</th>
+                  <th className="acciones-header">ACCIONES</th>
                 </tr>
               </thead>
+
               <tbody>
-                {vendedores.map((vendedor, index) => (
-                  <tr
-                    key={vendedor.id}
-                    className={index !== vendedores.length - 1 ? "border-b border-slate-100" : ""}
-                  >
-                    <td className="px-6 py-4 font-medium text-blue-900">{vendedor.nombreNegocio}</td>
-                    <td className="px-6 py-4 text-slate-500">{vendedor.nombre}</td>
-                    <td className="px-6 py-4 text-slate-500">{vendedor.correo}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${estiloEstado[vendedor.estado]}`}>
-                        {textoEstado[vendedor.estado]}
+
+                {vendedores.map((vendedor) => (
+
+                  <tr key={vendedor.id}>
+
+                    {/* NEGOCIO */}
+                    <td>
+                      <div className="negocio-cell">
+
+                        <div className="negocio-avatar">
+                          {vendedor.nombreNegocio
+                            ? vendedor.nombreNegocio.charAt(0).toUpperCase()
+                            : "L"}
+                        </div>
+
+                        <div>
+                          <strong>{vendedor.nombreNegocio}</strong>
+                          <span>Tiendas Lumya</span>
+                        </div>
+
+                      </div>
+                    </td>
+
+                    {/* PROPIETARIO */}
+                    <td>
+                      <div className="propietario-cell">
+                        <div className="person-icon">
+                          👤
+                        </div>
+
+                        <span>{vendedor.nombre}</span>
+                      </div>
+                    </td>
+
+                    {/* CORREO */}
+                    <td>
+                      <span className="correo-cell">
+                        ✉ {vendedor.correo}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      {vendedor.estado === "pendiente" ? (
-                        <Link href={`/admin/vendedores/nuevo?id=${vendedor.id}`}>
-                          <button className="text-cyan-700 hover:text-cyan-900 text-sm font-semibold">
-                            Revisar solicitud
-                          </button>
-                        </Link>
-                      ) : (
-                        <>
-                          <Link href={`/admin/vendedores/editar?id=${vendedor.id}`}>
-                           
-                          </Link>
-                          <button
-                            onClick={() =>
-                              cambiarEstado(
-                                vendedor.id,
-                                vendedor.estado === "activo" ? "suspendido" : "activo"
-                              )
-                            }
-                            disabled={actualizandoId === vendedor.id}
-                            className="text-red-500 hover:text-red-700 text-sm font-semibold disabled:opacity-50"
-                          >
-                            {actualizandoId === vendedor.id
-                              ? "..."
-                              : vendedor.estado === "activo"
-                              ? "Suspender"
-                              : "Reactivar"}
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
 
-      </div>
-    </div>
-  );
+                    {/* ESTADO */}
+                    <td>
+                      <span
+                        className={`estado-badge estado-${vendedor.estado}`}
+                      >
+                        <span className="estado-dot"></span>
+
+                        {textoEstado[vendedor.estado] ||
+                          vendedor.estado}
+                      </span>
+                    </td>
+
+                    {/* ACCIONES */}
+                    <td>
+
+                      <div className="acciones-cell">
+
+                        {vendedor.estado === "pendiente" ? (
+
+                          <Link
+                            href={`/admin/vendedores/nuevo?id=${vendedor.id}`}
+                            className="btn-revisar"
+                          >
+                            <span>👁</span>
+                            Revisar solicitud
+                          </Link>
+
+                        ) : (
+
+                          <>
+                            <Link
+                              href={`/admin/vendedores/editar?id=${vendedor.id}`}
+                              className="btn-editar"
+                            >
+                              ✏ Editar
+                            </Link>
+
+                            <button
+                              onClick={() =>
+                                cambiarEstado(
+                                  vendedor.id,
+                                  vendedor.estado === "activo"
+                                    ? "suspendido"
+                                    : "activo"
+                                )
+                              }
+                              disabled={
+                                actualizandoId === vendedor.id
+                              }
+                              className={
+                                vendedor.estado === "activo"
+                                  ? "btn-suspender"
+                                  : "btn-reactivar"
+                              }
+                            >
+                              {actualizandoId === vendedor.id
+                                ? "..."
+                                : vendedor.estado === "activo"
+                                ? "⏸ Suspender"
+                                : "▶ Reactivar"}
+                            </button>
+                          </>
+
+                        )}
+
+                      </div>
+
+                    </td>
+
+                  </tr>
+
+                ))}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+          {/* CARDS MOBILE */}
+          <div className="vendedores-mobile">
+
+            {vendedores.map((vendedor) => (
+
+              <div
+                className="vendedor-mobile-card"
+                key={vendedor.id}
+              >
+
+                <div className="mobile-card-top">
+
+                  <div className="negocio-cell">
+
+                    <div className="negocio-avatar">
+                      {vendedor.nombreNegocio
+                        ? vendedor.nombreNegocio.charAt(0).toUpperCase()
+                        : "L"}
+                    </div>
+
+                    <div>
+                      <strong>{vendedor.nombreNegocio}</strong>
+                      <span>Tiendas Lumya</span>
+                    </div>
+
+                  </div>
+
+                  <span
+                    className={`estado-badge estado-${vendedor.estado}`}
+                  >
+                    <span className="estado-dot"></span>
+
+                    {textoEstado[vendedor.estado] ||
+                      vendedor.estado}
+                  </span>
+
+                </div>
+
+                <div className="mobile-info">
+
+                  <div>
+                    <span>Propietario</span>
+                    <strong>{vendedor.nombre}</strong>
+                  </div>
+
+                  <div>
+                    <span>Correo</span>
+                    <strong>{vendedor.correo}</strong>
+                  </div>
+
+                </div>
+
+                <div className="mobile-actions">
+
+                  {vendedor.estado === "pendiente" ? (
+
+                    <Link
+                      href={`/admin/vendedores/nuevo?id=${vendedor.id}`}
+                      className="btn-revisar mobile-button"
+                    >
+                      👁 Revisar solicitud
+                    </Link>
+
+                  ) : (
+
+                    <>
+                      <Link
+                        href={`/admin/vendedores/editar?id=${vendedor.id}`}
+                        className="btn-editar mobile-button"
+                      >
+                        ✏ Editar
+                      </Link>
+
+                      <button
+                        onClick={() =>
+                          cambiarEstado(
+                            vendedor.id,
+                            vendedor.estado === "activo"
+                              ? "suspendido"
+                              : "activo"
+                          )
+                        }
+                        disabled={
+                          actualizandoId === vendedor.id
+                        }
+                        className={
+                          vendedor.estado === "activo"
+                            ? "btn-suspender mobile-button"
+                            : "btn-reactivar mobile-button"
+                        }
+                      >
+                        {actualizandoId === vendedor.id
+                          ? "..."
+                          : vendedor.estado === "activo"
+                          ? "⏸ Suspender"
+                          : "▶ Reactivar"}
+                      </button>
+                    </>
+
+                  )}
+
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
+        </>
+
+      )}
+
+    </main>
+
+  </div>
+);
 }

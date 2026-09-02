@@ -1,0 +1,752 @@
+/* =========================================
+   LUMYA - GESTIÓN DE VENDEDORES
+   ========================================= */
+
+.vendedores-page {
+  min-height: 100vh;
+  background: #f4f7fb;
+  color: #172033;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* =========================================
+   HEADER
+   ========================================= */
+
+.vendedores-header {
+  background: linear-gradient(135deg, #071f52 0%, #0b3b78 55%, #075985 100%);
+  box-shadow: 0 4px 18px rgba(15, 38, 75, 0.18);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.vendedores-header-inner {
+  max-width: 1180px;
+  min-height: 78px;
+  margin: auto;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.btn-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.btn-volver:hover {
+  background: rgba(255, 255, 255, 0.13);
+  transform: translateX(-2px);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.header-logo {
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.header-brand h1 {
+  margin: 0;
+  color: white;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.header-brand p {
+  margin: 3px 0 0;
+  color: #bfdbfe;
+  font-size: 12px;
+}
+
+.admin-badge {
+  margin-left: auto;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+
+.admin-badge span {
+  color: #4ade80;
+  margin-right: 6px;
+}
+
+/* =========================================
+   CONTENIDO
+   ========================================= */
+
+.vendedores-content {
+  max-width: 1180px;
+  margin: auto;
+  padding: 42px 28px 70px;
+}
+
+.page-title {
+  margin-bottom: 28px;
+}
+
+.page-title > div {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.title-icon {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #dbeafe, #cffafe);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 27px;
+  box-shadow: 0 5px 15px rgba(37, 99, 235, 0.08);
+}
+
+.page-title h2 {
+  margin: 0;
+  color: #0f2f63;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.page-title p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* =========================================
+   ERROR
+   ========================================= */
+
+.error-box {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #9f1239;
+  padding: 15px 18px;
+  border-radius: 14px;
+  margin-bottom: 24px;
+}
+
+.error-box > span {
+  font-size: 22px;
+}
+
+.error-box strong {
+  font-size: 14px;
+}
+
+.error-box p {
+  margin: 3px 0 0;
+  font-size: 13px;
+}
+
+/* =========================================
+   ESTADÍSTICAS
+   ========================================= */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 35px;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid #e5eaf1;
+  border-radius: 18px;
+  padding: 21px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.045);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 21px;
+}
+
+.stat-icon.blue {
+  background: #e0ecff;
+}
+
+.stat-icon.green {
+  background: #dcfce7;
+}
+
+.stat-icon.yellow {
+  background: #fef3c7;
+}
+
+.stat-card span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.stat-card strong {
+  color: #102f61;
+  font-size: 25px;
+  font-weight: 800;
+}
+
+/* =========================================
+   LISTADO
+   ========================================= */
+
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.list-header h3 {
+  margin: 0;
+  color: #172b4d;
+  font-size: 19px;
+  font-weight: 750;
+}
+
+.list-header p {
+  margin: 4px 0 0;
+  color: #7b8798;
+  font-size: 13px;
+}
+
+.total-badge {
+  background: #e8f3ff;
+  color: #1261a0;
+  padding: 8px 13px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* =========================================
+   TABLA
+   ========================================= */
+
+.vendedores-table-container {
+  background: white;
+  border: 1px solid #e3e8ef;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 7px 25px rgba(15, 23, 42, 0.055);
+}
+
+.vendedores-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.vendedores-table thead {
+  background: #f7faff;
+}
+
+.vendedores-table th {
+  padding: 17px 20px;
+  text-align: left;
+  color: #52647c;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  border-bottom: 1px solid #e7edf4;
+}
+
+.vendedores-table td {
+  padding: 18px 20px;
+  border-bottom: 1px solid #edf1f5;
+  vertical-align: middle;
+}
+
+.vendedores-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.vendedores-table tbody tr:hover {
+  background: #f9fbfe;
+}
+
+.vendedores-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* =========================================
+   NEGOCIO
+   ========================================= */
+
+.negocio-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.negocio-avatar {
+  width: 43px;
+  height: 43px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #0b4a8b, #0891b2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 800;
+  box-shadow: 0 5px 12px rgba(8, 91, 140, 0.18);
+}
+
+.negocio-cell strong {
+  display: block;
+  color: #173661;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.negocio-cell span {
+  display: block;
+  color: #94a3b8;
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+/* =========================================
+   PROPIETARIO
+   ========================================= */
+
+.propietario-cell {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.person-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* =========================================
+   CORREO
+   ========================================= */
+
+.correo-cell {
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* =========================================
+   ESTADOS
+   ========================================= */
+
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.estado-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.estado-activo {
+  color: #15803d;
+  background: #dcfce7;
+}
+
+.estado-activo .estado-dot {
+  background: #22c55e;
+}
+
+.estado-pendiente {
+  color: #a16207;
+  background: #fef3c7;
+}
+
+.estado-pendiente .estado-dot {
+  background: #eab308;
+}
+
+.estado-suspendido {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.estado-suspendido .estado-dot {
+  background: #ef4444;
+}
+
+/* =========================================
+   ACCIONES
+   ========================================= */
+
+.acciones-header {
+  text-align: right !important;
+}
+
+.acciones-cell {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-revisar,
+.btn-editar,
+.btn-suspender,
+.btn-reactivar {
+  border: none;
+  text-decoration: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 9px 12px;
+  border-radius: 9px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-revisar {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.btn-revisar:hover {
+  background: #bae6fd;
+}
+
+.btn-editar {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.btn-editar:hover {
+  background: #e0e7ff;
+}
+
+.btn-suspender {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.btn-suspender:hover {
+  background: #ffe4e6;
+}
+
+.btn-reactivar {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.btn-reactivar:hover {
+  background: #bbf7d0;
+}
+
+.btn-suspender:disabled,
+.btn-reactivar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   LOADING
+   ========================================= */
+
+.loading-card {
+  background: white;
+  border: 1px solid #e5eaf1;
+  border-radius: 18px;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 7px 25px rgba(15, 23, 42, 0.04);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #dbeafe;
+  border-top-color: #0b5cab;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 15px;
+}
+
+.loading-card h3 {
+  margin: 0;
+  color: #1e3a5f;
+  font-size: 16px;
+}
+
+.loading-card p {
+  margin: 6px 0 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================
+   EMPTY
+   ========================================= */
+
+.empty-card {
+  background: white;
+  border: 1px solid #e5eaf1;
+  border-radius: 18px;
+  min-height: 330px;
+  padding: 50px 25px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 7px 25px rgba(15, 23, 42, 0.04);
+}
+
+.empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: #e8f3ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin-bottom: 17px;
+}
+
+.empty-card h3 {
+  margin: 0;
+  color: #173661;
+  font-size: 19px;
+}
+
+.empty-card p {
+  max-width: 430px;
+  color: #7b8798;
+  line-height: 1.6;
+  font-size: 13px;
+  margin: 8px 0 20px;
+}
+
+.empty-button {
+  text-decoration: none;
+  background: #0b4a8b;
+  color: white;
+  padding: 10px 17px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* =========================================
+   MOBILE
+   ========================================= */
+
+.vendedores-mobile {
+  display: none;
+}
+
+@media (max-width: 850px) {
+
+  .vendedores-header-inner {
+    padding: 0 18px;
+  }
+
+  .header-brand {
+    margin-left: 0;
+  }
+
+  .admin-badge {
+    display: none;
+  }
+
+  .vendedores-content {
+    padding: 30px 18px 50px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vendedores-table-container {
+    display: none;
+  }
+
+  .vendedores-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .vendedor-mobile-card {
+    background: white;
+    border: 1px solid #e3e8ef;
+    border-radius: 17px;
+    padding: 18px;
+    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.045);
+  }
+
+  .mobile-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .mobile-info {
+    border-top: 1px solid #edf1f5;
+    border-bottom: 1px solid #edf1f5;
+    margin: 16px 0;
+    padding: 14px 0;
+    display: grid;
+    gap: 12px;
+  }
+
+  .mobile-info span {
+    display: block;
+    color: #94a3b8;
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .mobile-info strong {
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    word-break: break-word;
+  }
+
+  .mobile-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .mobile-button {
+    flex: 1;
+    text-align: center;
+  }
+
+  .page-title h2 {
+    font-size: 25px;
+  }
+}
+
+@media (max-width: 550px) {
+
+  .vendedores-header-inner {
+    min-height: 70px;
+  }
+
+  .btn-volver {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  .header-brand h1 {
+    font-size: 14px;
+  }
+
+  .header-brand p {
+    display: none;
+  }
+
+  .title-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 23px;
+  }
+
+  .page-title h2 {
+    font-size: 22px;
+  }
+
+  .page-title p {
+    font-size: 12px;
+  }
+
+  .stat-card {
+    padding: 17px;
+  }
+
+  .list-header {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .total-badge {
+    font-size: 10px;
+  }
+
+  .mobile-card-top {
+    flex-direction: column;
+  }
+
+  .estado-badge {
+    align-self: flex-start;
+  }
+}
